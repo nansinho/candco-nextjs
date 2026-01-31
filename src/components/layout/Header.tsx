@@ -195,12 +195,12 @@ export default function Header() {
   // Block body scroll when mobile menu is open
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = "hidden";
+      document.body.style.overflowY = "hidden";
     } else {
-      document.body.style.overflow = "";
+      document.body.style.overflowY = "";
     }
     return () => {
-      document.body.style.overflow = "";
+      document.body.style.overflowY = "";
     };
   }, [isOpen]);
 
