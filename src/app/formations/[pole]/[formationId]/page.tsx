@@ -178,8 +178,7 @@ export default async function FormationDetailPage({ params }: Props) {
       <CourseJsonLd formation={formation} pole={pole} />
       <BreadcrumbJsonLd formation={formation} pole={pole} />
 
-      <main className="min-h-screen">
-        {/* Breadcrumb */}
+      {/* Breadcrumb */}
         <nav
           className="bg-card border-b border-border"
           aria-label="Fil d'Ariane"
@@ -381,7 +380,6 @@ export default async function FormationDetailPage({ params }: Props) {
             </div>
           </div>
         </section>
-      </main>
     </>
   );
 }

@@ -34,7 +34,7 @@ export default async function FormationsPage() {
   }));
 
   return (
-    <main className="min-h-screen">
+    <>
       {/* Hero */}
       <section className="section-padding-sm bg-gradient-to-b from-background to-card">
         <div className="container-custom text-center">
@@ -133,7 +133,6 @@ export default async function FormationsPage() {
           </Link>
         </div>
       </section>
-
-    </main>
+    </>
   );
 }
