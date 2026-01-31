@@ -2,6 +2,11 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import { AccessibilityWidget } from "@/components/AccessibilityWidget";
+import { ThemeProvider } from "@/components/ThemeProvider";
+import { ChatWidget } from "@/components/chat/ChatWidget";
+import { ScrollToTop } from "@/components/ScrollToTop";
+import { CookieBanner } from "@/components/CookieBanner";
 
 // SEO Metadata globales
 export const metadata: Metadata = {
@@ -252,9 +257,15 @@ export default function RootLayout({
         <link rel="manifest" href="/manifest.json" />
       </head>
       <body className="antialiased">
-        <Header />
-        <main className="pt-16 lg:pt-20">{children}</main>
-        <Footer />
+        <ThemeProvider>
+          <Header />
+          <main className="pt-16 lg:pt-20">{children}</main>
+          <Footer />
+          <AccessibilityWidget />
+          <ChatWidget />
+          <ScrollToTop />
+          <CookieBanner />
+        </ThemeProvider>
       </body>
     </html>
   );

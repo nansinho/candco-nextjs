@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
@@ -556,10 +557,12 @@ export default function FormationsClient({
                                       <article className="relative h-full bg-card rounded-2xl border border-border/50 overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 flex flex-col">
                                         {/* Image */}
                                         <div className="aspect-[4/3] sm:aspect-[3/2] overflow-hidden relative bg-muted">
-                                          <img
+                                          <Image
                                             src={getFormationImage(formation)}
                                             alt={formation.title}
-                                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                            fill
+                                            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                                            className="object-cover transition-transform duration-500 group-hover:scale-105"
                                           />
                                           <div
                                             className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-500"

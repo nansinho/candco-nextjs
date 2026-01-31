@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 
@@ -77,10 +78,12 @@ export default async function BlogPreview() {
                 {/* Image */}
                 <div className="aspect-video overflow-hidden relative bg-secondary">
                   {article.image_url ? (
-                    <img
+                    <Image
                       src={article.image_url}
                       alt={article.title}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      fill
+                      sizes="(max-width: 768px) 100vw, 33vw"
+                      className="object-cover transition-transform duration-500 group-hover:scale-105"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
