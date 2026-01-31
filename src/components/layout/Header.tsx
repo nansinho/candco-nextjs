@@ -24,6 +24,7 @@ import {
   User,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 type NavSubItem = {
   name: string;
@@ -399,6 +400,8 @@ export default function Header() {
               <Search className="w-5 h-5" />
             </button>
 
+            <ThemeToggle />
+
             <div className="w-px h-6 bg-border/50 mx-2" />
 
             <Link
@@ -425,6 +428,8 @@ export default function Header() {
             >
               <Search className="w-5 h-5" />
             </button>
+
+            <ThemeToggle />
 
             <button
               className="p-2.5 text-muted-foreground hover:text-foreground transition-colors rounded-full hover:bg-secondary/50"

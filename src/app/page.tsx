@@ -18,6 +18,7 @@ import {
 import PartnersSection from "@/components/home/PartnersSection";
 import Testimonials from "@/components/home/Testimonials";
 import BlogPreview from "@/components/home/BlogPreview";
+import HeroCarousel from "@/components/home/HeroCarousel";
 
 export const metadata: Metadata = {
   title: "C&Co Formation | Centre de Formation Professionnelle Certifié Qualiopi",
@@ -33,12 +34,6 @@ export const metadata: Metadata = {
     "financement OPCO",
   ],
 };
-
-const stats = [
-  { value: "25 000+", label: "Professionnels formés" },
-  { value: "98%", label: "Taux de réussite" },
-  { value: "15+", label: "Années d'expertise" },
-];
 
 const polesConfig = [
   {
@@ -103,16 +98,23 @@ const features = [
 export default async function HomePage() {
   const supabase = await createClient();
 
-  // Récupérer les formations populaires (4)
-  const { data: popularFormations } = await supabase
-    .from("formations")
-    .select("id, title, subtitle, slug, duration, price, pole, pole_name, image_url")
-    .eq("active", true)
-    .eq("popular", true)
-    .limit(4);
+  // Paralléliser les requêtes Supabase pour de meilleures performances
+  const [popularResult, poleCountsResult] = await Promise.all([
+    supabase
+      .from("formations")
+      .select("id, title, subtitle, slug, duration, price, pole, pole_name, image_url")
+      .eq("active", true)
+      .eq("popular", true)
+      .limit(4),
+    supabase
+      .from("formations")
+      .select("pole")
+      .eq("active", true),
+  ]);
+
+  let formations = popularResult.data;
 
   // Si pas assez de formations populaires, récupérer les plus récentes
-  let formations = popularFormations;
   if (!formations || formations.length < 4) {
     const { data: recentFormations } = await supabase
       .from("formations")
@@ -123,11 +125,7 @@ export default async function HomePage() {
     formations = recentFormations;
   }
 
-  // Compter les formations par pôle
-  const { data: poleCounts } = await supabase
-    .from("formations")
-    .select("pole")
-    .eq("active", true);
+  const poleCounts = poleCountsResult.data;
 
   const counts: Record<string, number> = {};
   poleCounts?.forEach((f) => {
@@ -136,73 +134,8 @@ export default async function HomePage() {
 
   return (
     <>
-      {/* Hero Section */}
-      <section className="relative min-h-[85vh] flex items-center justify-center overflow-hidden">
-        {/* Background Image */}
-        <div className="absolute inset-0">
-          <Image
-            src="/pole-security.jpg"
-            alt="Formation professionnelle"
-            fill
-            className="object-cover"
-            priority
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-background/90 via-background/80 to-background" />
-        </div>
-
-        <div className="container-custom relative z-10 text-center py-20">
-          {/* Badge */}
-          <p className="text-sm text-muted-foreground mb-6 tracking-widest uppercase">
-            Centre de formation certifié Qualiopi
-          </p>
-
-          {/* Title */}
-          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-light leading-tight mb-8 max-w-4xl mx-auto">
-            Construisez votre{" "}
-            <span className="text-primary font-medium">avenir professionnel</span>{" "}
-            avec excellence
-          </h1>
-
-          {/* Subtitle */}
-          <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-12">
-            Sécurité, Petite Enfance, Santé. Des formations certifiantes
-            finançables via OPCO et dispositifs entreprise, conçues pour votre
-            réussite.
-          </p>
-
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
-            <Link
-              href="/formations"
-              className="w-full sm:w-auto sm:min-w-[220px] inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
-            >
-              Découvrir nos formations
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-            <Link
-              href="/contact"
-              className="w-full sm:w-auto sm:min-w-[220px] inline-flex items-center justify-center px-6 py-3 bg-secondary text-secondary-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors"
-            >
-              Nous contacter
-            </Link>
-          </div>
-
-          {/* Stats */}
-          <div className="flex justify-center gap-6 sm:gap-12 lg:gap-20">
-            {stats.map((stat) => (
-              <div
-                key={stat.label}
-                className="text-center min-w-[60px] sm:min-w-[80px] lg:min-w-[100px]"
-              >
-                <p className="text-2xl sm:text-3xl lg:text-4xl font-light mb-1 tabular-nums text-primary">
-                  {stat.value}
-                </p>
-                <p className="text-sm text-muted-foreground">{stat.label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* Hero Section with Ken Burns Effect */}
+      <HeroCarousel />
 
       {/* Partners Section */}
       <PartnersSection />
@@ -344,10 +277,12 @@ export default async function HomePage() {
                       {/* Image */}
                       <div className="aspect-[3/2] overflow-hidden relative bg-secondary">
                         {formation.image_url ? (
-                          <img
+                          <Image
                             src={formation.image_url}
                             alt={formation.title}
-                            className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110"
+                            fill
+                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                            className="object-cover transition-all duration-700 group-hover:scale-110"
                           />
                         ) : (
                           <div

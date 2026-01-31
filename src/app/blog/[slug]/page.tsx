@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 
 type Props = {
@@ -120,11 +121,16 @@ export default async function BlogArticlePage({ params }: Props) {
         <section className="pb-12">
           <div className="container-custom">
             <div className="max-w-4xl mx-auto">
-              <img
-                src={article.image_url}
-                alt={article.title}
-                className="w-full rounded-lg"
-              />
+              <div className="relative aspect-video rounded-lg overflow-hidden">
+                <Image
+                  src={article.image_url}
+                  alt={article.title}
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 896px"
+                  className="object-cover"
+                  priority
+                />
+              </div>
             </div>
           </div>
         </section>
@@ -157,11 +163,13 @@ export default async function BlogArticlePage({ params }: Props) {
                   className="card-minimal-hover overflow-hidden group"
                 >
                   {related.image_url && (
-                    <div className="aspect-video bg-secondary overflow-hidden">
-                      <img
+                    <div className="aspect-video bg-secondary overflow-hidden relative">
+                      <Image
                         src={related.image_url}
                         alt={related.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        fill
+                        sizes="(max-width: 768px) 100vw, 33vw"
+                        className="object-cover group-hover:scale-105 transition-transform duration-300"
                       />
                     </div>
                   )}

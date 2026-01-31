@@ -274,3 +274,40 @@
     transform: translateX(-50%);
   }
 }
+
+/* Accessibility Modes */
+html.accessibility-large-text {
+  font-size: 120%;
+}
+
+html.accessibility-large-text * {
+  font-size: inherit;
+}
+
+html.accessibility-high-contrast {
+  filter: contrast(1.25);
+}
+
+html.accessibility-wide-spacing {
+  letter-spacing: 0.05em;
+  word-spacing: 0.1em;
+}
+
+html.accessibility-wide-spacing * {
+  line-height: 1.8 !important;
+}
+
+html.accessibility-highlight-links a {
+  outline: 2px solid currentColor !important;
+  outline-offset: 2px !important;
+  text-decoration: underline !important;
+}
+
+html.accessibility-desaturated {
+  filter: grayscale(1);
+}
+
+/* Combine filters when both high-contrast and desaturated are active */
+html.accessibility-high-contrast.accessibility-desaturated {
+  filter: contrast(1.25) grayscale(1);
+}

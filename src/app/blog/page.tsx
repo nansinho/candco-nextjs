@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 
 export const metadata: Metadata = {
   title: "Blog",
@@ -74,11 +75,13 @@ export default async function BlogPage() {
                 >
                   {/* Image */}
                   {article.image_url && (
-                    <div className="aspect-video bg-secondary overflow-hidden">
-                      <img
+                    <div className="aspect-video bg-secondary overflow-hidden relative">
+                      <Image
                         src={article.image_url}
                         alt={article.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        fill
+                        sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                        className="object-cover group-hover:scale-105 transition-transform duration-300"
                       />
                     </div>
                   )}
