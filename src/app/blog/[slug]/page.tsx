@@ -58,7 +58,7 @@ export default async function BlogArticlePage({ params }: Props) {
     .limit(3);
 
   return (
-    <main className="min-h-screen">
+    <>
       {/* Breadcrumb */}
       <div className="bg-card border-b border-border">
         <div className="container-custom py-4">
@@ -194,6 +194,6 @@ export default async function BlogArticlePage({ params }: Props) {
           </Link>
         </div>
       </section>
-    </main>
+    </>
   );
 }

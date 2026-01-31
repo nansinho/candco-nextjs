@@ -36,7 +36,7 @@ export default function ContactPage() {
 
   if (isSubmitted) {
     return (
-      <main className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="container-custom text-center py-20">
           <div className="max-w-md mx-auto">
             <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -67,12 +67,12 @@ export default function ContactPage() {
             </Link>
           </div>
         </div>
-      </main>
+      </div>
     );
   }
 
   return (
-    <main className="min-h-screen">
+    <>
       {/* Hero */}
       <section className="section-padding-sm bg-gradient-to-b from-background to-card">
         <div className="container-custom text-center">
@@ -275,6 +275,6 @@ export default function ContactPage() {
           </div>
         </div>
       </section>
-    </main>
+    </>
   );
 }
