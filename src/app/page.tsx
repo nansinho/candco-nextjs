@@ -7,16 +7,25 @@ export default async function HomePage() {
   // Récupérer les formations depuis Supabase (côté serveur = SEO optimisé)
   const { data: formations, error } = await supabase
     .from("formations")
-    .select("id, title, slug, description, duration, price")
-    .eq("is_active", true)
+    .select("id, title, slug, description, duration, price, pole, pole_name, image_url")
+    .eq("active", true)
     .order("title")
     .limit(6);
 
-  // Récupérer les pôles
-  const { data: poles } = await supabase
-    .from("poles")
-    .select("id, name, slug, description")
-    .order("name");
+  // Récupérer les pôles uniques depuis les formations
+  const { data: polesData } = await supabase
+    .from("formations")
+    .select("pole, pole_name")
+    .eq("active", true);
+
+  // Dédupliquer les pôles
+  const polesMap = new Map();
+  polesData?.forEach((f) => {
+    if (f.pole && !polesMap.has(f.pole)) {
+      polesMap.set(f.pole, { slug: f.pole, name: f.pole_name });
+    }
+  });
+  const poles = Array.from(polesMap.values());
 
   return (
     <main className="min-h-screen">

@@ -13,7 +13,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const { data: article } = await supabase
     .from("blog_articles")
-    .select("title, excerpt, featured_image")
+    .select("title, excerpt, image_url, meta_title, meta_description")
     .eq("slug", slug)
     .single();
 
@@ -22,12 +22,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   return {
-    title: article.title,
-    description: article.excerpt,
+    title: article.meta_title || article.title,
+    description: article.meta_description || article.excerpt,
     openGraph: {
-      title: article.title,
-      description: article.excerpt || undefined,
-      images: article.featured_image ? [article.featured_image] : undefined,
+      title: article.meta_title || article.title,
+      description: article.meta_description || article.excerpt || undefined,
+      images: article.image_url ? [article.image_url] : undefined,
     },
   };
 }
@@ -41,7 +41,7 @@ export default async function BlogArticlePage({ params }: Props) {
     .from("blog_articles")
     .select("*")
     .eq("slug", slug)
-    .eq("status", "published")
+    .eq("published", true)
     .single();
 
   if (!article) {
@@ -51,8 +51,8 @@ export default async function BlogArticlePage({ params }: Props) {
   // Récupérer les articles similaires
   const { data: relatedArticles } = await supabase
     .from("blog_articles")
-    .select("id, title, slug, excerpt, featured_image")
-    .eq("status", "published")
+    .select("id, title, slug, excerpt, image_url")
+    .eq("published", true)
     .eq("category", article.category)
     .neq("id", article.id)
     .limit(3);
@@ -89,9 +89,9 @@ export default async function BlogArticlePage({ params }: Props) {
                   {article.category}
                 </span>
               )}
-              {article.reading_time && (
+              {article.read_time && (
                 <span className="text-sm text-muted-foreground">
-                  {article.reading_time} min de lecture
+                  {article.read_time} min de lecture
                 </span>
               )}
             </div>
@@ -116,12 +116,12 @@ export default async function BlogArticlePage({ params }: Props) {
       </section>
 
       {/* Image */}
-      {article.featured_image && (
+      {article.image_url && (
         <section className="pb-12">
           <div className="container-custom">
             <div className="max-w-4xl mx-auto">
               <img
-                src={article.featured_image}
+                src={article.image_url}
                 alt={article.title}
                 className="w-full rounded-lg"
               />
@@ -156,10 +156,10 @@ export default async function BlogArticlePage({ params }: Props) {
                   href={`/blog/${related.slug}`}
                   className="card-minimal-hover overflow-hidden group"
                 >
-                  {related.featured_image && (
+                  {related.image_url && (
                     <div className="aspect-video bg-secondary overflow-hidden">
                       <img
-                        src={related.featured_image}
+                        src={related.image_url}
                         alt={related.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />

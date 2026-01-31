@@ -13,7 +13,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const { data: formation } = await supabase
     .from("formations")
-    .select("title, description")
+    .select("title, description, meta_title, meta_description")
     .eq("slug", formationId)
     .single();
 
@@ -22,8 +22,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   return {
-    title: formation.title,
-    description: formation.description,
+    title: formation.meta_title || formation.title,
+    description: formation.meta_description || formation.description,
   };
 }
 
@@ -31,17 +31,10 @@ export default async function FormationDetailPage({ params }: Props) {
   const { pole, formationId } = await params;
   const supabase = await createClient();
 
-  // Récupérer la formation avec son pôle
+  // Récupérer la formation
   const { data: formation } = await supabase
     .from("formations")
-    .select(`
-      *,
-      poles (
-        id,
-        name,
-        slug
-      )
-    `)
+    .select("*")
     .eq("slug", formationId)
     .single();
 
@@ -75,13 +68,6 @@ export default async function FormationDetailPage({ params }: Props) {
               Formations
             </Link>
             <span>/</span>
-            <Link
-              href={`/formations?pole=${pole}`}
-              className="hover:text-foreground transition-colors"
-            >
-              {formation.poles?.name}
-            </Link>
-            <span>/</span>
             <span className="text-foreground">{formation.title}</span>
           </nav>
         </div>
@@ -93,15 +79,18 @@ export default async function FormationDetailPage({ params }: Props) {
           <div className="max-w-4xl">
             <div className="flex items-center gap-3 mb-4">
               <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium">
-                {formation.poles?.name}
+                {formation.pole_name}
               </span>
-              {formation.is_certifying && (
+              {formation.certification && (
                 <span className="px-3 py-1 bg-green-500/10 text-green-500 rounded-full text-sm font-medium">
-                  Certifiante
+                  {formation.certification}
                 </span>
               )}
             </div>
             <h1 className="heading-hero mb-6">{formation.title}</h1>
+            {formation.subtitle && (
+              <p className="text-xl text-muted-foreground mb-4">{formation.subtitle}</p>
+            )}
             <p className="text-body-lg">{formation.description}</p>
           </div>
         </div>
@@ -113,43 +102,63 @@ export default async function FormationDetailPage({ params }: Props) {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
             {/* Colonne principale */}
             <div className="lg:col-span-2 space-y-12">
-              {/* Objectifs */}
-              {formation.objectives && (
+              {/* Objectifs généraux */}
+              {formation.objectifs_generaux && Array.isArray(formation.objectifs_generaux) && formation.objectifs_generaux.length > 0 && (
                 <div>
                   <h2 className="heading-card mb-4">Objectifs de la formation</h2>
-                  <div className="prose prose-invert max-w-none">
-                    <p className="text-body whitespace-pre-line">
-                      {formation.objectives}
-                    </p>
-                  </div>
+                  <ul className="space-y-2">
+                    {formation.objectifs_generaux.map((obj: string, i: number) => (
+                      <li key={i} className="flex items-start gap-3 text-body">
+                        <span className="text-primary mt-1">✓</span>
+                        {obj}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               )}
 
               {/* Programme */}
-              {formation.program && (
+              {formation.programme && Array.isArray(formation.programme) && formation.programme.length > 0 && (
                 <div>
                   <h2 className="heading-card mb-4">Programme</h2>
-                  <div className="prose prose-invert max-w-none">
-                    <p className="text-body whitespace-pre-line">
-                      {formation.program}
-                    </p>
+                  <div className="space-y-4">
+                    {formation.programme.map((item: any, i: number) => (
+                      <div key={i} className="p-4 bg-card rounded-lg border border-border">
+                        <h3 className="font-medium mb-2">{item.title || item}</h3>
+                        {item.content && <p className="text-muted-foreground text-sm">{item.content}</p>}
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
 
               {/* Prérequis */}
-              {formation.prerequisites && (
+              {formation.prerequis && Array.isArray(formation.prerequis) && formation.prerequis.length > 0 && (
                 <div>
                   <h2 className="heading-card mb-4">Prérequis</h2>
-                  <p className="text-body">{formation.prerequisites}</p>
+                  <ul className="space-y-2">
+                    {formation.prerequis.map((prereq: string, i: number) => (
+                      <li key={i} className="flex items-start gap-3 text-body">
+                        <span className="text-muted-foreground">•</span>
+                        {prereq}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               )}
 
-              {/* Public cible */}
-              {formation.target_audience && (
+              {/* Public visé */}
+              {formation.public_vise && Array.isArray(formation.public_vise) && formation.public_vise.length > 0 && (
                 <div>
                   <h2 className="heading-card mb-4">Public concerné</h2>
-                  <p className="text-body">{formation.target_audience}</p>
+                  <ul className="space-y-2">
+                    {formation.public_vise.map((pub: string, i: number) => (
+                      <li key={i} className="flex items-start gap-3 text-body">
+                        <span className="text-muted-foreground">•</span>
+                        {pub}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               )}
             </div>
@@ -170,22 +179,20 @@ export default async function FormationDetailPage({ params }: Props) {
                     <div className="flex justify-between items-center py-3 border-b border-border">
                       <span className="text-muted-foreground">Tarif</span>
                       <span className="font-medium text-primary">
-                        {formation.price}€
+                        {formation.price}
                       </span>
                     </div>
                   )}
-                  {formation.modality && (
-                    <div className="flex justify-between items-center py-3 border-b border-border">
-                      <span className="text-muted-foreground">Modalité</span>
-                      <span className="font-medium">{formation.modality}</span>
-                    </div>
-                  )}
-                  {formation.participants_min && formation.participants_max && (
+                  {formation.nombre_participants && (
                     <div className="flex justify-between items-center py-3 border-b border-border">
                       <span className="text-muted-foreground">Participants</span>
-                      <span className="font-medium">
-                        {formation.participants_min} à {formation.participants_max}
-                      </span>
+                      <span className="font-medium">{formation.nombre_participants}</span>
+                    </div>
+                  )}
+                  {formation.format_lieu && (
+                    <div className="flex justify-between items-center py-3 border-b border-border">
+                      <span className="text-muted-foreground">Lieu</span>
+                      <span className="font-medium">{formation.format_lieu}</span>
                     </div>
                   )}
                 </div>

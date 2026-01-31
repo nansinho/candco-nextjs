@@ -11,36 +11,26 @@ export const metadata: Metadata = {
 export default async function FormationsPage() {
   const supabase = await createClient();
 
-  // Récupérer les formations avec leurs pôles
+  // Récupérer les formations
   const { data: formations } = await supabase
     .from("formations")
-    .select(`
-      id,
-      title,
-      slug,
-      description,
-      duration,
-      price,
-      pole_id,
-      poles (
-        id,
-        name,
-        slug
-      )
-    `)
-    .eq("is_active", true)
+    .select("id, title, slug, description, duration, price, pole, pole_name, image_url")
+    .eq("active", true)
     .order("title");
 
-  // Récupérer les pôles pour le filtre
-  const { data: poles } = await supabase
-    .from("poles")
-    .select("id, name, slug, description")
-    .order("name");
+  // Extraire les pôles uniques
+  const polesMap = new Map();
+  formations?.forEach((f) => {
+    if (f.pole && !polesMap.has(f.pole)) {
+      polesMap.set(f.pole, { slug: f.pole, name: f.pole_name });
+    }
+  });
+  const poles = Array.from(polesMap.values());
 
   // Grouper les formations par pôle
-  const formationsByPole = poles?.map((pole) => ({
+  const formationsByPole = poles.map((pole) => ({
     ...pole,
-    formations: formations?.filter((f) => f.pole_id === pole.id) || [],
+    formations: formations?.filter((f) => f.pole === pole.slug) || [],
   }));
 
   return (
@@ -66,9 +56,9 @@ export default async function FormationsPage() {
             >
               Toutes
             </Link>
-            {poles?.map((pole) => (
+            {poles.map((pole) => (
               <Link
-                key={pole.id}
+                key={pole.slug}
                 href={`/formations?pole=${pole.slug}`}
                 className="px-4 py-2 rounded-full bg-secondary text-secondary-foreground text-sm font-medium hover:bg-secondary/80 transition-colors"
               >
@@ -82,10 +72,10 @@ export default async function FormationsPage() {
       {/* Liste des formations par pôle */}
       <section className="section-padding-sm">
         <div className="container-custom">
-          {formationsByPole?.map(
+          {formationsByPole.map(
             (pole) =>
               pole.formations.length > 0 && (
-                <div key={pole.id} className="mb-16 last:mb-0">
+                <div key={pole.slug} className="mb-16 last:mb-0">
                   <h2 className="heading-section mb-8">{pole.name}</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {pole.formations.map((formation: any) => (

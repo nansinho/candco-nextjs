@@ -14,17 +14,8 @@ export default async function BlogPage() {
   // Récupérer les articles publiés
   const { data: articles } = await supabase
     .from("blog_articles")
-    .select(`
-      id,
-      title,
-      slug,
-      excerpt,
-      featured_image,
-      published_at,
-      category,
-      reading_time
-    `)
-    .eq("status", "published")
+    .select("id, title, slug, excerpt, image_url, published_at, category, read_time")
+    .eq("published", true)
     .order("published_at", { ascending: false });
 
   // Extraire les catégories uniques
@@ -82,16 +73,16 @@ export default async function BlogPage() {
                   className="card-minimal-hover overflow-hidden group"
                 >
                   {/* Image */}
-                  {article.featured_image && (
+                  {article.image_url && (
                     <div className="aspect-video bg-secondary overflow-hidden">
                       <img
-                        src={article.featured_image}
+                        src={article.image_url}
                         alt={article.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
                     </div>
                   )}
-                  {!article.featured_image && (
+                  {!article.image_url && (
                     <div className="aspect-video bg-gradient-to-br from-primary/20 to-primary/5" />
                   )}
 
@@ -103,9 +94,9 @@ export default async function BlogPage() {
                           {article.category}
                         </span>
                       )}
-                      {article.reading_time && (
+                      {article.read_time && (
                         <span className="text-xs text-muted-foreground">
-                          {article.reading_time} min de lecture
+                          {article.read_time} min de lecture
                         </span>
                       )}
                     </div>
