@@ -116,12 +116,6 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* Footer simple */}
-      <footer className="py-8 border-t border-border">
-        <div className="container-custom text-center text-muted-foreground">
-          <p>© 2024 C&Co Formation. Tous droits réservés.</p>
-        </div>
-      </footer>
     </main>
   );
 }

@@ -235,12 +235,6 @@ export default async function FormationDetailPage({ params }: Props) {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="py-8 border-t border-border">
-        <div className="container-custom text-center text-muted-foreground">
-          <p>© 2024 C&Co Formation. Tous droits réservés.</p>
-        </div>
-      </footer>
     </main>
   );
 }
