@@ -1,138 +1,177 @@
 import { createClient } from "@/lib/supabase/server";
 import { Metadata } from "next";
-import Link from "next/link";
+import FormationsClient from "./FormationsClient";
 
 export const metadata: Metadata = {
-  title: "Nos Formations",
+  title: "Nos Formations Professionnelles | Catalogue Complet",
   description:
-    "Découvrez notre catalogue de formations professionnelles : SST, sécurité incendie, petite enfance, santé. Formations certifiantes et qualifiantes.",
+    "Découvrez notre catalogue de formations professionnelles certifiantes : SST, sécurité incendie, petite enfance (CAP AEPE), santé. Formations éligibles OPCO et financement entreprise.",
+  keywords: [
+    "formation professionnelle",
+    "formation SST",
+    "formation sécurité",
+    "formation petite enfance",
+    "CAP AEPE",
+    "formation santé",
+    "AFGSU",
+    "formation certifiante",
+    "Qualiopi",
+    "OPCO",
+  ],
+  openGraph: {
+    title: "Catalogue de Formations | C&Co Formation",
+    description:
+      "+100 formations professionnelles certifiantes. Sécurité, Petite Enfance, Santé. Financement OPCO.",
+    images: [
+      {
+        url: "/og-formations.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Catalogue de formations C&Co Formation",
+      },
+    ],
+  },
 };
 
 export default async function FormationsPage() {
   const supabase = await createClient();
 
-  // Récupérer les formations
+  // Fetch formations with all needed fields
   const { data: formations } = await supabase
     .from("formations")
-    .select("id, title, slug, description, duration, price, pole, pole_name, image_url")
+    .select(
+      "id, title, subtitle, description, pole, pole_name, duration, price, image_url, popular, active, category_id, slug"
+    )
     .eq("active", true)
     .order("title");
 
-  // Extraire les pôles uniques
-  const polesMap = new Map();
-  formations?.forEach((f) => {
-    if (f.pole && !polesMap.has(f.pole)) {
-      polesMap.set(f.pole, { slug: f.pole, name: f.pole_name });
-    }
-  });
-  const poles = Array.from(polesMap.values());
+  // Fetch categories
+  const { data: categories } = await supabase
+    .from("categories")
+    .select("id, name, slug, pole_id")
+    .order("name");
 
-  // Grouper les formations par pôle
-  const formationsByPole = poles.map((pole) => ({
-    ...pole,
-    formations: formations?.filter((f) => f.pole === pole.slug) || [],
-  }));
+  // Fetch active sessions with inscription counts
+  const { data: sessionsData } = await supabase
+    .from("sessions")
+    .select(
+      `
+      id,
+      formation_id,
+      start_date,
+      max_participants,
+      inscriptions:inscriptions(count)
+    `
+    )
+    .eq("is_public", true)
+    .in("status", ["planifiee", "confirmee"])
+    .gte("start_date", new Date().toISOString().split("T")[0]);
+
+  // Process session counts
+  const sessionCounts: Record<
+    string,
+    {
+      formation_id: string;
+      count: number;
+      next_session_date: string | null;
+      total_places: number;
+    }
+  > = {};
+
+  if (sessionsData) {
+    sessionsData.forEach((session: any) => {
+      const formationId = session.formation_id;
+      const inscriptionCount =
+        session.inscriptions?.[0]?.count || session.inscriptions?.length || 0;
+      const availablePlaces = Math.max(
+        0,
+        (session.max_participants || 0) - inscriptionCount
+      );
+
+      if (!sessionCounts[formationId]) {
+        sessionCounts[formationId] = {
+          formation_id: formationId,
+          count: 0,
+          next_session_date: null,
+          total_places: 0,
+        };
+      }
+
+      sessionCounts[formationId].count += 1;
+      sessionCounts[formationId].total_places += availablePlaces;
+
+      // Track the earliest session date
+      if (
+        !sessionCounts[formationId].next_session_date ||
+        session.start_date < sessionCounts[formationId].next_session_date
+      ) {
+        sessionCounts[formationId].next_session_date = session.start_date;
+      }
+    });
+  }
 
   return (
     <>
-      {/* Hero */}
-      <section className="section-padding-sm bg-gradient-to-b from-background to-card">
-        <div className="container-custom text-center">
-          <h1 className="heading-hero mb-4">Nos Formations</h1>
-          <p className="text-body-lg max-w-2xl mx-auto">
-            Découvrez notre catalogue complet de formations professionnelles
-            certifiantes et qualifiantes.
-          </p>
-        </div>
-      </section>
+      {/* Hero Section */}
+      <section className="relative py-16 md:py-24 overflow-hidden">
+        {/* Background gradient */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-background" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/10 via-transparent to-transparent" />
 
-      {/* Filtres par pôle */}
-      <section className="py-8 border-b border-border">
-        <div className="container-custom">
-          <div className="flex flex-wrap gap-3 justify-center">
-            <Link
-              href="/formations"
-              className="px-4 py-2 rounded-full bg-primary text-primary-foreground text-sm font-medium"
-            >
-              Toutes
-            </Link>
-            {poles.map((pole) => (
-              <Link
-                key={pole.slug}
-                href={`/formations?pole=${pole.slug}`}
-                className="px-4 py-2 rounded-full bg-secondary text-secondary-foreground text-sm font-medium hover:bg-secondary/80 transition-colors"
-              >
-                {pole.name}
-              </Link>
-            ))}
+        <div className="container-custom relative z-10">
+          <div className="max-w-3xl mx-auto text-center">
+            <p className="text-sm uppercase tracking-widest text-primary font-medium mb-4">
+              Catalogue de formations
+            </p>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-light leading-tight mb-6">
+              Développez vos{" "}
+              <span className="text-primary font-normal">compétences</span>
+            </h1>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Découvrez notre catalogue complet de formations professionnelles
+              certifiantes. Sécurité, Petite Enfance, Santé — trouvez la
+              formation qui correspond à vos objectifs.
+            </p>
+
+            {/* Stats */}
+            <div className="flex flex-wrap items-center justify-center gap-6 md:gap-12 mt-10">
+              <div className="text-center">
+                <p className="text-2xl md:text-3xl font-light text-primary">
+                  {formations?.length || 0}+
+                </p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wider">
+                  Formations
+                </p>
+              </div>
+              <div className="w-px h-8 bg-border hidden md:block" />
+              <div className="text-center">
+                <p className="text-2xl md:text-3xl font-light text-primary">
+                  3
+                </p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wider">
+                  Pôles
+                </p>
+              </div>
+              <div className="w-px h-8 bg-border hidden md:block" />
+              <div className="text-center">
+                <p className="text-2xl md:text-3xl font-light text-primary">
+                  98%
+                </p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wider">
+                  Réussite
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Liste des formations par pôle */}
-      <section className="section-padding-sm">
-        <div className="container-custom">
-          {formationsByPole.map(
-            (pole) =>
-              pole.formations.length > 0 && (
-                <div key={pole.slug} className="mb-16 last:mb-0">
-                  <h2 className="heading-section mb-8">{pole.name}</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {pole.formations.map((formation: any) => (
-                      <Link
-                        key={formation.id}
-                        href={`/formations/${pole.slug}/${formation.slug}`}
-                        className="card-minimal-hover p-6 flex flex-col"
-                      >
-                        <h3 className="heading-card mb-2">{formation.title}</h3>
-                        <p className="text-body line-clamp-3 flex-1 mb-4">
-                          {formation.description}
-                        </p>
-                        <div className="flex items-center justify-between text-sm text-muted-foreground pt-4 border-t border-border">
-                          {formation.duration && (
-                            <span>Durée: {formation.duration}</span>
-                          )}
-                          {formation.price && (
-                            <span className="text-primary font-medium">
-                              {formation.price}€
-                            </span>
-                          )}
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )
-          )}
-
-          {(!formations || formations.length === 0) && (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">
-                Aucune formation disponible pour le moment.
-              </p>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="section-padding-sm bg-card">
-        <div className="container-custom text-center">
-          <h2 className="heading-section mb-4">
-            Vous ne trouvez pas la formation recherchée ?
-          </h2>
-          <p className="text-body-lg mb-8 max-w-2xl mx-auto">
-            Contactez-nous pour discuter de vos besoins spécifiques. Nous
-            pouvons créer des formations sur mesure.
-          </p>
-          <Link
-            href="/contact"
-            className="inline-flex items-center justify-center px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
-          >
-            Nous contacter
-          </Link>
-        </div>
-      </section>
+      {/* Client Component with Filters */}
+      <FormationsClient
+        formations={formations || []}
+        categories={categories || []}
+        sessionCounts={sessionCounts}
+      />
     </>
   );
 }
