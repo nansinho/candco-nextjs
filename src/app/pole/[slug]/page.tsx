@@ -29,7 +29,7 @@ const polesConfig: Record<
     longDescription: string;
     image: string;
     icon: typeof Shield;
-    color: string;
+    cssVar: string;
     features: { title: string; description: string }[];
     certifications: string[];
   }
@@ -43,7 +43,7 @@ const polesConfig: Record<
       "Notre pôle Sécurité & Prévention vous accompagne dans la maîtrise des risques professionnels. Des formations certifiantes et reconnues pour devenir acteur de la sécurité dans votre entreprise.",
     image: "/pole-security.jpg",
     icon: Shield,
-    color: "text-red-500",
+    cssVar: "pole-securite",
     features: [
       {
         title: "Formateurs experts",
@@ -73,7 +73,7 @@ const polesConfig: Record<
       "Notre pôle Petite Enfance forme les professionnels à l'accompagnement bienveillant des tout-petits. Découvrez nos formations sur les pédagogies alternatives, l'éveil sensoriel et le développement de l'enfant.",
     image: "/pole-childhood.jpg",
     icon: Baby,
-    color: "text-teal-500",
+    cssVar: "pole-petite-enfance",
     features: [
       {
         title: "Pédagogies alternatives",
@@ -103,7 +103,7 @@ const polesConfig: Record<
       "Notre pôle Santé propose des formations adaptées aux professionnels du secteur médical et paramédical. Maîtrisez les gestes essentiels et développez vos compétences en accompagnement des patients.",
     image: "/pole-health.jpg",
     icon: HeartPulse,
-    color: "text-blue-500",
+    cssVar: "pole-sante",
     features: [
       {
         title: "Gestes d'urgence",
@@ -199,15 +199,24 @@ export default async function PolePage({ params }: Props) {
 
         <div className="container-custom relative z-10 text-center py-20">
           {/* Icon Badge */}
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-6">
-            <Icon className={`w-8 h-8 ${pole.color}`} />
+          <div
+            className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-6"
+            style={{ backgroundColor: `hsl(var(--${pole.cssVar}) / 0.15)` }}
+          >
+            <Icon
+              className="w-8 h-8"
+              style={{ color: `hsl(var(--${pole.cssVar}))` }}
+            />
           </div>
 
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-light leading-tight mb-4 max-w-4xl mx-auto">
             {pole.title}
           </h1>
 
-          <p className="text-xl text-primary font-medium mb-6">
+          <p
+            className="text-xl font-medium mb-6"
+            style={{ color: `hsl(var(--${pole.cssVar}))` }}
+          >
             {pole.subtitle}
           </p>
 
@@ -249,10 +258,19 @@ export default async function PolePage({ params }: Props) {
             {pole.features.map((feature, index) => (
               <div
                 key={feature.title}
-                className="group p-6 rounded-2xl border border-border/50 hover:border-primary/30 hover:bg-card/50 transition-all duration-300"
+                className="group p-6 rounded-2xl border border-border/50 hover:bg-card/50 transition-all duration-300"
+                style={{
+                  "--hover-border-color": `hsl(var(--${pole.cssVar}) / 0.3)`,
+                } as React.CSSProperties}
               >
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <CheckCircle className="w-5 h-5 text-primary" />
+                <div
+                  className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform"
+                  style={{ backgroundColor: `hsl(var(--${pole.cssVar}) / 0.15)` }}
+                >
+                  <CheckCircle
+                    className="w-5 h-5"
+                    style={{ color: `hsl(var(--${pole.cssVar}))` }}
+                  />
                 </div>
                 <h3 className="font-medium mb-2">{feature.title}</h3>
                 <p className="text-sm text-muted-foreground">
@@ -281,7 +299,10 @@ export default async function PolePage({ params }: Props) {
                   key={cert}
                   className="flex items-center gap-2 px-4 py-2 bg-card rounded-full border border-border/50"
                 >
-                  <Award className="w-4 h-4 text-primary" />
+                  <Award
+                    className="w-4 h-4"
+                    style={{ color: `hsl(var(--${pole.cssVar}))` }}
+                  />
                   <span className="text-sm font-medium">{cert}</span>
                 </div>
               ))}
@@ -330,15 +351,32 @@ export default async function PolePage({ params }: Props) {
                           className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
-                          <BookOpen className="w-8 h-8 text-primary/50" />
+                        <div
+                          className="w-full h-full flex items-center justify-center"
+                          style={{
+                            background: `linear-gradient(135deg, hsl(var(--${pole.cssVar}) / 0.2), hsl(var(--${pole.cssVar}) / 0.05))`,
+                          }}
+                        >
+                          <BookOpen
+                            className="w-8 h-8"
+                            style={{ color: `hsl(var(--${pole.cssVar}) / 0.5)` }}
+                          />
                         </div>
                       )}
                     </div>
 
+                    {/* Colored bar */}
+                    <div
+                      className="h-1 w-0 group-hover:w-full transition-all duration-500"
+                      style={{ backgroundColor: `hsl(var(--${pole.cssVar}))` }}
+                    />
+
                     {/* Content */}
                     <div className="p-5">
-                      <h3 className="font-medium mb-2 group-hover:text-primary transition-colors">
+                      <h3
+                        className="font-medium mb-2 transition-colors"
+                        style={{ color: `hsl(var(--${pole.cssVar}))` }}
+                      >
                         {formation.title}
                       </h3>
                       {formation.subtitle && (
@@ -355,7 +393,10 @@ export default async function PolePage({ params }: Props) {
                           </div>
                         )}
                         {formation.price && (
-                          <span className="font-medium text-foreground group-hover:text-primary transition-colors">
+                          <span
+                            className="font-medium transition-colors"
+                            style={{ color: `hsl(var(--${pole.cssVar}))` }}
+                          >
                             {formation.price}
                           </span>
                         )}
