@@ -47,6 +47,7 @@ const polesConfig = [
     description: "Développez vos compétences en prévention des risques et premiers secours. Formations certifiantes éligibles au financement OPCO.",
     image: "/pole-security.jpg",
     icon: Shield,
+    color: "pole-securite",
   },
   {
     id: "petite-enfance",
@@ -54,6 +55,7 @@ const polesConfig = [
     description: "Accompagnez le développement des tout-petits avec bienveillance et pédagogies innovantes.",
     image: "/pole-childhood.jpg",
     icon: Baby,
+    color: "pole-petite-enfance",
   },
   {
     id: "sante",
@@ -61,6 +63,7 @@ const polesConfig = [
     description: "Maîtrisez les gestes essentiels du soin et de l'urgence. Formations pratiques certifiées et reconnues.",
     image: "/pole-health.jpg",
     icon: HeartPulse,
+    color: "pole-sante",
   },
 ];
 
@@ -235,30 +238,48 @@ export default async function HomePage() {
                         fill
                         className="object-cover transition-all duration-700 group-hover:scale-110"
                       />
-                      <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/40 transition-all duration-500" />
+                      <div
+                        className="absolute inset-0 opacity-0 group-hover:opacity-40 transition-all duration-500"
+                        style={{ backgroundColor: `hsl(var(--${pole.color}))` }}
+                      />
                       {/* Icon overlay */}
                       <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500">
-                        <div className="w-16 h-16 rounded-full bg-primary/90 flex items-center justify-center scale-50 group-hover:scale-100 transition-transform duration-500">
+                        <div
+                          className="w-16 h-16 rounded-full flex items-center justify-center scale-50 group-hover:scale-100 transition-transform duration-500"
+                          style={{ backgroundColor: `hsl(var(--${pole.color}) / 0.9)` }}
+                        >
                           <Icon className="w-8 h-8 text-white" />
                         </div>
                       </div>
                     </div>
 
                     {/* Colored bar */}
-                    <div className="h-1 w-0 group-hover:w-full transition-all duration-500 bg-primary" />
+                    <div
+                      className="h-1 w-0 group-hover:w-full transition-all duration-500"
+                      style={{ backgroundColor: `hsl(var(--${pole.color}))` }}
+                    />
 
                     {/* Content */}
                     <div className="p-6">
                       <div className="flex items-start justify-between gap-4 mb-3">
-                        <h3 className="text-lg font-medium text-primary">
+                        <h3
+                          className="text-lg font-medium"
+                          style={{ color: `hsl(var(--${pole.color}))` }}
+                        >
                           {pole.title}
                         </h3>
-                        <ArrowRight className="w-4 h-4 -translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300 flex-shrink-0 mt-1 text-primary" />
+                        <ArrowRight
+                          className="w-4 h-4 -translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300 flex-shrink-0 mt-1"
+                          style={{ color: `hsl(var(--${pole.color}))` }}
+                        />
                       </div>
                       <p className="text-sm text-muted-foreground mb-4">
                         {pole.description}
                       </p>
-                      <p className="text-xs font-medium text-primary/80">
+                      <p
+                        className="text-xs font-medium"
+                        style={{ color: `hsl(var(--${pole.color}) / 0.8)` }}
+                      >
                         {count} {count > 1 ? "formations" : "formation"}
                       </p>
                     </div>
@@ -304,55 +325,93 @@ export default async function HomePage() {
             </div>
 
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {formations.map((formation) => (
-                <Link
-                  key={formation.id}
-                  href={`/formations/${formation.pole}/${formation.slug || formation.id}`}
-                  className="group block h-full"
-                >
-                  <article className="h-full bg-card rounded-xl border border-border/50 overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-2">
-                    {/* Image */}
-                    <div className="aspect-[3/2] overflow-hidden relative bg-secondary">
-                      {formation.image_url ? (
-                        <img
-                          src={formation.image_url}
-                          alt={formation.title}
-                          className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
-                          <BookOpen className="w-8 h-8 text-primary/50" />
-                        </div>
-                      )}
-                      <div className="absolute top-3 left-3">
-                        <span className="text-xs px-2.5 py-1 rounded-full bg-primary text-primary-foreground">
-                          {formation.pole_name}
-                        </span>
-                      </div>
-                    </div>
+              {formations.map((formation) => {
+                // Map pole to color
+                const poleColorMap: Record<string, string> = {
+                  "securite-prevention": "pole-securite",
+                  "petite-enfance": "pole-petite-enfance",
+                  "sante": "pole-sante",
+                };
+                const poleColor = poleColorMap[formation.pole] || "primary";
 
-                    {/* Content */}
-                    <div className="p-5">
-                      <h3 className="font-medium mb-1 group-hover:text-primary transition-colors">
-                        {formation.title}
-                      </h3>
-                      <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                        {formation.subtitle}
-                      </p>
-
-                      <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                          <Clock className="w-3.5 h-3.5" />
-                          {formation.duration}
+                return (
+                  <Link
+                    key={formation.id}
+                    href={`/formations/${formation.pole}/${formation.slug || formation.id}`}
+                    className="group block h-full"
+                  >
+                    <article className="h-full bg-card rounded-xl border border-border/50 overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-2">
+                      {/* Image */}
+                      <div className="aspect-[3/2] overflow-hidden relative bg-secondary">
+                        {formation.image_url ? (
+                          <img
+                            src={formation.image_url}
+                            alt={formation.title}
+                            className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110"
+                          />
+                        ) : (
+                          <div
+                            className="w-full h-full flex items-center justify-center"
+                            style={{
+                              background: `linear-gradient(135deg, hsl(var(--${poleColor}) / 0.2), hsl(var(--${poleColor}) / 0.05))`,
+                            }}
+                          >
+                            <BookOpen
+                              className="w-8 h-8"
+                              style={{ color: `hsl(var(--${poleColor}) / 0.5)` }}
+                            />
+                          </div>
+                        )}
+                        <div className="absolute top-3 left-3">
+                          <span
+                            className="text-xs px-2.5 py-1 rounded-full"
+                            style={{
+                              backgroundColor: `hsl(var(--${poleColor}))`,
+                              color: `hsl(var(--${poleColor}-foreground))`,
+                            }}
+                          >
+                            {formation.pole_name}
+                          </span>
                         </div>
-                        <span className="font-medium text-foreground group-hover:text-primary transition-colors">
-                          {formation.price}
-                        </span>
                       </div>
-                    </div>
-                  </article>
-                </Link>
-              ))}
+
+                      {/* Colored bar */}
+                      <div
+                        className="h-1 w-0 group-hover:w-full transition-all duration-500"
+                        style={{ backgroundColor: `hsl(var(--${poleColor}))` }}
+                      />
+
+                      {/* Content */}
+                      <div className="p-5">
+                        <h3
+                          className="font-medium mb-1 transition-colors"
+                          style={{
+                            color: `hsl(var(--${poleColor}))`,
+                          }}
+                        >
+                          {formation.title}
+                        </h3>
+                        <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                          {formation.subtitle}
+                        </p>
+
+                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                          <div className="flex items-center gap-1">
+                            <Clock className="w-3.5 h-3.5" />
+                            {formation.duration}
+                          </div>
+                          <span
+                            className="font-medium transition-colors"
+                            style={{ color: `hsl(var(--${poleColor}))` }}
+                          >
+                            {formation.price}
+                          </span>
+                        </div>
+                      </div>
+                    </article>
+                  </Link>
+                );
+              })}
             </div>
           </div>
         </section>
