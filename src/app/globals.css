@@ -259,3 +259,24 @@
   outline-offset: 2px;
   border-radius: inherit;
 }
+
+/* Partners carousel infinite scroll */
+.partners-carousel {
+  overflow: hidden;
+  width: 100%;
+}
+
+.partners-track {
+  display: flex;
+  width: max-content;
+  animation: scroll-partners 60s linear infinite;
+}
+
+@keyframes scroll-partners {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}

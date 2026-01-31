@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import {
   ArrowRight,
   Award,
@@ -12,7 +13,11 @@ import {
   Shield,
   Baby,
   HeartPulse,
+  Clock,
 } from "lucide-react";
+import PartnersSection from "@/components/home/PartnersSection";
+import Testimonials from "@/components/home/Testimonials";
+import BlogPreview from "@/components/home/BlogPreview";
 
 export const metadata: Metadata = {
   title: "C&Co Formation | Centre de Formation Professionnelle Certifié Qualiopi",
@@ -35,20 +40,29 @@ const stats = [
   { value: "15+", label: "Années d'expertise" },
 ];
 
-const poleIcons = {
-  "securite-prevention": Shield,
-  "petite-enfance": Baby,
-  sante: HeartPulse,
-};
-
-const poleDescriptions: Record<string, string> = {
-  "securite-prevention":
-    "SST, incendie, habilitations électriques. Protégez vos équipes avec nos formations certifiantes.",
-  "petite-enfance":
-    "Éveil, pédagogies alternatives, formations continues. Accompagnez le développement des tout-petits.",
-  sante:
-    "Gestes d'urgence, soins, accompagnement. Des formations pour les professionnels de santé.",
-};
+const polesConfig = [
+  {
+    id: "securite-prevention",
+    title: "Sécurité Prévention",
+    description: "Développez vos compétences en prévention des risques et premiers secours. Formations certifiantes éligibles au financement OPCO.",
+    image: "/pole-security.jpg",
+    icon: Shield,
+  },
+  {
+    id: "petite-enfance",
+    title: "Petite Enfance",
+    description: "Accompagnez le développement des tout-petits avec bienveillance et pédagogies innovantes.",
+    image: "/pole-childhood.jpg",
+    icon: Baby,
+  },
+  {
+    id: "sante",
+    title: "Santé",
+    description: "Maîtrisez les gestes essentiels du soin et de l'urgence. Formations pratiques certifiées et reconnues.",
+    image: "/pole-health.jpg",
+    icon: HeartPulse,
+  },
+];
 
 const features = [
   {
@@ -86,39 +100,51 @@ const features = [
 export default async function HomePage() {
   const supabase = await createClient();
 
-  // Récupérer les formations depuis Supabase
-  const { data: formations } = await supabase
+  // Récupérer les formations populaires (4)
+  const { data: popularFormations } = await supabase
     .from("formations")
-    .select(
-      "id, title, slug, description, duration, price, pole, pole_name, image_url"
-    )
+    .select("id, title, subtitle, slug, duration, price, pole, pole_name, image_url")
     .eq("active", true)
-    .order("title")
-    .limit(6);
+    .eq("popular", true)
+    .limit(4);
 
-  // Récupérer les pôles uniques depuis les formations
-  const { data: polesData } = await supabase
+  // Si pas assez de formations populaires, récupérer les plus récentes
+  let formations = popularFormations;
+  if (!formations || formations.length < 4) {
+    const { data: recentFormations } = await supabase
+      .from("formations")
+      .select("id, title, subtitle, slug, duration, price, pole, pole_name, image_url")
+      .eq("active", true)
+      .order("created_at", { ascending: false })
+      .limit(4);
+    formations = recentFormations;
+  }
+
+  // Compter les formations par pôle
+  const { data: poleCounts } = await supabase
     .from("formations")
-    .select("pole, pole_name")
+    .select("pole")
     .eq("active", true);
 
-  // Dédupliquer les pôles
-  const polesMap = new Map();
-  polesData?.forEach((f) => {
-    if (f.pole && !polesMap.has(f.pole)) {
-      polesMap.set(f.pole, { slug: f.pole, name: f.pole_name });
-    }
+  const counts: Record<string, number> = {};
+  poleCounts?.forEach((f) => {
+    counts[f.pole] = (counts[f.pole] || 0) + 1;
   });
-  const poles = Array.from(polesMap.values());
 
   return (
     <main className="min-h-screen">
       {/* Hero Section */}
-      <section className="relative min-h-[85vh] flex items-center justify-center bg-gradient-to-b from-background via-background/95 to-card overflow-hidden">
-        {/* Decorative background */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
+      <section className="relative min-h-[85vh] flex items-center justify-center overflow-hidden">
+        {/* Background Image */}
+        <div className="absolute inset-0">
+          <Image
+            src="/pole-security.jpg"
+            alt="Formation professionnelle"
+            fill
+            className="object-cover"
+            priority
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-background/90 via-background/80 to-background" />
         </div>
 
         <div className="container-custom relative z-10 text-center py-20">
@@ -175,105 +201,156 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Pôles Section */}
-      {poles && poles.length > 0 && (
-        <section className="section-padding border-t border-border/50">
-          <div className="container-custom">
-            <div className="max-w-2xl mb-12">
-              <p className="text-sm text-muted-foreground tracking-widest uppercase mb-4">
-                Nos domaines d'expertise
-              </p>
-              <h2 className="heading-section">
-                Trois pôles de formation pour répondre à vos besoins.
-              </h2>
-            </div>
+      {/* Partners Section */}
+      <PartnersSection />
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {poles.map((pole) => {
-                const Icon =
-                  poleIcons[pole.slug as keyof typeof poleIcons] || BookOpen;
-                const description = poleDescriptions[pole.slug] || "";
-                return (
-                  <Link
-                    key={pole.slug}
-                    href={`/pole/${pole.slug}`}
-                    className="group relative p-8 rounded-2xl border border-border/50 bg-card/30 hover:border-primary/30 hover:bg-card/60 transition-all duration-300"
-                  >
-                    <div className="mb-6">
-                      <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center group-hover:scale-110 group-hover:bg-primary/20 transition-all duration-300">
-                        <Icon className="w-7 h-7 text-primary" />
+      {/* Training Poles Section */}
+      <section className="section-padding">
+        <div className="container-custom">
+          <div className="max-w-2xl mb-16">
+            <p className="text-sm text-muted-foreground tracking-widest uppercase mb-4">
+              Nos domaines d'expertise
+            </p>
+            <h2 className="heading-section">
+              Trois pôles de formation pour accompagner votre évolution professionnelle.
+            </h2>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
+            {polesConfig.map((pole) => {
+              const Icon = pole.icon;
+              const count = counts[pole.id] || 0;
+              return (
+                <Link
+                  key={pole.id}
+                  href={`/pole/${pole.id}`}
+                  className="group block h-full"
+                >
+                  <article className="relative h-full bg-card rounded-2xl border border-border/50 overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-2">
+                    {/* Image */}
+                    <div className="aspect-[4/3] overflow-hidden relative">
+                      <Image
+                        src={pole.image}
+                        alt={`Formation ${pole.title}`}
+                        fill
+                        className="object-cover transition-all duration-700 group-hover:scale-110"
+                      />
+                      <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/40 transition-all duration-500" />
+                      {/* Icon overlay */}
+                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500">
+                        <div className="w-16 h-16 rounded-full bg-primary/90 flex items-center justify-center scale-50 group-hover:scale-100 transition-transform duration-500">
+                          <Icon className="w-8 h-8 text-white" />
+                        </div>
                       </div>
                     </div>
-                    <h3 className="heading-card mb-3 group-hover:text-primary transition-colors">
-                      {pole.name}
-                    </h3>
-                    <p className="text-body text-muted-foreground">
-                      {description}
-                    </p>
-                    <div className="mt-6 flex items-center text-sm font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity">
-                      Voir les formations
-                      <ArrowRight className="w-4 h-4 ml-2" />
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-      )}
 
-      {/* Formations Section */}
+                    {/* Colored bar */}
+                    <div className="h-1 w-0 group-hover:w-full transition-all duration-500 bg-primary" />
+
+                    {/* Content */}
+                    <div className="p-6">
+                      <div className="flex items-start justify-between gap-4 mb-3">
+                        <h3 className="text-lg font-medium text-primary">
+                          {pole.title}
+                        </h3>
+                        <ArrowRight className="w-4 h-4 -translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300 flex-shrink-0 mt-1 text-primary" />
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        {pole.description}
+                      </p>
+                      <p className="text-xs font-medium text-primary/80">
+                        {count} {count > 1 ? "formations" : "formation"}
+                      </p>
+                    </div>
+                  </article>
+                </Link>
+              );
+            })}
+          </div>
+
+          <div className="mt-12 text-center">
+            <Link
+              href="/formations"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-secondary text-secondary-foreground rounded-lg text-sm font-medium hover:bg-secondary/80 transition-colors"
+            >
+              Voir toutes les formations
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Featured Formations Section */}
       {formations && formations.length > 0 && (
-        <section className="section-padding bg-card/30 border-t border-border/50">
+        <section className="section-padding border-t border-border/50">
           <div className="container-custom">
-            <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-12">
-              <div className="max-w-2xl">
+            <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-16">
+              <div className="max-w-xl">
                 <p className="text-sm text-muted-foreground tracking-widest uppercase mb-4">
-                  Nos formations
+                  Formations populaires
                 </p>
                 <h2 className="heading-section">
-                  Des formations adaptées à votre parcours.
+                  Nos formations les plus demandées.
                 </h2>
               </div>
+
               <Link
                 href="/formations"
-                className="inline-flex items-center gap-2 text-primary hover:underline underline-offset-4"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-secondary text-secondary-foreground rounded-lg text-sm font-medium hover:bg-secondary/80 transition-colors"
               >
-                Voir toutes les formations
+                Voir tout
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {formations.map((formation) => (
                 <Link
                   key={formation.id}
-                  href={`/formations/${formation.pole}/${formation.slug}`}
-                  className="group card-minimal-hover p-6 flex flex-col"
+                  href={`/formations/${formation.pole}/${formation.slug || formation.id}`}
+                  className="group block h-full"
                 >
-                  <div className="flex items-center gap-2 mb-4">
-                    <span className="px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded">
-                      {formation.pole_name}
-                    </span>
-                  </div>
-                  <h3 className="heading-card mb-2 group-hover:text-primary transition-colors">
-                    {formation.title}
-                  </h3>
-                  <p className="text-body text-muted-foreground line-clamp-3 flex-1 mb-4">
-                    {formation.description}
-                  </p>
-                  <div className="flex items-center justify-between text-sm pt-4 border-t border-border/50">
-                    {formation.duration && (
-                      <span className="text-muted-foreground">
-                        {formation.duration}
-                      </span>
-                    )}
-                    {formation.price && (
-                      <span className="text-primary font-medium">
-                        {formation.price}€
-                      </span>
-                    )}
-                  </div>
+                  <article className="h-full bg-card rounded-xl border border-border/50 overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-2">
+                    {/* Image */}
+                    <div className="aspect-[3/2] overflow-hidden relative bg-secondary">
+                      {formation.image_url ? (
+                        <img
+                          src={formation.image_url}
+                          alt={formation.title}
+                          className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
+                          <BookOpen className="w-8 h-8 text-primary/50" />
+                        </div>
+                      )}
+                      <div className="absolute top-3 left-3">
+                        <span className="text-xs px-2.5 py-1 rounded-full bg-primary text-primary-foreground">
+                          {formation.pole_name}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Content */}
+                    <div className="p-5">
+                      <h3 className="font-medium mb-1 group-hover:text-primary transition-colors">
+                        {formation.title}
+                      </h3>
+                      <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                        {formation.subtitle}
+                      </p>
+
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <Clock className="w-3.5 h-3.5" />
+                          {formation.duration}
+                        </div>
+                        <span className="font-medium text-foreground group-hover:text-primary transition-colors">
+                          {formation.price}
+                        </span>
+                      </div>
+                    </div>
+                  </article>
                 </Link>
               ))}
             </div>
@@ -320,31 +397,39 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* Testimonials Section */}
+      <Testimonials />
+
+      {/* Blog Preview Section */}
+      <BlogPreview />
+
       {/* CTA Section */}
       <section className="section-padding bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border-t border-border/50">
         <div className="container-custom">
           <div className="max-w-3xl mx-auto text-center">
+            <p className="text-sm text-muted-foreground tracking-widest uppercase mb-4">
+              Prêt à vous former ?
+            </p>
             <h2 className="heading-section mb-6">
-              Prêt à développer vos compétences ?
+              Commencez votre formation dès aujourd'hui.
             </h2>
             <p className="text-body-lg text-muted-foreground mb-8">
-              Contactez-nous pour discuter de votre projet de formation. Notre
-              équipe vous accompagne dans le choix de la formation adaptée et les
-              démarches de financement.
+              Rejoignez les professionnels qui ont fait confiance à C&Co Formation.
+              Accompagnement personnalisé, 100% finançable via OPCO.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
-                href="/contact"
+                href="/formations"
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
               >
-                Demander un devis gratuit
+                Voir les formations
                 <ArrowRight className="w-4 h-4" />
               </Link>
               <Link
-                href="/formations"
+                href="/contact"
                 className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 border border-border text-foreground rounded-lg font-medium hover:bg-secondary transition-colors"
               >
-                Parcourir le catalogue
+                Nous contacter
               </Link>
             </div>
           </div>
