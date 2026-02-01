@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useEffect } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { AdminSidebar } from "./AdminSidebar";
 import { AdminHeader } from "./AdminHeader";
 import { AdminBottomNav } from "./AdminBottomNav";
@@ -14,19 +14,22 @@ interface AdminLayoutClientProps {
 }
 
 export function AdminLayoutClient({ children }: AdminLayoutClientProps) {
+  const [mounted, setMounted] = useState(false);
   const { user, loading, userRole } = useAuth();
   const router = useRouter();
 
-  // Hide main site header/footer for admin
+  // Hide main site header/footer for admin + set mounted state
   useEffect(() => {
     document.body.classList.add("admin-layout");
+    setMounted(true);
     return () => {
       document.body.classList.remove("admin-layout");
     };
   }, []);
 
-  // Show loading state
-  if (loading) {
+  // Show loading state until client is mounted AND auth is loaded
+  // This prevents hydration mismatch by always rendering the same loader on server/client
+  if (!mounted || loading) {
     return (
       <div className="fixed inset-0 z-[100] bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
@@ -37,13 +40,13 @@ export function AdminLayoutClient({ children }: AdminLayoutClientProps) {
     );
   }
 
-  // Redirect if not authenticated
+  // Redirect if not authenticated (only after mount)
   if (!user) {
     router.push("/auth?redirect=/admin");
     return null;
   }
 
-  // Check admin access
+  // Check admin access (only after mount)
   const adminRoles = ["superadmin", "admin", "org_manager", "moderator"];
   if (!adminRoles.includes(userRole || "")) {
     router.push("/");
