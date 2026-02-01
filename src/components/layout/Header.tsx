@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 import {
   ChevronDown,
@@ -22,9 +22,22 @@ import {
   Baby,
   HeartPulse,
   User,
+  LogOut,
+  Settings,
+  LayoutDashboard,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { createClient } from "@/lib/supabase/client";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 type NavSubItem = {
   name: string;
@@ -166,18 +179,109 @@ const mobileNavigation: NavItem[] = [
   { name: "Contact", href: "/contact", icon: Mail },
 ];
 
+// Role labels and colors
+const roleLabels: Record<string, string> = {
+  superadmin: "Super Admin",
+  admin: "Admin",
+  org_manager: "Manager",
+  moderator: "Modérateur",
+  formateur: "Formateur",
+  client_manager: "Client",
+  user: "Utilisateur",
+};
+
+const roleColors: Record<string, string> = {
+  superadmin: "bg-amber-500/10 text-amber-600 border-amber-500/20",
+  admin: "bg-red-500/10 text-red-600 border-red-500/20",
+  org_manager: "bg-blue-500/10 text-blue-600 border-blue-500/20",
+  moderator: "bg-purple-500/10 text-purple-600 border-purple-500/20",
+  formateur: "bg-green-500/10 text-green-600 border-green-500/20",
+  client_manager: "bg-cyan-500/10 text-cyan-600 border-cyan-500/20",
+  user: "bg-muted text-muted-foreground border-border/30",
+};
+
+interface UserData {
+  id: string;
+  email: string;
+  first_name?: string;
+  last_name?: string;
+  avatar_url?: string;
+  role?: string;
+}
+
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [hoveredSubmenu, setHoveredSubmenu] = useState<string | null>(null);
   const [mobileSubmenuOpen, setMobileSubmenuOpen] = useState<string | null>(null);
+  const [user, setUser] = useState<UserData | null>(null);
+  const [loading, setLoading] = useState(true);
   const pathname = usePathname();
+  const router = useRouter();
 
   // Swipe to close state
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
   const [swipeOffset, setSwipeOffset] = useState(0);
   const [isSwipingMenu, setIsSwipingMenu] = useState(false);
+
+  // Check auth state
+  useEffect(() => {
+    const supabase = createClient();
+
+    const checkUser = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (session?.user) {
+          // Get profile and role
+          const [profileRes, roleRes] = await Promise.all([
+            supabase
+              .from("profiles")
+              .select("first_name, last_name, avatar_url")
+              .eq("id", session.user.id)
+              .single(),
+            supabase
+              .from("user_roles")
+              .select("role")
+              .eq("user_id", session.user.id)
+              .single(),
+          ]);
+
+          setUser({
+            id: session.user.id,
+            email: session.user.email || "",
+            first_name: profileRes.data?.first_name || session.user.user_metadata?.first_name,
+            last_name: profileRes.data?.last_name || session.user.user_metadata?.last_name,
+            avatar_url: profileRes.data?.avatar_url,
+            role: roleRes.data?.role || "user",
+          });
+        } else {
+          setUser(null);
+        }
+      } catch (error) {
+        console.error("Error checking user:", error);
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkUser();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_OUT") {
+        setUser(null);
+      } else if (event === "SIGNED_IN" && session?.user) {
+        checkUser();
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -244,6 +348,38 @@ export default function Header() {
     }
     return pathname === href || pathname.startsWith(href + "/");
   };
+
+  const handleSignOut = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    setUser(null);
+    router.push("/");
+  };
+
+  const getUserInitials = () => {
+    if (user?.first_name && user?.last_name) {
+      return `${user.first_name.charAt(0)}${user.last_name.charAt(0)}`.toUpperCase();
+    }
+    if (user?.first_name) {
+      return user.first_name.charAt(0).toUpperCase();
+    }
+    if (user?.email) {
+      return user.email.charAt(0).toUpperCase();
+    }
+    return "?";
+  };
+
+  const getUserDisplayName = () => {
+    if (user?.first_name && user?.last_name) {
+      return `${user.first_name} ${user.last_name}`;
+    }
+    if (user?.first_name) {
+      return user.first_name;
+    }
+    return user?.email?.split("@")[0] || "Utilisateur";
+  };
+
+  const isAdmin = user?.role && ["superadmin", "admin", "org_manager", "moderator"].includes(user.role);
 
   return (
     <header
@@ -404,13 +540,67 @@ export default function Header() {
 
             <div className="w-px h-6 bg-border/50 mx-2" />
 
-            <Link
-              href="/auth"
-              className="flex items-center gap-2 text-xs font-normal uppercase tracking-wider px-4 py-2.5 text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <User className="w-4 h-4" />
-              Connexion
-            </Link>
+            {/* User Auth Section */}
+            {!loading && user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-2.5 px-3 py-1.5 rounded-full hover:bg-secondary/50 transition-colors">
+                    <Avatar className="h-8 w-8 ring-2 ring-primary/20">
+                      <AvatarImage src={user.avatar_url} alt={getUserDisplayName()} />
+                      <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                        {getUserInitials()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col items-start">
+                      <span className="text-sm font-medium leading-tight">{getUserDisplayName()}</span>
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "text-[9px] px-1.5 py-0 h-4",
+                          roleColors[user.role || "user"]
+                        )}
+                      >
+                        {roleLabels[user.role || "user"]}
+                      </Badge>
+                    </div>
+                    <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <div className="px-2 py-2 border-b border-border/50">
+                    <p className="text-sm font-medium">{getUserDisplayName()}</p>
+                    <p className="text-xs text-muted-foreground">{user.email}</p>
+                  </div>
+                  <DropdownMenuItem asChild>
+                    <Link href="/mon-compte" className="cursor-pointer">
+                      <User className="mr-2 h-4 w-4" />
+                      Mon compte
+                    </Link>
+                  </DropdownMenuItem>
+                  {isAdmin && (
+                    <DropdownMenuItem asChild>
+                      <Link href="/admin" className="cursor-pointer">
+                        <LayoutDashboard className="mr-2 h-4 w-4" />
+                        Administration
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-destructive focus:text-destructive">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Déconnexion
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Link
+                href="/auth"
+                className="flex items-center gap-2 text-xs font-normal uppercase tracking-wider px-4 py-2.5 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <User className="w-4 h-4" />
+                Connexion
+              </Link>
+            )}
 
             <Link
               href="/contact"
@@ -430,6 +620,18 @@ export default function Header() {
             </button>
 
             <ThemeToggle />
+
+            {/* Mobile user avatar */}
+            {!loading && user && (
+              <Link href="/mon-compte" className="p-1">
+                <Avatar className="h-8 w-8 ring-2 ring-primary/20">
+                  <AvatarImage src={user.avatar_url} alt={getUserDisplayName()} />
+                  <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                    {getUserInitials()}
+                  </AvatarFallback>
+                </Avatar>
+              </Link>
+            )}
 
             <button
               className="p-2.5 text-muted-foreground hover:text-foreground transition-colors rounded-full hover:bg-secondary/50"
@@ -480,6 +682,32 @@ export default function Header() {
                 </button>
               </div>
             </div>
+
+            {/* User info if logged in */}
+            {!loading && user && (
+              <div className="px-4 py-3 border-b border-border/30 bg-gradient-to-br from-primary/5 via-background to-background">
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-10 w-10 ring-2 ring-primary/20">
+                    <AvatarImage src={user.avatar_url} alt={getUserDisplayName()} />
+                    <AvatarFallback className="bg-primary text-primary-foreground text-sm">
+                      {getUserInitials()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{getUserDisplayName()}</p>
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        "text-[9px] px-1.5 py-0 h-4 mt-0.5",
+                        roleColors[user.role || "user"]
+                      )}
+                    >
+                      {roleLabels[user.role || "user"]}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Navigation */}
             <div className="flex-1 overflow-y-auto">
@@ -619,14 +847,47 @@ export default function Header() {
 
             {/* Bottom actions */}
             <div className="border-t border-border/30 px-4 py-4 shrink-0 space-y-2 bg-background">
-              <Link
-                href="/auth"
-                onClick={() => setIsOpen(false)}
-                className="w-full flex items-center justify-center gap-2 h-9 text-sm font-medium rounded-lg bg-secondary/50 hover:bg-secondary transition-colors"
-              >
-                <User className="w-4 h-4 text-muted-foreground" />
-                Connexion
-              </Link>
+              {!loading && user ? (
+                <>
+                  <Link
+                    href="/mon-compte"
+                    onClick={() => setIsOpen(false)}
+                    className="w-full flex items-center justify-center gap-2 h-9 text-sm font-medium rounded-lg bg-secondary/50 hover:bg-secondary transition-colors"
+                  >
+                    <User className="w-4 h-4 text-muted-foreground" />
+                    Mon compte
+                  </Link>
+                  {isAdmin && (
+                    <Link
+                      href="/admin"
+                      onClick={() => setIsOpen(false)}
+                      className="w-full flex items-center justify-center gap-2 h-9 text-sm font-medium rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                    >
+                      <LayoutDashboard className="w-4 h-4" />
+                      Administration
+                    </Link>
+                  )}
+                  <button
+                    onClick={() => {
+                      handleSignOut();
+                      setIsOpen(false);
+                    }}
+                    className="w-full flex items-center justify-center gap-2 h-9 text-sm font-medium rounded-lg text-destructive hover:bg-destructive/10 transition-colors"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Déconnexion
+                  </button>
+                </>
+              ) : (
+                <Link
+                  href="/auth"
+                  onClick={() => setIsOpen(false)}
+                  className="w-full flex items-center justify-center gap-2 h-9 text-sm font-medium rounded-lg bg-secondary/50 hover:bg-secondary transition-colors"
+                >
+                  <User className="w-4 h-4 text-muted-foreground" />
+                  Connexion
+                </Link>
+              )}
               <Link
                 href="/contact"
                 onClick={() => setIsOpen(false)}
