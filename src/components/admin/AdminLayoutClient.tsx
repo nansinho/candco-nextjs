@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useEffect } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { AdminSidebar } from "./AdminSidebar";
 import { AdminHeader } from "./AdminHeader";
 import { AdminBottomNav } from "./AdminBottomNav";
@@ -14,10 +14,9 @@ interface AdminLayoutClientProps {
 }
 
 export function AdminLayoutClient({ children }: AdminLayoutClientProps) {
-  // Note: No need for mounted state since this component is loaded with ssr: false
-  // It will NEVER render on the server, so no hydration mismatch is possible
   const { user, loading, userRole } = useAuth();
   const router = useRouter();
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   // Add admin-layout class to body
   useEffect(() => {
@@ -27,9 +26,31 @@ export function AdminLayoutClient({ children }: AdminLayoutClientProps) {
     };
   }, []);
 
-  // Show loading state while auth is loading
-  // Use same colors as AdminLayoutDynamic loading fallback for consistency
-  if (loading) {
+  // Handle redirects in useEffect to avoid infinite loop
+  // NEVER call router.push during render!
+  const adminRoles = ["superadmin", "admin", "org_manager", "moderator"];
+
+  useEffect(() => {
+    // Don't redirect while still loading
+    if (loading) return;
+
+    // Redirect if not authenticated
+    if (!user) {
+      setIsRedirecting(true);
+      router.push("/auth?redirect=/admin");
+      return;
+    }
+
+    // Redirect if not admin
+    if (!adminRoles.includes(userRole || "")) {
+      setIsRedirecting(true);
+      router.push("/");
+      return;
+    }
+  }, [loading, user, userRole, router]);
+
+  // Show loading state while auth is loading OR while redirecting
+  if (loading || isRedirecting || !user || !adminRoles.includes(userRole || "")) {
     return (
       <div className="fixed inset-0 z-[100] bg-zinc-950 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
@@ -38,19 +59,6 @@ export function AdminLayoutClient({ children }: AdminLayoutClientProps) {
         </div>
       </div>
     );
-  }
-
-  // Redirect if not authenticated (only after mount)
-  if (!user) {
-    router.push("/auth?redirect=/admin");
-    return null;
-  }
-
-  // Check admin access (only after mount)
-  const adminRoles = ["superadmin", "admin", "org_manager", "moderator"];
-  if (!adminRoles.includes(userRole || "")) {
-    router.push("/");
-    return null;
   }
 
   return (
