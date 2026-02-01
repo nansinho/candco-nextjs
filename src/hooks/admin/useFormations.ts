@@ -7,15 +7,17 @@ import { queryKeys } from "@/lib/queryKeys";
 export interface FormationWithData {
   id: string;
   title: string;
+  subtitle: string | null;
   slug: string;
   description: string | null;
   pole: string;
-  pole_name: string;
-  duree_heures: number | null;
-  duree_jours: number | null;
-  prix: number | null;
+  pole_name: string | null;
+  duration: string | null;
+  price: number | null;
+  image_url: string | null;
+  popular: boolean;
   active: boolean;
-  image: string | null;
+  category_id: string | null;
   created_at: string;
   sessions_count: number;
 }
@@ -28,15 +30,17 @@ async function fetchFormations(): Promise<FormationWithData[]> {
     .select(`
       id,
       title,
+      subtitle,
       slug,
       description,
       pole,
       pole_name,
-      duree_heures,
-      duree_jours,
-      prix,
+      duration,
+      price,
+      image_url,
+      popular,
       active,
-      image,
+      category_id,
       created_at
     `)
     .order("title", { ascending: true });
