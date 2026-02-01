@@ -1,7 +1,5 @@
 import { Metadata } from "next";
-import { AuthProvider } from "@/contexts/AuthContext";
-import { QueryProvider } from "@/providers/QueryProvider";
-import { AdminLayoutClient } from "@/components/admin/AdminLayoutClient";
+import { AdminLayoutDynamic } from "@/components/admin/AdminLayoutDynamic";
 
 export const metadata: Metadata = {
   title: {
@@ -19,11 +17,5 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <QueryProvider>
-      <AuthProvider>
-        <AdminLayoutClient>{children}</AdminLayoutClient>
-      </AuthProvider>
-    </QueryProvider>
-  );
+  return <AdminLayoutDynamic>{children}</AdminLayoutDynamic>;
 }
