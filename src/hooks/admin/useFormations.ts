@@ -13,7 +13,7 @@ export interface FormationWithData {
   pole: string;
   pole_name: string | null;
   duration: string | null;
-  price: number | null;
+  price: string | null;
   image_url: string | null;
   popular: boolean;
   active: boolean;

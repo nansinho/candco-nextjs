@@ -25,7 +25,7 @@ export interface Client {
   effectif_entreprise: string | null;
   active: boolean;
   organization_id: string | null;
-  parent_id: string | null;
+  parent_client_id: string | null;
   region: string | null;
   client_type: "siege" | "filiale" | "etablissement" | null;
   created_at: string;
