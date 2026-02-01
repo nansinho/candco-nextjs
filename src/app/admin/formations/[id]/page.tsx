@@ -259,7 +259,7 @@ export default function AdminFormationEdit() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(formationSchema) as any,
     defaultValues: {
-      id: crypto.randomUUID(),
+      id: "",
       title: "",
       subtitle: "",
       pole: "",
