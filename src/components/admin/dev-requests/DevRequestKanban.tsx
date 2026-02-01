@@ -32,7 +32,6 @@ import {
   useDevRequestColumns,
   useUpdateDevRequestColumn,
   useDeleteDevRequestColumn,
-  useUpdateDevRequest,
   useBatchUpdateColumnOrder,
 } from "@/hooks/admin/useDevRequests";
 import { DevRequestColumn } from "./DevRequestColumn";
@@ -92,7 +91,6 @@ export function DevRequestKanban({
   onRequestClick,
   showResolved = false
 }: DevRequestKanbanProps) {
-  const updateRequest = useUpdateDevRequest();
   const batchUpdate = useBatchUpdateColumnOrder();
 
   const { data: dbColumns = [] } = useDevRequestColumns();
@@ -353,22 +351,11 @@ export function DevRequestKanban({
     }
 
     if (updates.length > 0) {
-      updates.forEach((update) => {
-        if (update.column_slug) {
-          updateRequest.mutate({
-            id: update.id,
-            column_slug: update.column_slug,
-            column_order: update.column_order,
-          });
-        }
-      });
-
-      const orderOnlyUpdates = updates.filter((u) => !u.column_slug);
-      if (orderOnlyUpdates.length > 0) {
-        batchUpdate.mutate(orderOnlyUpdates);
-      }
+      // UN SEUL appel batch pour TOUTES les mises à jour
+      // Évite les race conditions et la boucle infinie de React Query
+      batchUpdate.mutate(updates);
     }
-  }, [localBoard, requests, updateRequest, batchUpdate, boardSnapshot]);
+  }, [localBoard, requests, batchUpdate, boardSnapshot]);
 
   const handleDragCancel = useCallback(() => {
     setActiveId(null);
