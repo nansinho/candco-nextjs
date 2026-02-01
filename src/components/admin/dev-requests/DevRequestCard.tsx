@@ -25,9 +25,12 @@ interface DevRequestCardProps {
   request: DevRequest;
   onClick: () => void;
   isDragOverlay?: boolean;
+  columnSlug?: string;
 }
 
-export function DevRequestCard({ request, onClick, isDragOverlay = false }: DevRequestCardProps) {
+export function DevRequestCard({ request, onClick, isDragOverlay = false, columnSlug }: DevRequestCardProps) {
+  const currentColumnSlug = columnSlug || request.column_slug || request.status;
+
   const {
     attributes,
     listeners,
@@ -40,7 +43,7 @@ export function DevRequestCard({ request, onClick, isDragOverlay = false }: DevR
     data: {
       type: "card",
       request,
-      status: request.column_slug || request.status,
+      columnSlug: currentColumnSlug,
     },
   });
 
