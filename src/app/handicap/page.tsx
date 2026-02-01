@@ -24,6 +24,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { PageHero } from "@/components/PageHero";
 
 export const metadata: Metadata = {
   title: "Personnes en situation de handicap | C&Co Formation",
@@ -280,57 +281,22 @@ export default function HandicapPage() {
   return (
     <>
       {/* Hero */}
-      <section className="section-padding border-b border-border/50">
-        <div className="container-custom">
-          {/* Breadcrumb */}
-          <nav className="mb-8 text-sm text-muted-foreground">
-            <ol className="flex items-center gap-2">
-              <li>
-                <Link href="/" className="hover:text-primary transition-colors">
-                  Accueil
-                </Link>
-              </li>
-              <li>/</li>
-              <li className="text-foreground">Handicap & Inclusion</li>
-            </ol>
-          </nav>
-
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
-            <div>
-              <p className="text-sm text-muted-foreground mb-4 tracking-widest uppercase">
-                Handicap & Inclusion
-              </p>
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-light leading-tight mb-6">
-                Un accompagnement sur mesure.
-              </h1>
-              <p className="text-lg text-muted-foreground mb-8">
-                Notre référent handicap adapte votre parcours à vos besoins pour
-                garantir votre réussite.
-              </p>
-
-              <div className="flex flex-wrap gap-6">
-                <div className="flex items-center gap-2 text-sm">
-                  <CheckCircle className="w-4 h-4 text-primary" />
-                  Référent handicap dédié
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <CheckCircle className="w-4 h-4 text-primary" />
-                  Locaux accessibles PMR
-                </div>
-              </div>
-            </div>
-
-            <div className="relative hidden lg:flex items-center justify-center">
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-56 h-56 rounded-full bg-primary/20 blur-3xl" />
-              </div>
-              <div className="relative w-52 h-52 rounded-full bg-gradient-to-br from-primary/30 to-primary/10 border border-primary/20 flex items-center justify-center hover:scale-105 transition-transform duration-300">
-                <AccessibilityIcon className="w-28 h-28 text-primary" />
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      <PageHero
+        badge="Handicap & Inclusion"
+        badgeIcon="accessibility"
+        title="Un accompagnement sur mesure."
+        highlightedWord="sur mesure"
+        description="Notre référent handicap adapte votre parcours à vos besoins pour garantir votre réussite. Locaux accessibles PMR et aménagements personnalisés."
+        backgroundImage="/handicap-hero.jpg"
+        minHeight="medium"
+        breadcrumbs={[
+          { label: "Accueil", href: "/" },
+          { label: "Handicap & Inclusion" },
+        ]}
+        ctas={[
+          { label: "Contacter le référent", href: "#contact-referent", variant: "primary" },
+        ]}
+      />
 
       {/* Accompagnement en 3 étapes */}
       <section className="section-padding border-b border-border/50">

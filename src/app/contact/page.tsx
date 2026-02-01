@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { PageHero } from "@/components/PageHero";
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -74,15 +75,18 @@ export default function ContactPage() {
   return (
     <>
       {/* Hero */}
-      <section className="section-padding-sm bg-gradient-to-b from-background to-card">
-        <div className="container-custom text-center">
-          <h1 className="heading-hero mb-4">Contactez-nous</h1>
-          <p className="text-body-lg max-w-2xl mx-auto">
-            Une question ? Un projet de formation ? Notre équipe est à votre
-            disposition.
-          </p>
-        </div>
-      </section>
+      <PageHero
+        badge="Contact"
+        badgeIcon="mail"
+        title="Contactez-nous"
+        description="Une question ? Un projet de formation ? Notre équipe est à votre disposition pour vous accompagner dans votre projet."
+        backgroundImage="/contact-hero.jpg"
+        minHeight="small"
+        breadcrumbs={[
+          { label: "Accueil", href: "/" },
+          { label: "Contact" },
+        ]}
+      />
 
       {/* Formulaire et infos */}
       <section className="section-padding-sm">
