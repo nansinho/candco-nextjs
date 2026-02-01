@@ -2,15 +2,14 @@
 
 /**
  * @file DevRequestKanban.tsx
- * @description Kanban board simplifié pour les demandes de développement
- * Réécrit pour éviter les boucles infinies React
+ * @description Kanban board avec drag-and-drop fluide pour les demandes de développement
  */
 
 import { useState, useMemo, useCallback, useRef } from "react";
 import {
   DndContext,
   DragOverlay,
-  closestCorners,
+  rectIntersection,
   KeyboardSensor,
   PointerSensor,
   TouchSensor,
@@ -18,12 +17,12 @@ import {
   useSensors,
   DragStartEvent,
   DragEndEvent,
+  DragOverEvent,
 } from "@dnd-kit/core";
-import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
+import { sortableKeyboardCoordinates, arrayMove } from "@dnd-kit/sortable";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import {
   DevRequest,
-  DevRequestStatus,
   DevRequestColumn as ColumnType,
   useDevRequestColumns,
   useUpdateDevRequestColumn,
@@ -40,9 +39,11 @@ interface DevRequestKanbanProps {
   showResolved?: boolean;
 }
 
+type BoardState = Record<string, DevRequest[]>;
+
 // Groupe les requêtes par colonne
-function groupRequests(requests: DevRequest[], columns: ColumnType[]): Record<string, DevRequest[]> {
-  const result: Record<string, DevRequest[]> = {};
+function groupRequests(requests: DevRequest[], columns: ColumnType[]): BoardState {
+  const result: BoardState = {};
 
   // Initialiser toutes les colonnes
   columns.forEach(col => {
@@ -80,6 +81,9 @@ export function DevRequestKanban({
   // État pour le drag en cours
   const [activeId, setActiveId] = useState<string | null>(null);
 
+  // État local optimiste pour le drag (permet une UI fluide)
+  const [localBoard, setLocalBoard] = useState<BoardState | null>(null);
+
   // Ref pour éviter les doubles soumissions
   const isSubmitting = useRef(false);
 
@@ -91,10 +95,12 @@ export function DevRequestKanban({
       : dbColumns.filter(c => !c.is_resolved);
   }, [dbColumns, showResolved]);
 
-  // Grouper les requêtes par colonne (calculé à chaque render, pas de useEffect)
-  const boardData = useMemo(() => {
+  // Données du board (utilise l'état local pendant le drag, sinon les données serveur)
+  const serverBoard = useMemo(() => {
     return groupRequests(requests, visibleColumns);
   }, [requests, visibleColumns]);
+
+  const boardData = localBoard || serverBoard;
 
   // Trouver la requête active
   const activeRequest = useMemo(() => {
@@ -102,13 +108,23 @@ export function DevRequestKanban({
     return requests.find(r => r.id === activeId) || null;
   }, [activeId, requests]);
 
-  // Configuration des sensors
+  // Trouver dans quelle colonne se trouve une carte
+  const findColumnForCard = useCallback((cardId: string, board: BoardState): string | null => {
+    for (const [columnSlug, cards] of Object.entries(board)) {
+      if (cards.some(c => c.id === cardId)) {
+        return columnSlug;
+      }
+    }
+    return null;
+  }, []);
+
+  // Configuration des sensors avec activation rapide
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      activationConstraint: { distance: 8 },
+      activationConstraint: { distance: 5 },
     }),
     useSensor(TouchSensor, {
-      activationConstraint: { delay: 200, tolerance: 5 },
+      activationConstraint: { delay: 150, tolerance: 5 },
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
@@ -118,7 +134,64 @@ export function DevRequestKanban({
   // Début du drag
   const handleDragStart = useCallback((event: DragStartEvent) => {
     setActiveId(event.active.id as string);
-  }, []);
+    // Initialiser l'état local avec les données serveur
+    setLocalBoard({ ...serverBoard });
+  }, [serverBoard]);
+
+  // Pendant le drag (pour le réordonnancement en temps réel)
+  const handleDragOver = useCallback((event: DragOverEvent) => {
+    const { active, over } = event;
+    if (!over || !localBoard) return;
+
+    const activeId = active.id as string;
+    const overId = over.id as string;
+
+    // Trouver les colonnes source et destination
+    const activeColumn = findColumnForCard(activeId, localBoard);
+
+    // L'élément over peut être une carte ou une colonne
+    let overColumn = findColumnForCard(overId, localBoard);
+    if (!overColumn && visibleColumns.some(c => c.slug === overId)) {
+      overColumn = overId;
+    }
+
+    if (!activeColumn || !overColumn) return;
+
+    // Si même colonne et même carte, ignorer
+    if (activeColumn === overColumn && activeId === overId) return;
+
+    setLocalBoard(prev => {
+      if (!prev) return prev;
+
+      const activeCards = [...prev[activeColumn]];
+      const overCards = activeColumn === overColumn ? activeCards : [...prev[overColumn]];
+
+      const activeIndex = activeCards.findIndex(c => c.id === activeId);
+      const overIndex = overCards.findIndex(c => c.id === overId);
+
+      // Si on trouve pas l'index, c'est qu'on survole une colonne vide
+      const insertIndex = overIndex >= 0 ? overIndex : overCards.length;
+
+      if (activeColumn === overColumn) {
+        // Réordonnancement dans la même colonne
+        const newCards = arrayMove(activeCards, activeIndex, insertIndex);
+        return {
+          ...prev,
+          [activeColumn]: newCards,
+        };
+      } else {
+        // Déplacement entre colonnes
+        const [movedCard] = activeCards.splice(activeIndex, 1);
+        overCards.splice(insertIndex, 0, movedCard);
+
+        return {
+          ...prev,
+          [activeColumn]: activeCards,
+          [overColumn]: overCards,
+        };
+      }
+    });
+  }, [localBoard, findColumnForCard, visibleColumns]);
 
   // Fin du drag
   const handleDragEnd = useCallback((event: DragEndEvent) => {
@@ -126,72 +199,55 @@ export function DevRequestKanban({
 
     setActiveId(null);
 
-    if (!over || isSubmitting.current) return;
-
-    const draggedId = active.id as string;
-    const draggedRequest = requests.find(r => r.id === draggedId);
-    if (!draggedRequest) return;
-
-    // Déterminer la colonne cible
-    let targetColumn: string | null = null;
-
-    const overData = over.data.current;
-    if (overData?.type === "column") {
-      targetColumn = overData.columnSlug as string;
-    } else if (overData?.type === "card") {
-      targetColumn = overData.columnSlug as string;
-    } else {
-      // L'ID pourrait être le slug de la colonne
-      if (visibleColumns.some(c => c.slug === over.id)) {
-        targetColumn = over.id as string;
-      }
+    if (!over || !localBoard || isSubmitting.current) {
+      setLocalBoard(null);
+      return;
     }
 
-    if (!targetColumn) return;
+    const draggedId = active.id as string;
 
-    const sourceColumn = draggedRequest.column_slug || draggedRequest.status;
-
-    // Si pas de changement de colonne, ne rien faire
-    if (sourceColumn === targetColumn) return;
-
-    // Préparer les mises à jour
+    // Préparer les mises à jour basées sur l'état local
     isSubmitting.current = true;
 
     const updates: { id: string; column_order: number; column_slug?: string }[] = [];
 
-    // Mettre à jour l'élément déplacé
-    const targetCards = boardData[targetColumn] || [];
-    updates.push({
-      id: draggedId,
-      column_order: targetCards.length,
-      column_slug: targetColumn,
-    });
+    // Parcourir toutes les colonnes et enregistrer les changements
+    for (const [columnSlug, cards] of Object.entries(localBoard)) {
+      cards.forEach((card, index) => {
+        const originalCard = requests.find(r => r.id === card.id);
+        const originalColumn = originalCard?.column_slug || originalCard?.status;
 
-    // Réordonner la colonne source
-    const sourceCards = boardData[sourceColumn]?.filter(c => c.id !== draggedId) || [];
-    sourceCards.forEach((card, index) => {
-      if (card.column_order !== index) {
-        updates.push({
-          id: card.id,
-          column_order: index,
-        });
-      }
-    });
+        // Vérifier si position ou colonne a changé
+        const columnChanged = originalColumn !== columnSlug;
+        const orderChanged = originalCard?.column_order !== index;
+
+        if (columnChanged || orderChanged) {
+          updates.push({
+            id: card.id,
+            column_order: index,
+            ...(columnChanged && { column_slug: columnSlug }),
+          });
+        }
+      });
+    }
 
     if (updates.length > 0) {
       batchUpdate.mutate(updates, {
         onSettled: () => {
           isSubmitting.current = false;
+          setLocalBoard(null);
         },
       });
     } else {
       isSubmitting.current = false;
+      setLocalBoard(null);
     }
-  }, [requests, visibleColumns, boardData, batchUpdate]);
+  }, [localBoard, requests, batchUpdate]);
 
   // Annulation du drag
   const handleDragCancel = useCallback(() => {
     setActiveId(null);
+    setLocalBoard(null);
   }, []);
 
   // Callbacks pour les colonnes (mémorisés)
@@ -218,8 +274,9 @@ export function DevRequestKanban({
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCorners}
+      collisionDetection={rectIntersection}
       onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
     >
@@ -245,7 +302,7 @@ export function DevRequestKanban({
         <ScrollBar orientation="horizontal" />
       </ScrollArea>
 
-      <DragOverlay dropAnimation={{ duration: 200, easing: "ease-out" }}>
+      <DragOverlay dropAnimation={{ duration: 150, easing: "ease-out" }}>
         {activeRequest ? (
           <DevRequestCard
             request={activeRequest}
