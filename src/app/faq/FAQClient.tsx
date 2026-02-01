@@ -129,27 +129,20 @@ export default function FAQClient({ categories, items }: FAQClientProps) {
     <>
       {/* Hero Section */}
       <PageHero
-        badge="Centre d'aide"
-        badgeIcon="help-circle"
+        badge="FAQ"
         title="Questions fréquentes"
         highlightedWord="fréquentes"
-        description="Trouvez rapidement les réponses à vos questions. Si vous ne trouvez pas ce que vous cherchez, notre équipe est disponible pour vous aider."
-        backgroundImage="/faq-hero.jpg"
-        minHeight="medium"
-        breadcrumbs={[
-          { label: "Accueil", href: "/" },
-          { label: "FAQ" },
-        ]}
+        description="Trouvez les réponses à vos questions."
       >
         {/* Search Bar */}
-        <div className="relative max-w-xl mx-auto">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground z-10" />
+        <div className="relative max-w-md mx-auto">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10" />
           <input
             type="text"
-            placeholder="Rechercher une question..."
+            placeholder="Rechercher..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-4 py-4 text-lg rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+            className="w-full pl-11 pr-4 py-3 text-sm rounded-xl border border-border/50 bg-secondary/50 focus:outline-none focus:ring-2 focus:ring-primary/50"
           />
         </div>
       </PageHero>

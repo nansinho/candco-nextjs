@@ -77,15 +77,8 @@ export default function ContactPage() {
       {/* Hero */}
       <PageHero
         badge="Contact"
-        badgeIcon="mail"
         title="Contactez-nous"
-        description="Une question ? Un projet de formation ? Notre équipe est à votre disposition pour vous accompagner dans votre projet."
-        backgroundImage="/contact-hero.jpg"
-        minHeight="small"
-        breadcrumbs={[
-          { label: "Accueil", href: "/" },
-          { label: "Contact" },
-        ]}
+        description="Une question ? Notre équipe est à votre disposition."
       />
 
       {/* Formulaire et infos */}

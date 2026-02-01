@@ -30,15 +30,8 @@ export default async function BlogPage() {
       {/* Hero */}
       <PageHero
         badge="Blog"
-        badgeIcon="newspaper"
         title="Notre Blog"
-        description="Actualités, conseils et informations sur la formation professionnelle. SST, sécurité, petite enfance, santé."
-        backgroundImage="/blog-hero.jpg"
-        minHeight="medium"
-        breadcrumbs={[
-          { label: "Accueil", href: "/" },
-          { label: "Blog" },
-        ]}
+        description="Actualités et conseils sur la formation professionnelle."
       />
 
       {/* Filtres par catégorie */}

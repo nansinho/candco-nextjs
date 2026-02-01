@@ -163,20 +163,13 @@ export default async function AboutPage() {
       {/* Hero */}
       <PageHero
         badge="À propos"
-        badgeIcon="info"
-        title="C&Co Formation : l'expertise terrain au service de votre réussite."
+        title="L'expertise terrain au service de votre réussite"
         highlightedWord="expertise"
-        description="Un organisme de formation centré sur l'efficacité, la personnalisation et l'engagement, où chaque apprenant bénéficie d'un accompagnement sur mesure, pensé pour répondre aux réalités du terrain."
-        backgroundImage="/about-hero.jpg"
-        minHeight="large"
-        breadcrumbs={[
-          { label: "Accueil", href: "/" },
-          { label: "À propos" },
-        ]}
+        description="Formation sur mesure, certifiée Qualiopi, avec 15 ans d'expérience."
         stats={stats}
         ctas={[
           { label: "Nos formations", href: "/formations", variant: "primary" },
-          { label: "Nous contacter", href: "/contact", variant: "secondary" },
+          { label: "Contact", href: "/contact", variant: "outline" },
         ]}
       />
 
