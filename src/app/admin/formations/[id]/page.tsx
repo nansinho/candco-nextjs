@@ -61,6 +61,8 @@ import { toast } from "sonner";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { badgeStyles, badgeBase } from "@/components/admin/badgeStyles";
+import { useFormPersistence } from "@/hooks/useFormPersistence";
+import { AutoSaveIndicator } from "@/components/admin/AutoSaveIndicator";
 
 // ============== TYPES & SCHEMAS ==============
 
@@ -254,7 +256,7 @@ export default function AdminFormationEdit() {
     setValue,
     watch,
     reset,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<FormationFormData>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(formationSchema) as any,
@@ -302,6 +304,17 @@ export default function AdminFormationEdit() {
   });
 
   const formValues = watch();
+
+  // ============== FORM PERSISTENCE ==============
+
+  const { clearPersistence, autoSaveStatus, lastSavedAt } = useFormPersistence({
+    key: `formation-${id}`,
+    formData: formValues,
+    setFormData: (data) => reset(data, { keepDirty: false }),
+    isDirty,
+    autoSaveInterval: 5000,
+    showRecoveryToast: true,
+  });
 
   // ============== FILL SCORE CALCULATION ==============
 
@@ -461,11 +474,13 @@ export default function AdminFormationEdit() {
       if (isNew) {
         const { error } = await supabase.from("formations").insert(formationData);
         if (error) throw error;
+        clearPersistence();
         toast.success("Formation créée");
         router.push(`/admin/formations/${data.id}`);
       } else {
         const { error } = await supabase.from("formations").update(formationData).eq("id", id);
         if (error) throw error;
+        clearPersistence();
         toast.success("Formation mise à jour");
       }
     } catch (error) {
@@ -736,7 +751,8 @@ export default function AdminFormationEdit() {
             <ScoreIndicator />
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          <AutoSaveIndicator status={autoSaveStatus} lastSavedAt={lastSavedAt} />
           {!isNew && (
             <Button type="button" variant="outline" size="sm" className="text-destructive" onClick={() => setDeleteDialogOpen(true)}>
               <Trash2 className="h-4 w-4" />
@@ -1456,7 +1472,7 @@ export default function AdminFormationEdit() {
                 variant="outline"
                 size="sm"
                 className="w-full"
-                onClick={() => appendCustomField({ id: crypto.randomUUID(), name: "", value: "", type: "text" })}
+                onClick={() => appendCustomField({ id: `cf-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, name: "", value: "", type: "text" })}
               >
                 <Plus className="mr-2 h-3 w-3" />
                 Ajouter un champ
