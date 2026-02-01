@@ -675,7 +675,7 @@ export default function AdminUsers() {
               <div className="space-y-2">
                 <Label>Organisations</Label>
                 <div className="border rounded-md p-3 max-h-40 overflow-y-auto space-y-2">
-                  {organizations.map((org) => (
+                  {organizations.map((org: { id: string; name: string }) => (
                     <div key={org.id} className="flex items-center gap-2">
                       <Checkbox
                         id={`org-${org.id}`}

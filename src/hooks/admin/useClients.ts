@@ -46,21 +46,21 @@ export function useClients() {
       if (error) throw error;
 
       // Get sessions count for each client
-      const clientIds = data.map((c) => c.id);
+      const clientIds = data.map((c: { id: string }) => c.id);
       const { data: inscriptionsData } = await supabase
         .from("inscriptions")
         .select("client_id")
         .in("client_id", clientIds);
 
-      const sessionsCounts = clientIds.reduce((acc, id) => {
-        acc[id] = inscriptionsData?.filter((i) => i.client_id === id).length || 0;
+      const sessionsCounts = clientIds.reduce((acc: Record<string, number>, id: string) => {
+        acc[id] = inscriptionsData?.filter((i: { client_id: string }) => i.client_id === id).length || 0;
         return acc;
       }, {} as Record<string, number>);
 
-      return data.map((c) => ({
+      return (data as Client[]).map((c) => ({
         ...c,
         sessions_count: sessionsCounts[c.id] || 0,
-      })) as Client[];
+      }));
     },
     staleTime: 5 * 60 * 1000,
   });

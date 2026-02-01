@@ -49,7 +49,7 @@ async function fetchFormations(): Promise<FormationWithData[]> {
   if (!formations || formations.length === 0) return [];
 
   // Get sessions count per formation
-  const formationIds = formations.map((f) => f.id);
+  const formationIds = formations.map((f: { id: string }) => f.id);
   const { data: sessionsData } = await supabase
     .from("sessions")
     .select("formation_id")
@@ -57,11 +57,11 @@ async function fetchFormations(): Promise<FormationWithData[]> {
     .in("status", ["planifiee", "confirmee", "en_cours"]);
 
   const sessionsCounts: Record<string, number> = {};
-  sessionsData?.forEach((s) => {
+  sessionsData?.forEach((s: { formation_id: string }) => {
     sessionsCounts[s.formation_id] = (sessionsCounts[s.formation_id] || 0) + 1;
   });
 
-  return formations.map((formation) => ({
+  return formations.map((formation: { id: string }) => ({
     ...formation,
     sessions_count: sessionsCounts[formation.id] || 0,
   }));

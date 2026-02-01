@@ -102,7 +102,12 @@ async function fetchUsersFallback(
   }
 
   // Get user IDs
-  const userIds = profiles.map((p) => p.id);
+  type RawProfile = { id: string; first_name: string | null; last_name: string | null; avatar_url: string | null; created_at: string; image_rights_consent?: boolean | null; image_rights_consent_date?: string | null; account_type?: string | null };
+  type RawRole = { user_id: string; role: string };
+  type RawClient = { id: string; nom: string };
+  type RawClientUser = { user_id: string; client_id: string; client_role: string; is_primary: boolean; department_id: string | null };
+
+  const userIds = profiles.map((p: RawProfile) => p.id);
 
   // Fetch roles and client associations in parallel
   const [rolesResult, clientUsersResult, clientsResult] = await Promise.all([
@@ -116,12 +121,12 @@ async function fetchUsersFallback(
   const clients = clientsResult.data || [];
 
   // Create maps
-  const rolesMap = new Map(roles.map((r) => [r.user_id, r.role]));
-  const clientsMap = new Map(clients.map((c) => [c.id, c.nom]));
+  const rolesMap = new Map(roles.map((r: RawRole) => [r.user_id, r.role]));
+  const clientsMap = new Map<string, string>(clients.map((c: RawClient) => [c.id, c.nom]));
 
   // Group client_users by user_id
-  const clientUsersMap = new Map<string, typeof clientUsers>();
-  clientUsers.forEach((cu) => {
+  const clientUsersMap = new Map<string, RawClientUser[]>();
+  clientUsers.forEach((cu: RawClientUser) => {
     if (!clientUsersMap.has(cu.user_id)) {
       clientUsersMap.set(cu.user_id, []);
     }
@@ -129,9 +134,9 @@ async function fetchUsersFallback(
   });
 
   // Map profiles to UserWithRole
-  const users: UserWithRole[] = profiles.map((profile) => {
+  const users: UserWithRole[] = profiles.map((profile: RawProfile) => {
     const userClientUsers = clientUsersMap.get(profile.id) || [];
-    const userClients: UserClient[] = userClientUsers.map((cu) => ({
+    const userClients: UserClient[] = userClientUsers.map((cu: RawClientUser) => ({
       id: cu.client_id,
       name: clientsMap.get(cu.client_id) || "Client inconnu",
       client_role: cu.client_role,

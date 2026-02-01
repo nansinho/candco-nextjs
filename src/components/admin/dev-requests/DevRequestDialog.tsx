@@ -169,7 +169,7 @@ export function DevRequestDialog({ open, onOpenChange }: DevRequestDialogProps) 
                   </div>
                 ) : adminUsers && adminUsers.length > 0 ? (
                   <div className="space-y-2">
-                    {adminUsers.map((admin) => {
+                    {adminUsers.map((admin: { id: string; first_name?: string; last_name?: string }) => {
                       const initials = `${admin.first_name?.[0] || ''}${admin.last_name?.[0] || ''}`.toUpperCase() || '??';
                       const fullName = `${admin.first_name || ''} ${admin.last_name || ''}`.trim() || 'Utilisateur';
                       const isChecked = selectedAssignees.includes(admin.id);

@@ -158,10 +158,10 @@ export function ChatWidget() {
 
       // Build nodes map with options
       const nodesMap: Record<string, ChatNode> = {};
-      nodesData?.forEach((node) => {
+      nodesData?.forEach((node: { id: string; message: string; is_end?: boolean }) => {
         nodesMap[node.id] = {
           ...node,
-          options: optionsData?.filter((opt) => opt.node_id === node.id) || [],
+          options: optionsData?.filter((opt: { node_id: string }) => opt.node_id === node.id) || [],
         };
       });
 
