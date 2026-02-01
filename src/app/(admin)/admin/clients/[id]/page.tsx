@@ -149,7 +149,7 @@ export default function AdminClientDetail() {
       return;
     }
 
-    const sessionIds = sessionClients.map((sc) => sc.session_id);
+    const sessionIds = sessionClients.map((sc: { session_id: string }) => sc.session_id);
     const { data: sessionsData } = await supabase
       .from("sessions")
       .select("id, start_date, status, formations(title)")

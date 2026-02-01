@@ -45,8 +45,10 @@ async function fetchSessions(): Promise<SessionWithData[]> {
   if (sessionsError) throw sessionsError;
   if (!sessionsData || sessionsData.length === 0) return [];
 
+  type RawSession = { id: string; formation_id: string; formateur_id?: string };
+
   // Get unique formation IDs
-  const formationIds = [...new Set(sessionsData.map((s) => s.formation_id))];
+  const formationIds = [...new Set(sessionsData.map((s: RawSession) => s.formation_id))];
 
   // Fetch formations
   const { data: formationsData } = await supabase
@@ -56,7 +58,7 @@ async function fetchSessions(): Promise<SessionWithData[]> {
 
   // Get unique formateur IDs
   const formateurIds = [
-    ...new Set(sessionsData.filter((s) => s.formateur_id).map((s) => s.formateur_id)),
+    ...new Set(sessionsData.filter((s: RawSession) => s.formateur_id).map((s: RawSession) => s.formateur_id)),
   ];
 
   // Fetch formateurs if any
@@ -70,7 +72,7 @@ async function fetchSessions(): Promise<SessionWithData[]> {
   }
 
   // Count inscriptions per session
-  const sessionIds = sessionsData.map((s) => s.id);
+  const sessionIds = sessionsData.map((s: RawSession) => s.id);
   const { data: inscriptionsData } = await supabase
     .from("inscriptions")
     .select("session_id")
@@ -78,13 +80,13 @@ async function fetchSessions(): Promise<SessionWithData[]> {
     .neq("status", "annulee");
 
   const inscriptionsCounts: Record<string, number> = {};
-  inscriptionsData?.forEach((i) => {
+  inscriptionsData?.forEach((i: { session_id: string }) => {
     inscriptionsCounts[i.session_id] = (inscriptionsCounts[i.session_id] || 0) + 1;
   });
 
   // Build maps
   const formationsMap: Record<string, { title: string; pole: string; pole_name: string }> = {};
-  formationsData?.forEach((f) => {
+  formationsData?.forEach((f: { id: string; title: string; pole: string; pole_name: string }) => {
     formationsMap[f.id] = { title: f.title, pole: f.pole, pole_name: f.pole_name };
   });
 
@@ -93,7 +95,7 @@ async function fetchSessions(): Promise<SessionWithData[]> {
     formateursMap[f.id] = `${f.prenom} ${f.nom}`;
   });
 
-  return sessionsData.map((session) => ({
+  return sessionsData.map((session: RawSession & { formation_id: string }) => ({
     ...session,
     formation_title: formationsMap[session.formation_id]?.title || "Formation inconnue",
     pole: formationsMap[session.formation_id]?.pole || "",

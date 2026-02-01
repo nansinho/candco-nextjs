@@ -364,7 +364,7 @@ export function DevRequestDetail({ request, open, onOpenChange }: DevRequestDeta
               <span>Assigné à :</span>
             </div>
             <div className="flex flex-wrap gap-2">
-              {adminUsers?.map((admin) => {
+              {adminUsers?.map((admin: { id: string; first_name?: string; last_name?: string }) => {
                 const name = `${admin.first_name || ''} ${admin.last_name || ''}`.trim() || 'Admin';
                 const initials = `${admin.first_name?.charAt(0) || ''}${admin.last_name?.charAt(0) || ''}`.toUpperCase() || 'A';
                 const isAssigned = currentRequest.assigned_to.includes(admin.id);

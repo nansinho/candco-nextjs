@@ -270,7 +270,7 @@ export default function Header() {
     checkUser();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event: string, session: { user?: { id: string } } | null) => {
       if (event === "SIGNED_OUT") {
         setUser(null);
       } else if (event === "SIGNED_IN" && session?.user) {

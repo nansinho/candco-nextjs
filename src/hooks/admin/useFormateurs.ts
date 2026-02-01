@@ -48,21 +48,21 @@ export function useFormateurs() {
       if (error) throw error;
 
       // Get sessions count for each formateur
-      const formateurIds = data.map((f) => f.id);
+      const formateurIds = data.map((f: { id: string }) => f.id);
       const { data: sessionsData } = await supabase
         .from("sessions")
         .select("formateur_id")
         .in("formateur_id", formateurIds);
 
-      const sessionsCounts = formateurIds.reduce((acc, id) => {
-        acc[id] = sessionsData?.filter((s) => s.formateur_id === id).length || 0;
+      const sessionsCounts = formateurIds.reduce((acc: Record<string, number>, id: string) => {
+        acc[id] = sessionsData?.filter((s: { formateur_id: string }) => s.formateur_id === id).length || 0;
         return acc;
       }, {} as Record<string, number>);
 
-      return data.map((f) => ({
+      return (data as Formateur[]).map((f) => ({
         ...f,
         sessions_count: sessionsCounts[f.id] || 0,
-      })) as Formateur[];
+      }));
     },
     staleTime: 5 * 60 * 1000,
   });

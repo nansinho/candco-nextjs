@@ -126,14 +126,14 @@ export function useDevRequests(includeResolved = true) {
       const { data, error } = await query;
       if (error) throw error;
 
-      const requestIds = data?.map(r => r.id) || [];
+      const requestIds = data?.map((r: { id: string }) => r.id) || [];
       if (requestIds.length === 0) return [] as DevRequest[];
 
       // Collect all user IDs
       const allUserIds = new Set<string>();
-      data?.forEach(r => {
+      data?.forEach((r: { created_by?: string; assigned_to?: string[] }) => {
         if (r.created_by) allUserIds.add(r.created_by);
-        (r.assigned_to as string[] || []).forEach(id => allUserIds.add(id));
+        (r.assigned_to as string[] || []).forEach((id: string) => allUserIds.add(id));
       });
 
       // Fetch counts and profiles in parallel
@@ -157,11 +157,24 @@ export function useDevRequests(includeResolved = true) {
         };
       });
 
-      profilesResult.data?.forEach(p => {
+      profilesResult.data?.forEach((p: { id: string; first_name: string | null; last_name: string | null }) => {
         profilesMap[p.id] = p;
       });
 
-      return data?.map(request => ({
+      type RawRequest = {
+        id: string;
+        title: string;
+        description?: string;
+        status: string;
+        column_slug?: string;
+        priority?: string;
+        created_by?: string;
+        assigned_to?: string[];
+        created_at: string;
+        updated_at?: string;
+      };
+
+      return data?.map((request: RawRequest) => ({
         ...request,
         assigned_to: request.assigned_to || [],
         status: request.status as DevRequestStatus,
@@ -171,7 +184,7 @@ export function useDevRequests(includeResolved = true) {
         images_count: countsMap[request.id]?.images || 0,
         creator: request.created_by ? profilesMap[request.created_by] || null : null,
         assignees: (request.assigned_to as string[] || [])
-          .map(id => profilesMap[id])
+          .map((id: string) => profilesMap[id])
           .filter(Boolean),
       })) as DevRequest[];
     },
@@ -205,7 +218,7 @@ export function useDevRequestDetail(requestId: string | null) {
           .select("id, first_name, last_name")
           .in("id", Array.from(allUserIds));
 
-        profiles?.forEach(p => {
+        profiles?.forEach((p: { id: string; first_name: string | null; last_name: string | null }) => {
           profilesMap[p.id] = p;
         });
       }
@@ -217,7 +230,7 @@ export function useDevRequestDetail(requestId: string | null) {
         priority: data.priority as DevRequestPriority,
         creator: data.created_by ? profilesMap[data.created_by] || null : null,
         assignees: (data.assigned_to as string[] || [])
-          .map(id => profilesMap[id])
+          .map((id: string) => profilesMap[id])
           .filter(Boolean),
       } as DevRequest;
     },
@@ -257,7 +270,7 @@ export function useDevRequestImages(requestId: string | null) {
       if (!data || data.length === 0) return [];
 
       const imagesWithSignedUrls = await Promise.all(
-        data.map(async (img) => {
+        data.map(async (img: { id: string; request_id: string; image_url: string; file_name?: string; created_at: string }) => {
           const signedUrl = await getSignedImageUrl(supabase, img.image_url);
           return {
             ...img,
@@ -286,7 +299,7 @@ export function useAdminUsers() {
 
       if (roleError) throw roleError;
 
-      const userIds = roleData?.map(r => r.user_id) || [];
+      const userIds = roleData?.map((r: { user_id: string }) => r.user_id) || [];
       if (userIds.length === 0) return [];
 
       const { data: profiles, error: profileError } = await supabase
@@ -319,14 +332,17 @@ export function useDevRequestComments(requestId: string | null) {
       if (error) throw error;
       if (!comments || comments.length === 0) return [];
 
-      const commentIds = comments.map(c => c.id);
+      type RawComment = { id: string; request_id: string; user_id: string; content: string; created_at: string };
+      type RawCommentImage = { id: string; comment_id: string; image_url: string; file_name?: string | null; created_at: string };
+
+      const commentIds = comments.map((c: RawComment) => c.id);
       const { data: imagesData } = await supabase
         .from("dev_request_comment_images")
         .select("*")
         .in("comment_id", commentIds);
 
       const imagesWithSignedUrls = await Promise.all(
-        (imagesData || []).map(async (img) => {
+        (imagesData || []).map(async (img: RawCommentImage) => {
           const signedUrl = await getSignedImageUrl(supabase, img.image_url);
           return {
             ...img,
@@ -336,24 +352,24 @@ export function useDevRequestComments(requestId: string | null) {
       );
 
       const imagesByComment: Record<string, (DevRequestCommentImage & { display_url: string })[]> = {};
-      imagesWithSignedUrls.forEach(img => {
+      imagesWithSignedUrls.forEach((img) => {
         if (!imagesByComment[img.comment_id]) {
           imagesByComment[img.comment_id] = [];
         }
-        imagesByComment[img.comment_id].push(img);
+        imagesByComment[img.comment_id].push(img as DevRequestCommentImage & { display_url: string });
       });
 
-      const userIds = [...new Set(comments.map(c => c.user_id))];
+      const userIds = [...new Set(comments.map((c: RawComment) => c.user_id))];
       const { data: profiles } = await supabase
         .from("profiles")
         .select("id, first_name, last_name")
         .in("id", userIds);
 
       const profilesMap = Object.fromEntries(
-        (profiles || []).map(p => [p.id, p])
+        (profiles || []).map((p: { id: string; first_name: string | null; last_name: string | null }) => [p.id, p])
       );
 
-      return comments.map(comment => ({
+      return comments.map((comment: RawComment) => ({
         ...comment,
         user: profilesMap[comment.user_id] || null,
         images: imagesByComment[comment.id] || [],
@@ -380,7 +396,9 @@ export function useDevRequestHistory(requestId: string | null) {
       if (error) throw error;
       if (!data || data.length === 0) return [];
 
-      const userIds = [...new Set(data.filter(h => h.user_id).map(h => h.user_id!))];
+      type RawHistory = { id: string; request_id: string; user_id?: string | null; action_type: string; old_value?: string; new_value?: string; created_at: string };
+
+      const userIds = [...new Set(data.filter((h: RawHistory) => h.user_id).map((h: RawHistory) => h.user_id!))];
       const { data: profiles } = userIds.length > 0
         ? await supabase
             .from("profiles")
@@ -389,10 +407,10 @@ export function useDevRequestHistory(requestId: string | null) {
         : { data: [] };
 
       const profilesMap = Object.fromEntries(
-        (profiles || []).map(p => [p.id, p])
+        (profiles || []).map((p: { id: string; first_name: string | null; last_name: string | null }) => [p.id, p])
       );
 
-      return data.map(h => ({
+      return data.map((h: RawHistory) => ({
         ...h,
         action_type: h.action_type as DevRequestHistory['action_type'],
         user: h.user_id ? profilesMap[h.user_id] || null : null,
@@ -901,8 +919,10 @@ export function useDeletedDevRequests() {
 
       if (error) throw error;
 
-      const creatorIds = [...new Set(data?.map(r => r.created_by).filter(Boolean))];
-      let profilesMap: Record<string, { id: string; first_name: string | null; last_name: string | null }> = {};
+      type RawReq = { id: string; title: string; status: string; priority?: string; created_by?: string; assigned_to?: string[]; deleted_at?: string };
+
+      const creatorIds = [...new Set(data?.map((r: RawReq) => r.created_by).filter(Boolean))];
+      const profilesMap: Record<string, { id: string; first_name: string | null; last_name: string | null }> = {};
 
       if (creatorIds.length > 0) {
         const { data: profiles } = await supabase
@@ -910,12 +930,12 @@ export function useDeletedDevRequests() {
           .select("id, first_name, last_name")
           .in("id", creatorIds as string[]);
 
-        profiles?.forEach(p => {
+        profiles?.forEach((p: { id: string; first_name: string | null; last_name: string | null }) => {
           profilesMap[p.id] = p;
         });
       }
 
-      return data?.map(request => ({
+      return data?.map((request: RawReq) => ({
         ...request,
         assigned_to: request.assigned_to || [],
         status: request.status as DevRequestStatus,
@@ -941,8 +961,10 @@ export function useResolvedDevRequests() {
 
       if (error) throw error;
 
-      const creatorIds = [...new Set(data?.map(r => r.created_by).filter(Boolean))];
-      let profilesMap: Record<string, { id: string; first_name: string | null; last_name: string | null }> = {};
+      type RawReq2 = { id: string; title: string; status: string; priority?: string; created_by?: string; assigned_to?: string[] };
+
+      const creatorIds = [...new Set(data?.map((r: RawReq2) => r.created_by).filter(Boolean))];
+      const profilesMap: Record<string, { id: string; first_name: string | null; last_name: string | null }> = {};
 
       if (creatorIds.length > 0) {
         const { data: profiles } = await supabase
@@ -950,12 +972,12 @@ export function useResolvedDevRequests() {
           .select("id, first_name, last_name")
           .in("id", creatorIds as string[]);
 
-        profiles?.forEach(p => {
+        profiles?.forEach((p: { id: string; first_name: string | null; last_name: string | null }) => {
           profilesMap[p.id] = p;
         });
       }
 
-      return data?.map(request => ({
+      return data?.map((request: RawReq2) => ({
         ...request,
         assigned_to: request.assigned_to || [],
         status: request.status as DevRequestStatus,
@@ -981,8 +1003,10 @@ export function useArchivedDevRequests() {
 
       if (error) throw error;
 
-      const creatorIds = [...new Set(data?.map(r => r.created_by).filter(Boolean))];
-      let profilesMap: Record<string, { id: string; first_name: string | null; last_name: string | null }> = {};
+      type RawReq3 = { id: string; title: string; status: string; priority?: string; created_by?: string; assigned_to?: string[] };
+
+      const creatorIds = [...new Set(data?.map((r: RawReq3) => r.created_by).filter(Boolean))];
+      const profilesMap: Record<string, { id: string; first_name: string | null; last_name: string | null }> = {};
 
       if (creatorIds.length > 0) {
         const { data: profiles } = await supabase
@@ -990,12 +1014,12 @@ export function useArchivedDevRequests() {
           .select("id, first_name, last_name")
           .in("id", creatorIds as string[]);
 
-        profiles?.forEach(p => {
+        profiles?.forEach((p: { id: string; first_name: string | null; last_name: string | null }) => {
           profilesMap[p.id] = p;
         });
       }
 
-      return data?.map(request => ({
+      return data?.map((request: RawReq3) => ({
         ...request,
         assigned_to: request.assigned_to || [],
         status: request.status as DevRequestStatus,
