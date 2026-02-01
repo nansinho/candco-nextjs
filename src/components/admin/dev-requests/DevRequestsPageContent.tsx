@@ -48,7 +48,8 @@ export default function DevRequestsPageContent() {
   const [selectedRequest, setSelectedRequest] = useState<DevRequest | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
 
-  const { data: requests = [], isLoading } = useDevRequests(true);
+  // false = exclude resolved/archived requests from the Kanban view
+  const { data: requests = [], isLoading } = useDevRequests(false);
 
   // Filter requests based on search and priority
   const filteredRequests = useMemo(() => {
