@@ -2,11 +2,8 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
-import { AccessibilityWidget } from "@/components/AccessibilityWidget";
 import { ThemeProvider } from "@/components/ThemeProvider";
-import { ChatWidget } from "@/components/chat/ChatWidget";
-import { ScrollToTop } from "@/components/ScrollToTop";
-import { CookieBanner } from "@/components/CookieBanner";
+import { ClientWidgets } from "@/components/ClientWidgets";
 
 // SEO Metadata globales
 export const metadata: Metadata = {
@@ -255,16 +252,17 @@ export default function RootLayout({
         <link rel="icon" href="/icon.svg" type="image/svg+xml" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="manifest" href="/manifest.json" />
+        {/* Preconnect pour Supabase - accélère les requêtes */}
+        <link rel="preconnect" href="https://sxadbvezilpcldmncjrk.supabase.co" />
+        <link rel="dns-prefetch" href="https://sxadbvezilpcldmncjrk.supabase.co" />
       </head>
       <body className="antialiased">
         <ThemeProvider>
           <Header />
           <main className="pt-16 lg:pt-20">{children}</main>
           <Footer />
-          <AccessibilityWidget />
-          <ChatWidget />
-          <ScrollToTop />
-          <CookieBanner />
+          {/* Widgets lazy-loaded côté client */}
+          <ClientWidgets />
         </ThemeProvider>
       </body>
     </html>
