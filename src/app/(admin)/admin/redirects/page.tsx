@@ -105,10 +105,14 @@ const typeConfig = {
 
 export default function RedirectsPage() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [newRedirect, setNewRedirect] = useState({
+  const [newRedirect, setNewRedirect] = useState<{
+    source: string;
+    destination: string;
+    type: "301" | "302" | "307" | "308";
+  }>({
     source: "",
     destination: "",
-    type: "301" as const,
+    type: "301",
   });
 
   const filteredRedirects = demoRedirects.filter(
