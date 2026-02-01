@@ -453,7 +453,7 @@ export function useCreateDevRequest() {
       if (data.images && data.images.length > 0) {
         for (const image of data.images) {
           const fileExt = image.name.split('.').pop();
-          const storagePath = `request-images/${request.id}/${crypto.randomUUID()}.${fileExt}`;
+          const storagePath = `request-images/${request.id}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
 
           const { error: uploadError } = await supabase.storage
             .from('dev-requests')
@@ -878,6 +878,236 @@ export function useDeleteDevRequestColumn() {
     },
     onError: (error) => {
       toast.error("Erreur lors de la suppression de la colonne");
+      console.error(error);
+    },
+  });
+}
+
+// =====================================================
+// Trash / Archive / Resolved Management
+// =====================================================
+
+// Fetch soft-deleted dev requests (trash)
+export function useDeletedDevRequests() {
+  return useQuery({
+    queryKey: ["dev-requests-deleted"],
+    queryFn: async () => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("dev_requests")
+        .select("*")
+        .not("deleted_at", "is", null)
+        .order("deleted_at", { ascending: false });
+
+      if (error) throw error;
+
+      const creatorIds = [...new Set(data?.map(r => r.created_by).filter(Boolean))];
+      let profilesMap: Record<string, { id: string; first_name: string | null; last_name: string | null }> = {};
+
+      if (creatorIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("id, first_name, last_name")
+          .in("id", creatorIds as string[]);
+
+        profiles?.forEach(p => {
+          profilesMap[p.id] = p;
+        });
+      }
+
+      return data?.map(request => ({
+        ...request,
+        assigned_to: request.assigned_to || [],
+        status: request.status as DevRequestStatus,
+        priority: request.priority as DevRequestPriority,
+        creator: request.created_by ? profilesMap[request.created_by] || null : null,
+      })) as DevRequest[];
+    },
+  });
+}
+
+// Fetch resolved dev requests
+export function useResolvedDevRequests() {
+  return useQuery({
+    queryKey: ["dev-requests-resolved"],
+    queryFn: async () => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("dev_requests")
+        .select("*")
+        .is("deleted_at", null)
+        .eq("status", "resolue")
+        .order("resolved_at", { ascending: false });
+
+      if (error) throw error;
+
+      const creatorIds = [...new Set(data?.map(r => r.created_by).filter(Boolean))];
+      let profilesMap: Record<string, { id: string; first_name: string | null; last_name: string | null }> = {};
+
+      if (creatorIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("id, first_name, last_name")
+          .in("id", creatorIds as string[]);
+
+        profiles?.forEach(p => {
+          profilesMap[p.id] = p;
+        });
+      }
+
+      return data?.map(request => ({
+        ...request,
+        assigned_to: request.assigned_to || [],
+        status: request.status as DevRequestStatus,
+        priority: request.priority as DevRequestPriority,
+        creator: request.created_by ? profilesMap[request.created_by] || null : null,
+      })) as DevRequest[];
+    },
+  });
+}
+
+// Fetch archived dev requests
+export function useArchivedDevRequests() {
+  return useQuery({
+    queryKey: ["dev-requests-archived"],
+    queryFn: async () => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("dev_requests")
+        .select("*")
+        .is("deleted_at", null)
+        .eq("status", "archivee")
+        .order("resolved_at", { ascending: false });
+
+      if (error) throw error;
+
+      const creatorIds = [...new Set(data?.map(r => r.created_by).filter(Boolean))];
+      let profilesMap: Record<string, { id: string; first_name: string | null; last_name: string | null }> = {};
+
+      if (creatorIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("id, first_name, last_name")
+          .in("id", creatorIds as string[]);
+
+        profiles?.forEach(p => {
+          profilesMap[p.id] = p;
+        });
+      }
+
+      return data?.map(request => ({
+        ...request,
+        assigned_to: request.assigned_to || [],
+        status: request.status as DevRequestStatus,
+        priority: request.priority as DevRequestPriority,
+        creator: request.created_by ? profilesMap[request.created_by] || null : null,
+      })) as DevRequest[];
+    },
+  });
+}
+
+// Restore a soft-deleted dev request
+export function useRestoreDevRequest() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (requestId: string) => {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("dev_requests")
+        .update({
+          deleted_at: null,
+          status: 'nouvelle' as DevRequestStatus,
+          column_slug: 'nouvelle',
+        })
+        .eq("id", requestId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["dev-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["dev-requests-deleted"] });
+      toast.success("Demande restaurée");
+    },
+    onError: (error) => {
+      toast.error("Erreur lors de la restauration");
+      console.error(error);
+    },
+  });
+}
+
+// Permanently delete a dev request
+export function usePermanentDeleteDevRequest() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (requestId: string) => {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("dev_requests")
+        .delete()
+        .eq("id", requestId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["dev-requests-deleted"] });
+      toast.success("Demande supprimée définitivement");
+    },
+    onError: (error) => {
+      toast.error("Erreur lors de la suppression définitive");
+      console.error(error);
+    },
+  });
+}
+
+// Empty trash (permanently delete all soft-deleted requests)
+export function useEmptyTrash() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("dev_requests")
+        .delete()
+        .not("deleted_at", "is", null);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["dev-requests-deleted"] });
+      toast.success("Corbeille vidée");
+    },
+    onError: (error) => {
+      toast.error("Erreur lors du vidage de la corbeille");
+      console.error(error);
+    },
+  });
+}
+
+// Archive a resolved request
+export function useArchiveDevRequest() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (requestId: string) => {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("dev_requests")
+        .update({ status: 'archivee', column_slug: 'archivee' })
+        .eq("id", requestId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["dev-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["dev-requests-resolved"] });
+      queryClient.invalidateQueries({ queryKey: ["dev-requests-archived"] });
+      toast.success("Demande archivée");
+    },
+    onError: (error) => {
+      toast.error("Erreur lors de l'archivage");
       console.error(error);
     },
   });
