@@ -115,15 +115,10 @@ export default async function FormationsPage() {
     <>
       {/* Hero Section */}
       <PageHero
-        badge="Formations"
-        title="Développez vos compétences"
-        highlightedWord="compétences"
-        description="Formations certifiantes en Sécurité, Petite Enfance et Santé."
-        stats={[
-          { value: `${formations?.length || 22}+`, label: "Formations" },
-          { value: "3", label: "Pôles" },
-          { value: "98%", label: "Réussite" },
-        ]}
+        badge="Catalogue de formations"
+        title="Trouvez la formation qui vous correspond."
+        highlightedWord="formation"
+        description="Plus de 50 formations certifiantes dans les domaines de la Sécurité, de la Petite Enfance et de la Santé."
       />
 
       {/* Client Component with Filters */}

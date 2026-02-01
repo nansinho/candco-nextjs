@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { ReactNode } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
@@ -24,6 +25,13 @@ interface PageHeroProps {
   highlightedWord?: string;
   description?: string;
 
+  // Background
+  backgroundImage?: string;
+
+  // Layout
+  align?: "left" | "center";
+  size?: "sm" | "md" | "lg";
+
   // Optional elements
   stats?: Stat[];
   ctas?: CTA[];
@@ -35,11 +43,14 @@ export function PageHero({
   title,
   highlightedWord,
   description,
+  backgroundImage,
+  align = "left",
+  size = "md",
   stats,
   ctas,
   children,
 }: PageHeroProps) {
-  // Split title to highlight word with gradient
+  // Split title to highlight word
   const renderTitle = () => {
     if (!highlightedWord) {
       return title;
@@ -53,42 +64,74 @@ export function PageHero({
     return (
       <>
         {parts[0]}
-        <span className="bg-gradient-to-r from-primary via-orange-400 to-primary bg-clip-text text-transparent">
-          {highlightedWord}
-        </span>
+        <span className="text-primary">{highlightedWord}</span>
         {parts[1]}
       </>
     );
   };
 
-  return (
-    <section className="relative py-16 md:py-24 overflow-hidden">
-      {/* Subtle gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-primary/[0.03] via-transparent to-transparent" />
+  // Size variants
+  const sizeClasses = {
+    sm: "py-12 md:py-16",
+    md: "py-16 md:py-24",
+    lg: "min-h-[60vh] py-20 md:py-32 flex items-center",
+  };
 
-      {/* Subtle glow effect */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-primary/[0.08] rounded-full blur-[120px] pointer-events-none" />
+  const hasBackground = !!backgroundImage;
+
+  return (
+    <section
+      className={cn(
+        "relative overflow-hidden border-b border-border/50",
+        sizeClasses[size]
+      )}
+    >
+      {/* Background Image */}
+      {hasBackground && (
+        <>
+          <div className="absolute inset-0">
+            <Image
+              src={backgroundImage}
+              alt=""
+              fill
+              className="object-cover"
+              priority
+            />
+          </div>
+          {/* Gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-b from-background/95 via-background/85 to-background" />
+        </>
+      )}
+
+      {/* Subtle glow effect (no bg image) */}
+      {!hasBackground && (
+        <div className="absolute top-0 left-1/4 w-[500px] h-[250px] bg-primary/[0.04] rounded-full blur-[100px] pointer-events-none" />
+      )}
 
       <div className="container-custom relative z-10">
-        <div className="max-w-3xl mx-auto text-center">
+        <div
+          className={cn(
+            align === "center" ? "max-w-3xl mx-auto text-center" : "max-w-2xl"
+          )}
+        >
           {/* Badge */}
           {badge && (
-            <motion.div
+            <motion.p
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4 }}
-              className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-xs font-medium tracking-widest uppercase text-primary mb-6"
+              transition={{ duration: 0.3 }}
+              className="text-sm text-muted-foreground mb-4 tracking-widest uppercase"
             >
               {badge}
-            </motion.div>
+            </motion.p>
           )}
 
-          {/* Title */}
+          {/* Title - font-light for thin titles */}
           <motion.h1
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-3xl sm:text-4xl md:text-5xl font-medium tracking-tight leading-[1.1] mb-4"
+            transition={{ duration: 0.4, delay: 0.05 }}
+            className="text-3xl sm:text-4xl lg:text-5xl font-light tracking-tight leading-[1.15] mb-5"
           >
             {renderTitle()}
           </motion.h1>
@@ -96,37 +139,32 @@ export function PageHero({
           {/* Description */}
           {description && (
             <motion.p
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="text-base md:text-lg text-muted-foreground max-w-xl mx-auto"
+              transition={{ duration: 0.4, delay: 0.1 }}
+              className="text-lg sm:text-xl text-muted-foreground leading-relaxed"
             >
               {description}
             </motion.p>
           )}
 
-          {/* Stats - inline compact */}
+          {/* Stats - inline */}
           {stats && stats.length > 0 && (
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              className="flex items-center justify-center gap-6 mt-8"
+              transition={{ duration: 0.4, delay: 0.15 }}
+              className={cn(
+                "flex gap-8 mt-8",
+                align === "center" && "justify-center"
+              )}
             >
-              {stats.map((stat, index) => (
-                <div
-                  key={stat.label}
-                  className={cn(
-                    "flex items-center gap-2",
-                    index > 0 && "border-l border-border/30 pl-6"
-                  )}
-                >
-                  <span className="text-xl font-semibold text-primary">
+              {stats.map((stat) => (
+                <div key={stat.label} className="text-center">
+                  <p className="text-3xl lg:text-4xl font-light text-primary">
                     {stat.value}
-                  </span>
-                  <span className="text-xs text-muted-foreground uppercase tracking-wide">
-                    {stat.label}
-                  </span>
+                  </p>
+                  <p className="text-sm text-muted-foreground">{stat.label}</p>
                 </div>
               ))}
             </motion.div>
@@ -135,9 +173,9 @@ export function PageHero({
           {/* Custom children (search bars, etc.) */}
           {children && (
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
+              transition={{ duration: 0.4, delay: 0.15 }}
               className="mt-8"
             >
               {children}
@@ -147,10 +185,13 @@ export function PageHero({
           {/* CTAs */}
           {ctas && ctas.length > 0 && (
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-              className="flex flex-wrap items-center justify-center gap-3 mt-8"
+              transition={{ duration: 0.4, delay: 0.2 }}
+              className={cn(
+                "flex flex-wrap gap-3 mt-8",
+                align === "center" && "justify-center"
+              )}
             >
               {ctas.map((cta) => {
                 const isPrimary = cta.variant === "primary" || !cta.variant;
@@ -161,11 +202,11 @@ export function PageHero({
                     className={cn(
                       "inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
                       isPrimary &&
-                        "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5",
+                        "bg-primary text-primary-foreground hover:bg-primary/90",
                       cta.variant === "secondary" &&
-                        "bg-secondary/80 text-secondary-foreground hover:bg-secondary",
+                        "bg-secondary text-secondary-foreground hover:bg-secondary/80",
                       cta.variant === "outline" &&
-                        "border border-border/50 text-foreground hover:bg-secondary/50 hover:border-border"
+                        "border border-border text-foreground hover:bg-secondary/50"
                     )}
                   >
                     {cta.label}
