@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
+import { PageHero } from "@/components/PageHero";
 
 export const metadata: Metadata = {
   title: "Blog",
@@ -27,15 +28,18 @@ export default async function BlogPage() {
   return (
     <>
       {/* Hero */}
-      <section className="section-padding-sm bg-gradient-to-b from-background to-card">
-        <div className="container-custom text-center">
-          <h1 className="heading-hero mb-4">Notre Blog</h1>
-          <p className="text-body-lg max-w-2xl mx-auto">
-            Actualités, conseils et informations sur la formation
-            professionnelle.
-          </p>
-        </div>
-      </section>
+      <PageHero
+        badge="Blog"
+        badgeIcon="newspaper"
+        title="Notre Blog"
+        description="Actualités, conseils et informations sur la formation professionnelle. SST, sécurité, petite enfance, santé."
+        backgroundImage="/blog-hero.jpg"
+        minHeight="medium"
+        breadcrumbs={[
+          { label: "Accueil", href: "/" },
+          { label: "Blog" },
+        ]}
+      />
 
       {/* Filtres par catégorie */}
       {categories.length > 0 && (

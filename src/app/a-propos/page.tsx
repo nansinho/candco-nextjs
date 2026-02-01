@@ -20,6 +20,7 @@ import {
   FileCheck,
 } from "lucide-react";
 import AboutClient from "./AboutClient";
+import { PageHero } from "@/components/PageHero";
 
 export const metadata: Metadata = {
   title: "À Propos de C&Co Formation | Organisme de Formation Certifié Qualiopi",
@@ -160,80 +161,24 @@ export default async function AboutPage() {
   return (
     <>
       {/* Hero */}
-      <section className="section-padding border-b border-border/50">
-        <div className="container-custom">
-          {/* Breadcrumb */}
-          <nav className="mb-8 text-sm text-muted-foreground">
-            <ol className="flex items-center gap-2">
-              <li>
-                <Link href="/" className="hover:text-primary transition-colors">
-                  Accueil
-                </Link>
-              </li>
-              <li>/</li>
-              <li className="text-foreground">À propos</li>
-            </ol>
-          </nav>
-
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
-            <div>
-              <p className="text-sm text-muted-foreground mb-4 tracking-widest uppercase">
-                À propos
-              </p>
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-light leading-tight mb-6">
-                C&Co Formation : l'expertise terrain au service de votre
-                réussite.
-              </h1>
-              <p className="text-lg text-muted-foreground mb-6">
-                Un organisme de formation centré sur l'efficacité, la
-                personnalisation et l'engagement, où chaque apprenant bénéficie
-                d'un accompagnement sur mesure, pensé pour répondre aux réalités
-                du terrain.
-              </p>
-
-              <div className="flex flex-wrap gap-6">
-                <div className="flex items-center gap-2 text-sm">
-                  <CheckCircle className="w-4 h-4 text-primary" />
-                  Certifié Qualiopi
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <CheckCircle className="w-4 h-4 text-primary" />
-                  Formation sur mesure
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <CheckCircle className="w-4 h-4 text-primary" />
-                  15 ans d'expérience
-                </div>
-              </div>
-            </div>
-
-            <div className="relative hidden lg:flex items-center justify-center">
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-56 h-56 rounded-full bg-primary/20 blur-3xl" />
-              </div>
-              <div className="relative w-52 h-52 rounded-full bg-gradient-to-br from-primary/30 to-primary/10 border border-primary/20 flex items-center justify-center hover:scale-105 transition-transform duration-300">
-                <FounderIcon className="w-28 h-28 text-primary" />
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Stats */}
-      <section className="py-16 border-b border-border/50 bg-muted/30">
-        <div className="container-custom">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {stats.map((stat) => (
-              <div key={stat.label} className="text-center">
-                <p className="text-4xl lg:text-5xl font-light text-primary mb-2">
-                  {stat.value}
-                </p>
-                <p className="text-sm text-muted-foreground">{stat.label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <PageHero
+        badge="À propos"
+        badgeIcon="info"
+        title="C&Co Formation : l'expertise terrain au service de votre réussite."
+        highlightedWord="expertise"
+        description="Un organisme de formation centré sur l'efficacité, la personnalisation et l'engagement, où chaque apprenant bénéficie d'un accompagnement sur mesure, pensé pour répondre aux réalités du terrain."
+        backgroundImage="/about-hero.jpg"
+        minHeight="large"
+        breadcrumbs={[
+          { label: "Accueil", href: "/" },
+          { label: "À propos" },
+        ]}
+        stats={stats}
+        ctas={[
+          { label: "Nos formations", href: "/formations", variant: "primary" },
+          { label: "Nous contacter", href: "/contact", variant: "secondary" },
+        ]}
+      />
 
       {/* Fondateur */}
       <section className="section-padding border-b border-border/50">

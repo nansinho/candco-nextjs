@@ -26,6 +26,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { cn } from "@/lib/utils";
+import { PageHero } from "@/components/PageHero";
 
 // Icon mapping
 const iconMap: Record<string, LucideIcon> = {
@@ -127,49 +128,31 @@ export default function FAQClient({ categories, items }: FAQClientProps) {
   return (
     <>
       {/* Hero Section */}
-      <section className="section-padding-sm border-b border-border/50">
-        <div className="container-custom">
-          {/* Breadcrumb */}
-          <nav className="mb-8 text-sm text-muted-foreground">
-            <ol className="flex items-center gap-2">
-              <li>
-                <Link href="/" className="hover:text-primary transition-colors">
-                  Accueil
-                </Link>
-              </li>
-              <li>/</li>
-              <li className="text-foreground">FAQ</li>
-            </ol>
-          </nav>
-
-          <div className="max-w-3xl mx-auto text-center">
-            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground mb-4 tracking-widest uppercase">
-              <HelpCircle className="w-4 h-4" />
-              Centre d'aide
-            </div>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-light leading-tight mb-6">
-              Questions <span className="text-primary">fréquentes</span>
-            </h1>
-            <p className="text-lg text-muted-foreground mb-10">
-              Trouvez rapidement les réponses à vos questions. Si vous ne
-              trouvez pas ce que vous cherchez, notre équipe est disponible pour
-              vous aider.
-            </p>
-
-            {/* Search Bar */}
-            <div className="relative max-w-xl mx-auto">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground z-10" />
-              <input
-                type="text"
-                placeholder="Rechercher une question..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-12 pr-4 py-4 text-lg rounded-2xl border border-border/50 bg-background focus:outline-none focus:ring-2 focus:ring-primary/50"
-              />
-            </div>
-          </div>
+      <PageHero
+        badge="Centre d'aide"
+        badgeIcon="help-circle"
+        title="Questions fréquentes"
+        highlightedWord="fréquentes"
+        description="Trouvez rapidement les réponses à vos questions. Si vous ne trouvez pas ce que vous cherchez, notre équipe est disponible pour vous aider."
+        backgroundImage="/faq-hero.jpg"
+        minHeight="medium"
+        breadcrumbs={[
+          { label: "Accueil", href: "/" },
+          { label: "FAQ" },
+        ]}
+      >
+        {/* Search Bar */}
+        <div className="relative max-w-xl mx-auto">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground z-10" />
+          <input
+            type="text"
+            placeholder="Rechercher une question..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-12 pr-4 py-4 text-lg rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+          />
         </div>
-      </section>
+      </PageHero>
 
       {/* Categories Filter */}
       <section className="py-6 border-b border-border/50 sticky top-16 bg-background/95 backdrop-blur-xl z-40">
