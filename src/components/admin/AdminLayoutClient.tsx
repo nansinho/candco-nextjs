@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useEffect } from "react";
 import { AdminSidebar } from "./AdminSidebar";
 import { AdminHeader } from "./AdminHeader";
 import { AdminBottomNav } from "./AdminBottomNav";
@@ -14,27 +14,27 @@ interface AdminLayoutClientProps {
 }
 
 export function AdminLayoutClient({ children }: AdminLayoutClientProps) {
-  const [mounted, setMounted] = useState(false);
+  // Note: No need for mounted state since this component is loaded with ssr: false
+  // It will NEVER render on the server, so no hydration mismatch is possible
   const { user, loading, userRole } = useAuth();
   const router = useRouter();
 
-  // Hide main site header/footer for admin + set mounted state
+  // Add admin-layout class to body
   useEffect(() => {
     document.body.classList.add("admin-layout");
-    setMounted(true);
     return () => {
       document.body.classList.remove("admin-layout");
     };
   }, []);
 
-  // Show loading state until client is mounted AND auth is loaded
-  // This prevents hydration mismatch by always rendering the same loader on server/client
-  if (!mounted || loading) {
+  // Show loading state while auth is loading
+  // Use same colors as AdminLayoutDynamic loading fallback for consistency
+  if (loading) {
     return (
-      <div className="fixed inset-0 z-[100] bg-background flex items-center justify-center">
+      <div className="fixed inset-0 z-[100] bg-zinc-950 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Chargement...</p>
+          <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+          <p className="text-sm text-zinc-400">Chargement...</p>
         </div>
       </div>
     );
