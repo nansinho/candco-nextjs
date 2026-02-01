@@ -2,10 +2,10 @@
 
 /**
  * @file DevRequestColumn.tsx
- * @description Colonne du Kanban pour les demandes
+ * @description Colonne simplifiée du Kanban pour les demandes
  */
 
-import { useState } from "react";
+import { useState, memo } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
@@ -21,23 +21,23 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Pencil, Trash2, Palette } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { DevRequest, DevRequestStatus, STATUS_LABELS } from "@/hooks/admin/useDevRequests";
+import { DevRequest, STATUS_LABELS, DevRequestStatus } from "@/hooks/admin/useDevRequests";
 import { DevRequestCard } from "./DevRequestCard";
 
 interface DevRequestColumnProps {
-  status: DevRequestStatus;
+  columnSlug: string;
+  columnName: string;
+  columnColor?: string;
+  isSystem: boolean;
   requests: DevRequest[];
   onRequestClick: (request: DevRequest) => void;
-  isActivelyDragging?: boolean;
-  columnName?: string;
-  columnColor?: string;
-  isSystem?: boolean;
+  isDragging?: boolean;
   onRename?: (newName: string) => void;
   onDelete?: () => void;
   onColorChange?: (color: string) => void;
 }
 
-const STATUS_COLORS: Record<DevRequestStatus, string> = {
+const STATUS_COLORS: Record<string, string> = {
   nouvelle: "bg-blue-500",
   a_trier: "bg-purple-500",
   en_cours: "bg-amber-500",
@@ -55,41 +55,39 @@ const COLUMN_COLORS = [
   { name: "Gris", value: "gray", class: "bg-muted-foreground" },
 ];
 
-export function DevRequestColumn({
-  status,
-  requests,
-  onRequestClick,
-  isActivelyDragging = false,
+function DevRequestColumnInner({
+  columnSlug,
   columnName,
   columnColor,
-  isSystem = true,
+  isSystem,
+  requests,
+  onRequestClick,
+  isDragging = false,
   onRename,
   onDelete,
   onColorChange,
 }: DevRequestColumnProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [editName, setEditName] = useState(columnName || STATUS_LABELS[status]);
+  const [editName, setEditName] = useState(columnName);
 
-  const { setNodeRef, isOver, active } = useDroppable({
-    id: status,
+  const { setNodeRef, isOver } = useDroppable({
+    id: columnSlug,
     data: {
       type: "column",
-      status,
+      columnSlug,
     },
   });
 
   const requestIds = requests.map(r => r.id);
   const isEmpty = requests.length === 0;
-  const displayName = columnName || STATUS_LABELS[status];
-  const colorClass = columnColor
-    ? COLUMN_COLORS.find(c => c.value === columnColor)?.class || STATUS_COLORS[status]
-    : STATUS_COLORS[status];
 
-  const canDrop = isOver && active?.data.current?.status !== status;
-  const showDropIndicator = isActivelyDragging;
+  // Déterminer la couleur
+  const colorClass = columnColor
+    ? COLUMN_COLORS.find(c => c.value === columnColor)?.class || STATUS_COLORS[columnSlug] || "bg-muted-foreground"
+    : STATUS_COLORS[columnSlug] || "bg-muted-foreground";
 
   const handleRename = () => {
-    if (onRename && editName.trim() && editName !== displayName) {
+    if (onRename && editName.trim() && editName !== columnName) {
       onRename(editName.trim());
     }
     setIsEditing(false);
@@ -99,7 +97,7 @@ export function DevRequestColumn({
     if (e.key === "Enter") {
       handleRename();
     } else if (e.key === "Escape") {
-      setEditName(displayName);
+      setEditName(columnName);
       setIsEditing(false);
     }
   };
@@ -136,7 +134,7 @@ export function DevRequestColumn({
                 className="text-sm font-medium truncate cursor-default"
                 onDoubleClick={() => onRename && setIsEditing(true)}
               >
-                {displayName}
+                {columnName}
               </CardTitle>
             )}
           </div>
@@ -204,10 +202,9 @@ export function DevRequestColumn({
         <div
           ref={setNodeRef}
           className={cn(
-            "flex flex-col gap-2 transition-all duration-200 rounded-lg touch-none",
-            isEmpty && "min-h-[100px] items-center justify-center",
-            isEmpty && isOver && "bg-primary/10",
-            !isEmpty && isOver && "bg-primary/5"
+            "flex flex-col gap-2 transition-all duration-200 rounded-lg touch-none min-h-[60px]",
+            isEmpty && "items-center justify-center",
+            isOver && "bg-primary/10"
           )}
         >
           <SortableContext items={requestIds} strategy={verticalListSortingStrategy}>
@@ -219,22 +216,14 @@ export function DevRequestColumn({
                 {isOver ? "Déposer ici" : "Aucune demande"}
               </span>
             ) : (
-              <>
-                {requests.map((request) => (
-                  <DevRequestCard
-                    key={request.id}
-                    request={request}
-                    onClick={() => onRequestClick(request)}
-                  />
-                ))}
-
-                <div
-                  className={cn(
-                    "min-h-[40px] rounded-lg transition-all duration-200",
-                    showDropIndicator && canDrop && "bg-primary/10"
-                  )}
+              requests.map((request) => (
+                <DevRequestCard
+                  key={request.id}
+                  request={request}
+                  onClick={() => onRequestClick(request)}
+                  columnSlug={columnSlug}
                 />
-              </>
+              ))
             )}
           </SortableContext>
         </div>
@@ -242,3 +231,6 @@ export function DevRequestColumn({
     </Card>
   );
 }
+
+// Mémoiser le composant pour éviter les re-renders inutiles
+export const DevRequestColumn = memo(DevRequestColumnInner);
