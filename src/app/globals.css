@@ -332,3 +332,14 @@ html.accessibility-high-contrast.accessibility-desaturated {
     animation: none;
   }
 }
+
+/* Admin Layout - Hide site Header/Footer */
+body.admin-layout {
+  overflow: hidden;
+}
+
+body.admin-layout > header,
+body.admin-layout > footer,
+body.admin-layout > main {
+  display: none !important;
+}
