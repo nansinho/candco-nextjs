@@ -130,16 +130,16 @@ export default function FAQClient({ categories, items }: FAQClientProps) {
       {/* Hero Section */}
       <PageHero
         badge="FAQ"
-        title="Questions fréquentes"
-        highlightedWord="fréquentes"
-        description="Trouvez les réponses à vos questions."
+        title="Trouvez les réponses à vos questions."
+        highlightedWord="réponses"
+        description="Notre FAQ couvre les sujets les plus fréquents sur nos formations et services."
       >
         {/* Search Bar */}
-        <div className="relative max-w-md mx-auto">
+        <div className="relative max-w-md">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10" />
           <input
             type="text"
-            placeholder="Rechercher..."
+            placeholder="Rechercher une question..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-11 pr-4 py-3 text-sm rounded-xl border border-border/50 bg-secondary/50 focus:outline-none focus:ring-2 focus:ring-primary/50"

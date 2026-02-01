@@ -30,8 +30,9 @@ export default async function BlogPage() {
       {/* Hero */}
       <PageHero
         badge="Blog"
-        title="Notre Blog"
-        description="Actualités et conseils sur la formation professionnelle."
+        title="Actualités et conseils formation."
+        highlightedWord="conseils"
+        description="Retrouvez nos articles sur la formation professionnelle, la sécurité, la petite enfance et la santé."
       />
 
       {/* Filtres par catégorie */}
