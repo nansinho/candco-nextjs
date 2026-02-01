@@ -339,7 +339,13 @@ body.admin-layout {
 }
 
 body.admin-layout > header,
-body.admin-layout > footer,
-body.admin-layout > main {
+body.admin-layout > footer {
   display: none !important;
+}
+
+/* Main is NOT hidden because admin layout is rendered inside it.
+   The admin fixed overlay at z-100 covers the main content. */
+body.admin-layout > main {
+  padding: 0 !important;
+  margin: 0 !important;
 }
