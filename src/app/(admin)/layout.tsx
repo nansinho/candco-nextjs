@@ -24,6 +24,21 @@ export const viewport: Viewport = {
   ],
 };
 
+// Polyfill script to protect against browser extensions (like MetaMask) that may block crypto.randomUUID
+const cryptoPolyfillScript = `
+(function() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID !== 'function') {
+    crypto.randomUUID = function() {
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = Math.random() * 16 | 0;
+        var v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
+    };
+  }
+})();
+`;
+
 export default function AdminRootLayout({
   children,
 }: Readonly<{
@@ -32,6 +47,8 @@ export default function AdminRootLayout({
   return (
     <html lang="fr" suppressHydrationWarning>
       <head>
+        {/* Polyfill for crypto.randomUUID - must run before any other scripts */}
+        <script dangerouslySetInnerHTML={{ __html: cryptoPolyfillScript }} />
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="icon" href="/icon.svg" type="image/svg+xml" />
         {/* Preconnect pour Supabase - accélère les requêtes */}
