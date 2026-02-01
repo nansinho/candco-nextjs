@@ -59,7 +59,7 @@ export default function AdminFormations() {
     const uniquePoles = new Map<string, string>();
     formations.forEach((f) => {
       if (f.pole && !uniquePoles.has(f.pole)) {
-        uniquePoles.set(f.pole, f.pole_name);
+        uniquePoles.set(f.pole, f.pole_name || f.pole);
       }
     });
     return Array.from(uniquePoles.entries());
@@ -235,11 +235,11 @@ export default function AdminFormations() {
                     <TableCell className={adminStyles.tableCell}>
                       <div className="flex items-center gap-1">
                         <Clock className="h-3 w-3 text-muted-foreground" />
-                        {formation.duree_heures || "-"}h
+                        {formation.duration || "-"}
                       </div>
                     </TableCell>
                     <TableCell className={adminStyles.tableCell}>
-                      {formation.prix ? `${formation.prix}€` : "-"}
+                      {formation.price ? `${formation.price}€` : "-"}
                     </TableCell>
                     <TableCell className={adminStyles.tableCell}>
                       <div className="flex items-center gap-1">
@@ -307,14 +307,14 @@ export default function AdminFormations() {
                         <Badge variant="outline" className={`text-xs ${poleColors[formation.pole] || ""}`}>
                           {formation.pole_name}
                         </Badge>
-                        {formation.duree_heures && (
+                        {formation.duration && (
                           <span className="text-xs text-muted-foreground">
-                            {formation.duree_heures}h
+                            {formation.duration}
                           </span>
                         )}
-                        {formation.prix && (
+                        {formation.price && (
                           <span className="text-xs text-muted-foreground">
-                            {formation.prix}€
+                            {formation.price}€
                           </span>
                         )}
                       </div>

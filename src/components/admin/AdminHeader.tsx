@@ -71,8 +71,8 @@ const getParentPath = (pathname: string): string | null => {
   return "/admin";
 };
 
-// Badge de rôle
-function RoleBadge({ role }: { role: string }) {
+// Badge de rôle - Design amélioré
+function RoleBadge({ role, size = "default" }: { role: string; size?: "default" | "large" }) {
   const roleLabels: Record<string, string> = {
     superadmin: "Super Admin",
     admin: "Admin",
@@ -84,12 +84,12 @@ function RoleBadge({ role }: { role: string }) {
   };
 
   const roleColors: Record<string, string> = {
-    superadmin: "bg-amber-500/10 text-amber-600 border-amber-500/20",
-    admin: "bg-destructive/10 text-destructive border-destructive/20",
-    org_manager: "bg-blue-500/10 text-blue-600 border-blue-500/20",
-    moderator: "bg-purple-500/10 text-purple-600 border-purple-500/20",
-    formateur: "bg-green-500/10 text-green-600 border-green-500/20",
-    client_manager: "bg-cyan-500/10 text-cyan-600 border-cyan-500/20",
+    superadmin: "bg-gradient-to-r from-amber-500/20 to-amber-600/10 text-amber-500 border-amber-500/30 shadow-amber-500/10",
+    admin: "bg-gradient-to-r from-red-500/20 to-red-600/10 text-red-500 border-red-500/30 shadow-red-500/10",
+    org_manager: "bg-gradient-to-r from-blue-500/20 to-blue-600/10 text-blue-500 border-blue-500/30 shadow-blue-500/10",
+    moderator: "bg-gradient-to-r from-purple-500/20 to-purple-600/10 text-purple-500 border-purple-500/30 shadow-purple-500/10",
+    formateur: "bg-gradient-to-r from-green-500/20 to-green-600/10 text-green-500 border-green-500/30 shadow-green-500/10",
+    client_manager: "bg-gradient-to-r from-cyan-500/20 to-cyan-600/10 text-cyan-500 border-cyan-500/30 shadow-cyan-500/10",
     user: "bg-muted text-muted-foreground border-border/30",
   };
 
@@ -97,7 +97,8 @@ function RoleBadge({ role }: { role: string }) {
     <Badge
       variant="outline"
       className={cn(
-        "text-[10px] px-1.5 py-0.5",
+        "font-medium shadow-sm",
+        size === "large" ? "text-[11px] px-2.5 py-0.5" : "text-[10px] px-2 py-0.5",
         roleColors[role] || roleColors.user
       )}
     >
@@ -186,25 +187,25 @@ export function AdminHeader() {
             </Link>
           </Button>
 
-          {/* User menu - Sidebar droite */}
+          {/* User menu - Carte premium */}
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" className="flex items-center gap-2.5 h-10 px-3 rounded-xl hover:bg-muted/50">
-                <div className="text-right hidden md:flex flex-col items-end gap-0.5">
-                  <span className="text-sm font-medium block leading-tight">{userDisplayName}</span>
-                  <RoleBadge role={effectiveRole || "user"} />
-                </div>
-                <Avatar className="h-8 w-8 ring-2 ring-border/30">
+              <button className="flex items-center gap-3 h-auto px-3 py-2 rounded-2xl bg-gradient-to-r from-secondary/60 to-secondary/30 hover:from-secondary/80 hover:to-secondary/50 border border-border/20 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer">
+                <Avatar className="h-9 w-9 ring-2 ring-primary/30 shadow-md">
                   <AvatarImage
                     src={userProfile?.avatar_url || undefined}
                     alt={userDisplayName}
                   />
-                  <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                  <AvatarFallback className="bg-primary text-primary-foreground text-sm font-medium">
                     {userInitials}
                   </AvatarFallback>
                 </Avatar>
-                <ChevronDown className="h-3.5 w-3.5 text-muted-foreground hidden md:block" />
-              </Button>
+                <div className="text-left hidden md:flex flex-col gap-0.5">
+                  <span className="text-sm font-semibold leading-tight text-foreground">{userDisplayName}</span>
+                  <RoleBadge role={effectiveRole || "user"} size="large" />
+                </div>
+                <ChevronDown className="h-4 w-4 text-muted-foreground/70 hidden md:block" />
+              </button>
             </SheetTrigger>
             <SheetContent side="right" className="w-[300px] sm:w-[340px] p-0 flex flex-col">
               {/* Header avec infos utilisateur */}
@@ -224,7 +225,9 @@ export function AdminHeader() {
                       {userDisplayName || "Administrateur"}
                     </SheetTitle>
                     <p className="text-xs text-muted-foreground truncate mt-0.5">{user?.email}</p>
-                    <RoleBadge role={effectiveRole || "user"} />
+                    <div className="mt-1.5">
+                      <RoleBadge role={effectiveRole || "user"} size="large" />
+                    </div>
                   </div>
                 </div>
               </SheetHeader>
