@@ -4,61 +4,207 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import { queryKeys } from "@/lib/queryKeys";
 
-export interface UserWithRole {
+// Types for user data
+export interface UserClient {
   id: string;
-  email: string;
-  first_name: string | null;
-  last_name: string | null;
-  avatar_url: string | null;
-  role: string;
-  created_at: string;
-  last_sign_in_at: string | null;
+  name: string;
+  client_role: string | null;
+  is_primary: boolean;
+  department_id: string | null;
+  department_name: string | null;
 }
 
-export function useUsers() {
+export interface UserOrganization {
+  id: string;
+  name: string;
+  role: string | null;
+  is_primary: boolean;
+}
+
+export interface UserWithRole {
+  id: string;
+  email: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  telephone: string | null;
+  avatar_url?: string | null;
+  role: string;
+  email_verified: boolean;
+  email_confirmed_at: string | null;
+  created_at: string;
+  organizations: UserOrganization[];
+  clients: UserClient[];
+  image_rights_consent: boolean | null;
+  image_rights_consent_date: string | null;
+  account_type: string | null;
+}
+
+export interface UsersQueryResult {
+  users: UserWithRole[];
+  totalCount: number;
+  page: number;
+  limit: number;
+}
+
+// Fetch users via edge function (returns email, verification status, clients, etc.)
+async function fetchUsersFromEdgeFunction(
+  supabase: ReturnType<typeof createClient>,
+  page: number,
+  search: string
+): Promise<UsersQueryResult> {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const accessToken = sessionData?.session?.access_token;
+
+  if (!accessToken) {
+    throw new Error("No access token available");
+  }
+
+  const response = await supabase.functions.invoke("get-users-with-email", {
+    body: { page, limit: 50, search },
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  if (response.error) {
+    throw new Error(response.error.message || "Failed to fetch users");
+  }
+
+  return response.data as UsersQueryResult;
+}
+
+// Fallback: fetch users directly from database (without email/verification)
+async function fetchUsersFallback(
+  supabase: ReturnType<typeof createClient>,
+  page: number,
+  search: string
+): Promise<UsersQueryResult> {
+  const limit = 50;
+  const offset = (page - 1) * limit;
+
+  // Build query
+  let query = supabase
+    .from("profiles")
+    .select("id, first_name, last_name, avatar_url, created_at, image_rights_consent, image_rights_consent_date, account_type", { count: "exact" })
+    .order("created_at", { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  // Apply search filter
+  if (search && search.length >= 2) {
+    query = query.or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%`);
+  }
+
+  const { data: profiles, error, count } = await query;
+
+  if (error) throw error;
+  if (!profiles || profiles.length === 0) {
+    return { users: [], totalCount: 0, page, limit };
+  }
+
+  // Get user IDs
+  const userIds = profiles.map((p) => p.id);
+
+  // Fetch roles and client associations in parallel
+  const [rolesResult, clientUsersResult, clientsResult] = await Promise.all([
+    supabase.from("user_roles").select("user_id, role").in("user_id", userIds),
+    supabase.from("client_users").select("user_id, client_id, client_role, is_primary, department_id").in("user_id", userIds).is("departed_at", null),
+    supabase.from("clients").select("id, nom"),
+  ]);
+
+  const roles = rolesResult.data || [];
+  const clientUsers = clientUsersResult.data || [];
+  const clients = clientsResult.data || [];
+
+  // Create maps
+  const rolesMap = new Map(roles.map((r) => [r.user_id, r.role]));
+  const clientsMap = new Map(clients.map((c) => [c.id, c.nom]));
+
+  // Group client_users by user_id
+  const clientUsersMap = new Map<string, typeof clientUsers>();
+  clientUsers.forEach((cu) => {
+    if (!clientUsersMap.has(cu.user_id)) {
+      clientUsersMap.set(cu.user_id, []);
+    }
+    clientUsersMap.get(cu.user_id)!.push(cu);
+  });
+
+  // Map profiles to UserWithRole
+  const users: UserWithRole[] = profiles.map((profile) => {
+    const userClientUsers = clientUsersMap.get(profile.id) || [];
+    const userClients: UserClient[] = userClientUsers.map((cu) => ({
+      id: cu.client_id,
+      name: clientsMap.get(cu.client_id) || "Client inconnu",
+      client_role: cu.client_role,
+      is_primary: cu.is_primary,
+      department_id: cu.department_id,
+      department_name: null,
+    }));
+
+    return {
+      id: profile.id,
+      email: null, // Not available without edge function
+      first_name: profile.first_name,
+      last_name: profile.last_name,
+      telephone: null,
+      avatar_url: profile.avatar_url,
+      role: rolesMap.get(profile.id) || "user",
+      email_verified: true, // Assume verified in fallback
+      email_confirmed_at: null,
+      created_at: profile.created_at,
+      organizations: [],
+      clients: userClients,
+      image_rights_consent: profile.image_rights_consent,
+      image_rights_consent_date: profile.image_rights_consent_date,
+      account_type: profile.account_type,
+    };
+  });
+
+  return { users, totalCount: count || 0, page, limit };
+}
+
+// Main hook
+export function useUsers(page: number = 1, search: string = "") {
   const supabase = createClient();
 
   return useQuery({
-    queryKey: queryKeys.admin.users?.all || ["admin-users"],
+    queryKey: queryKeys.admin.users?.all
+      ? [...queryKeys.admin.users.all, page, search]
+      : ["admin-users", page, search],
     queryFn: async () => {
-      // Get all profiles
-      const { data: profiles, error: profilesError } = await supabase
-        .from("profiles")
-        .select("id, first_name, last_name, avatar_url, created_at")
-        .order("created_at", { ascending: false });
-
-      if (profilesError) throw profilesError;
-      if (!profiles || profiles.length === 0) return [];
-
-      // Get all user roles
-      const userIds = profiles.map((p) => p.id);
-      const { data: roles } = await supabase
-        .from("user_roles")
-        .select("user_id, role")
-        .in("user_id", userIds);
-
-      // Get auth users data (email, last_sign_in) - requires admin access
-      // For now, we'll just use the profile data
-      const rolesMap = roles?.reduce((acc, r) => {
-        acc[r.user_id] = r.role;
-        return acc;
-      }, {} as Record<string, string>) || {};
-
-      return profiles.map((profile) => ({
-        id: profile.id,
-        email: "", // Would need admin API to get email
-        first_name: profile.first_name,
-        last_name: profile.last_name,
-        avatar_url: profile.avatar_url,
-        role: rolesMap[profile.id] || "user",
-        created_at: profile.created_at,
-        last_sign_in_at: null,
-      })) as UserWithRole[];
+      try {
+        // Try edge function first
+        return await fetchUsersFromEdgeFunction(supabase, page, search);
+      } catch (error) {
+        console.warn("Edge function failed, using fallback:", error);
+        // Fallback to direct database query
+        return await fetchUsersFallback(supabase, page, search);
+      }
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 2 * 60 * 1000, // 2 minutes
   });
 }
 
+// Hook for organizations dropdown (for invite dialog)
+export function useOrganizations() {
+  const supabase = createClient();
+
+  return useQuery({
+    queryKey: ["admin-organizations"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("organizations")
+        .select("id, name")
+        .eq("is_active", true)
+        .order("name");
+
+      if (error) throw error;
+      return data || [];
+    },
+    staleTime: 10 * 60 * 1000, // 10 minutes
+  });
+}
+
+// Mutations
 export function useUserMutations() {
   const supabase = createClient();
   const queryClient = useQueryClient();
@@ -73,14 +219,12 @@ export function useUserMutations() {
         .single();
 
       if (existingRole) {
-        // Update existing role
         const { error } = await supabase
           .from("user_roles")
           .update({ role })
           .eq("user_id", userId);
         if (error) throw error;
       } else {
-        // Insert new role
         const { error } = await supabase
           .from("user_roles")
           .insert({ user_id: userId, role });
@@ -88,7 +232,7 @@ export function useUserMutations() {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.admin.users?.all || ["admin-users"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
     },
   });
 
@@ -101,9 +245,110 @@ export function useUserMutations() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.admin.users?.all || ["admin-users"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
     },
   });
 
-  return { updateRole, deleteUser };
+  const inviteUser = useMutation({
+    mutationFn: async ({
+      email,
+      role,
+      organizationIds,
+    }: {
+      email: string;
+      role: string;
+      organizationIds?: string[];
+    }) => {
+      // Create user with random password
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password: Math.random().toString(36).slice(-12) + Math.random().toString(36).slice(-12),
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth`,
+        },
+      });
+
+      if (signUpError) throw signUpError;
+      if (!signUpData.user) throw new Error("Failed to create user");
+
+      const userId = signUpData.user.id;
+
+      // Send verification email
+      await supabase.functions.invoke("send-verification-email", {
+        body: {
+          email,
+          userId,
+          firstName: "Utilisateur",
+          redirect: "/admin/users",
+        },
+      });
+
+      // Assign role if not "user"
+      if (role !== "user") {
+        await supabase.from("user_roles").insert({ user_id: userId, role });
+      }
+
+      // Create formateur record if role is formateur
+      if (role === "formateur") {
+        await supabase.from("formateurs").insert({
+          user_id: userId,
+          email,
+          nom: "Nouveau",
+          prenom: "Formateur",
+          statut: "Vacataire",
+          is_active: true,
+        });
+      }
+
+      // Assign organizations if provided and role is org_manager
+      if (role === "org_manager" && organizationIds && organizationIds.length > 0) {
+        const orgInserts = organizationIds.map((orgId, index) => ({
+          user_id: userId,
+          organization_id: orgId,
+          role: "manager",
+          is_primary: index === 0,
+        }));
+        await supabase.from("user_organizations").insert(orgInserts);
+      }
+
+      return userId;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+    },
+  });
+
+  const resendVerificationEmail = useMutation({
+    mutationFn: async ({ email, userId }: { email: string; userId: string }) => {
+      const { error } = await supabase.functions.invoke("send-verification-email", {
+        body: {
+          email,
+          userId,
+          firstName: "Utilisateur",
+          redirect: "/admin/users",
+        },
+      });
+      if (error) throw error;
+    },
+  });
+
+  const confirmEmailManually = useMutation({
+    mutationFn: async ({ userId }: { userId: string }) => {
+      const { error } = await supabase.functions.invoke("confirm-user-email", {
+        body: { userId },
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+    },
+  });
+
+  return {
+    updateRole,
+    deleteUser,
+    inviteUser,
+    resendVerificationEmail,
+    confirmEmailManually,
+  };
 }

@@ -44,7 +44,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     .select(
       "title, subtitle, description, meta_title, meta_description, image_url, pole_name, price, duration"
     )
-    .eq("slug", formationId)
+    .or(`slug.eq.${formationId},id.eq.${formationId}`)
     .single();
 
   if (!formation) {
@@ -228,11 +228,11 @@ export default async function FormationDetailPage({ params }: Props) {
   const { pole, formationId } = await params;
   const supabase = await createClient();
 
-  // Récupérer la formation avec la catégorie
+  // Récupérer la formation avec la catégorie (cherche par slug OU id)
   const { data: formation } = await supabase
     .from("formations")
     .select("*, categories(id, name, slug)")
-    .eq("slug", formationId)
+    .or(`slug.eq.${formationId},id.eq.${formationId}`)
     .single();
 
   if (!formation) {
