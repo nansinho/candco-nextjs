@@ -69,7 +69,7 @@ export default function AdminArticles() {
       const matchesSearch =
         a.title.toLowerCase().includes(search.toLowerCase()) ||
         a.category?.toLowerCase().includes(search.toLowerCase()) ||
-        a.author_name?.toLowerCase().includes(search.toLowerCase());
+        a.author?.toLowerCase().includes(search.toLowerCase());
 
       const matchesStatus =
         filterStatus === "all" ||
@@ -254,9 +254,9 @@ export default function AdminArticles() {
                               <Star className="h-4 w-4 text-amber-500 fill-amber-500 shrink-0" />
                             )}
                           </div>
-                          {article.author_name && (
+                          {article.author && (
                             <p className="text-xs text-muted-foreground">
-                              par {article.author_name}
+                              par {article.author}
                             </p>
                           )}
                         </div>

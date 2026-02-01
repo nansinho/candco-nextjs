@@ -24,6 +24,7 @@ export interface Formateur {
   numero_tva: string | null;
   numero_nda: string | null;
   assujetti_tva: boolean;
+  taux_tva: number | null;
   created_at: string;
   sessions_count?: number;
 }

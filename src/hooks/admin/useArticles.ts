@@ -14,7 +14,9 @@ export interface Article {
   category: string | null;
   published: boolean;
   featured: boolean;
-  author_name: string | null;
+  author: string | null;
+  original_url: string | null;
+  read_time: number | null;
   meta_title: string | null;
   meta_description: string | null;
   created_at: string;
