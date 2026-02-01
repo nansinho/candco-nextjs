@@ -282,17 +282,10 @@ export default function HandicapPage() {
     <>
       {/* Hero */}
       <PageHero
-        badge="Handicap & Inclusion"
-        badgeIcon="accessibility"
-        title="Un accompagnement sur mesure."
+        badge="Accessibilité"
+        title="Un accompagnement sur mesure"
         highlightedWord="sur mesure"
-        description="Notre référent handicap adapte votre parcours à vos besoins pour garantir votre réussite. Locaux accessibles PMR et aménagements personnalisés."
-        backgroundImage="/handicap-hero.jpg"
-        minHeight="medium"
-        breadcrumbs={[
-          { label: "Accueil", href: "/" },
-          { label: "Handicap & Inclusion" },
-        ]}
+        description="Référent handicap dédié, locaux PMR, aménagements personnalisés."
         ctas={[
           { label: "Contacter le référent", href: "#contact-referent", variant: "primary" },
         ]}

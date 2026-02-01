@@ -115,14 +115,10 @@ export default async function FormationsPage() {
     <>
       {/* Hero Section */}
       <PageHero
-        badge="Catalogue de formations"
-        badgeIcon="graduation-cap"
+        badge="Formations"
         title="Développez vos compétences"
         highlightedWord="compétences"
-        description="Découvrez notre catalogue complet de formations professionnelles certifiantes. Sécurité, Petite Enfance, Santé — trouvez la formation qui correspond à vos objectifs."
-        backgroundImage="/formations-hero.jpg"
-        minHeight="large"
-        overlayOpacity="medium"
+        description="Formations certifiantes en Sécurité, Petite Enfance et Santé."
         stats={[
           { value: `${formations?.length || 22}+`, label: "Formations" },
           { value: "3", label: "Pôles" },
