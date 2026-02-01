@@ -5,8 +5,8 @@
  * @description Page principale de gestion des demandes de développement
  */
 
-import { useState, useMemo } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useState, useMemo, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +26,7 @@ import {
   Filter,
   X,
   Code,
+  Loader2,
 } from "lucide-react";
 import {
   useDevRequests,
@@ -33,17 +34,27 @@ import {
   DevRequestPriority,
   PRIORITY_LABELS,
 } from "@/hooks/admin/useDevRequests";
-import {
-  DevRequestKanban,
-  DevRequestDialog,
-  DevRequestDetail,
-} from "@/components/admin/dev-requests";
+
+// Dynamic imports for components that use @dnd-kit (SSR-incompatible)
+const DevRequestKanban = dynamic(
+  () => import("@/components/admin/dev-requests/DevRequestKanban").then(mod => ({ default: mod.DevRequestKanban })),
+  { ssr: false, loading: () => <div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin" /></div> }
+);
+
+const DevRequestDialog = dynamic(
+  () => import("@/components/admin/dev-requests/DevRequestDialog").then(mod => ({ default: mod.DevRequestDialog })),
+  { ssr: false }
+);
+
+const DevRequestDetail = dynamic(
+  () => import("@/components/admin/dev-requests/DevRequestDetail").then(mod => ({ default: mod.DevRequestDetail })),
+  { ssr: false }
+);
 
 type ViewMode = "kanban" | "list";
 
 export default function AdminDemandesPage() {
-  const searchParams = useSearchParams();
-  const router = useRouter();
+  const [mounted, setMounted] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("kanban");
   const [searchQuery, setSearchQuery] = useState("");
   const [priorityFilter, setPriorityFilter] = useState<DevRequestPriority | "all">("all");
@@ -52,6 +63,11 @@ export default function AdminDemandesPage() {
   const [detailOpen, setDetailOpen] = useState(false);
 
   const { data: requests = [], isLoading } = useDevRequests(true);
+
+  // Wait for client-side mounting
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Filter requests based on search and priority
   const filteredRequests = useMemo(() => {
@@ -82,6 +98,15 @@ export default function AdminDemandesPage() {
   };
 
   const hasActiveFilters = searchQuery || priorityFilter !== "all";
+
+  // Show loading state during SSR/hydration
+  if (!mounted) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 sm:space-y-6 p-4 sm:p-6">
@@ -176,7 +201,7 @@ export default function AdminDemandesPage() {
       {/* Content */}
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+          <Loader2 className="h-8 w-8 animate-spin" />
         </div>
       ) : viewMode === "kanban" ? (
         <DevRequestKanban

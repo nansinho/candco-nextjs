@@ -872,7 +872,7 @@ export default function AdminFormationEdit() {
                           <SelectValue placeholder="Sélectionner" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Aucune</SelectItem>
+                          <SelectItem value="none">Aucune</SelectItem>
                           {filteredCategories.map((cat) => (
                             <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
                           ))}
@@ -1479,7 +1479,7 @@ export default function AdminFormationEdit() {
                   <SelectValue placeholder="Sélectionner" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Aucun</SelectItem>
+                  <SelectItem value="none">Aucun</SelectItem>
                   {organizations.map((org) => (
                     <SelectItem key={org.id} value={org.id}>
                       <div className="flex items-center gap-2">
