@@ -15,7 +15,13 @@ import {
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { LogOut, User, Building2, Home, Sun, Moon, ChevronDown, ArrowLeft } from "lucide-react";
+import { LogOut, User, Building2, Home, Sun, Moon, ChevronDown, ArrowLeft, GitCommit } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 // Fonction pour obtenir les initiales
@@ -107,6 +113,27 @@ function RoleBadge({ role, size = "default" }: { role: string; size?: "default" 
   );
 }
 
+// Build info from environment variables
+const buildId = process.env.NEXT_PUBLIC_BUILD_ID || "dev";
+const buildDate = process.env.NEXT_PUBLIC_BUILD_DATE || "";
+
+// Format build date for display
+const formatBuildDate = (dateStr: string): string => {
+  if (!dateStr) return "";
+  try {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString("fr-FR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return dateStr;
+  }
+};
+
 export function AdminHeader() {
   const { user, signOut, userRole, userOrganizations, currentOrganizationId, effectiveRole, userProfile } = useAuth();
   const router = useRouter();
@@ -114,6 +141,7 @@ export function AdminHeader() {
   const { theme, setTheme } = useTheme();
 
   const parentPath = getParentPath(pathname);
+  const formattedBuildDate = formatBuildDate(buildDate);
 
   const currentOrganization = userOrganizations.find(
     (org) => org.organization_id === currentOrganizationId
@@ -165,6 +193,25 @@ export function AdminHeader() {
               {currentOrganization.organization_name}
             </Badge>
           )}
+
+          {/* Version badge */}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge
+                  variant="outline"
+                  className="hidden sm:flex items-center gap-1 text-[10px] px-1.5 py-0.5 font-mono text-muted-foreground/70 border-border/30 bg-muted/30 hover:bg-muted/50 cursor-help"
+                >
+                  <GitCommit className="h-2.5 w-2.5" />
+                  {buildId}
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="text-xs">
+                <p className="font-semibold">Version: {buildId}</p>
+                {formattedBuildDate && <p className="text-muted-foreground">Build: {formattedBuildDate}</p>}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
 
         <div className="flex items-center gap-1.5">

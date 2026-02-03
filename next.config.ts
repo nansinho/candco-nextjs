@@ -1,6 +1,25 @@
 import type { NextConfig } from "next";
+import { execSync } from "child_process";
+
+// Get build info at build time
+const getBuildInfo = () => {
+  try {
+    const commitHash = execSync("git rev-parse --short HEAD").toString().trim();
+    const commitDate = execSync("git log -1 --format=%ci").toString().trim();
+    return { commitHash, commitDate };
+  } catch {
+    return { commitHash: "dev", commitDate: new Date().toISOString() };
+  }
+};
+
+const buildInfo = getBuildInfo();
 
 const nextConfig: NextConfig = {
+  // Expose build info to client
+  env: {
+    NEXT_PUBLIC_BUILD_ID: buildInfo.commitHash,
+    NEXT_PUBLIC_BUILD_DATE: buildInfo.commitDate,
+  },
   output: "standalone",
 
   // Skip TypeScript checking during build (VPS memory optimization)
