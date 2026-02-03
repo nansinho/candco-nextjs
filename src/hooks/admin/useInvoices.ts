@@ -54,7 +54,7 @@ async function fetchInvoices(): Promise<Invoice[]> {
     .from("invoices")
     .select(`
       *,
-      clients:client_id(company_name),
+      clients:client_id(nom),
       formations:formation_id(title)
     `)
     .order("date", { ascending: false });
@@ -64,7 +64,7 @@ async function fetchInvoices(): Promise<Invoice[]> {
 
   return data.map((item) => ({
     ...item,
-    client_name: (item.clients as { company_name: string } | null)?.company_name || null,
+    client_name: (item.clients as { nom: string } | null)?.nom || null,
     formation_title: (item.formations as { title: string } | null)?.title || null,
   }));
 }

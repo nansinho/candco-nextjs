@@ -290,7 +290,7 @@ export default function FacturationPage() {
             <SelectItem value="">Aucun client</SelectItem>
             {clients.map((client) => (
               <SelectItem key={client.id} value={client.id}>
-                {client.company_name}
+                {client.nom}
               </SelectItem>
             ))}
           </SelectContent>
