@@ -1,10 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { useCategories, useCategoryMutations, type CreateCategoryInput } from "@/hooks/admin/useCategories";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { EmptyState } from "@/components/admin/EmptyState";
+import { adminStyles } from "@/components/admin/AdminDesignSystem";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -14,6 +20,31 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Tags,
   Search,
   Plus,
@@ -22,148 +53,179 @@ import {
   GraduationCap,
   FolderOpen,
   MoreVertical,
+  Loader2,
 } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-
-interface Category {
-  id: string;
-  name: string;
-  slug: string;
-  description: string;
-  formationsCount: number;
-  color: string;
-  order: number;
-}
-
-const demoCategories: Category[] = [
-  {
-    id: "1",
-    name: "Sécurité au travail",
-    slug: "securite-travail",
-    description: "Formations SST, incendie, habilitations",
-    formationsCount: 12,
-    color: "#ef4444",
-    order: 1,
-  },
-  {
-    id: "2",
-    name: "Petite enfance",
-    slug: "petite-enfance",
-    description: "CAP AEPE, assistante maternelle",
-    formationsCount: 8,
-    color: "#f97316",
-    order: 2,
-  },
-  {
-    id: "3",
-    name: "Santé",
-    slug: "sante",
-    description: "AFGSU, gestes d'urgence, hygiène",
-    formationsCount: 15,
-    color: "#22c55e",
-    order: 3,
-  },
-  {
-    id: "4",
-    name: "Management",
-    slug: "management",
-    description: "Leadership, gestion d'équipe",
-    formationsCount: 6,
-    color: "#3b82f6",
-    order: 4,
-  },
-  {
-    id: "5",
-    name: "Bureautique",
-    slug: "bureautique",
-    description: "Excel, Word, PowerPoint",
-    formationsCount: 10,
-    color: "#8b5cf6",
-    order: 5,
-  },
-  {
-    id: "6",
-    name: "Langues",
-    slug: "langues",
-    description: "Anglais, espagnol, allemand",
-    formationsCount: 4,
-    color: "#ec4899",
-    order: 6,
-  },
-];
+import { toast } from "sonner";
 
 export default function CategoriesPage() {
+  const { data: categories = [], isLoading } = useCategories();
+  const { createCategory, updateCategory, deleteCategory } = useCategoryMutations();
+
   const [searchQuery, setSearchQuery] = useState("");
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<typeof categories[0] | null>(null);
+  const [formData, setFormData] = useState<Partial<CreateCategoryInput>>({
+    name: "",
+    slug: "",
+  });
 
-  const filteredCategories = demoCategories.filter(
-    (cat) =>
+  const filteredCategories = useMemo(() => {
+    return categories.filter((cat) =>
       cat.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      cat.description.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+      cat.slug.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [categories, searchQuery]);
 
-  const totalFormations = demoCategories.reduce((sum, c) => sum + c.formationsCount, 0);
+  const stats = useMemo(() => ({
+    total: categories.length,
+    totalFormations: categories.reduce((sum, c) => sum + (c.count || 0), 0),
+    avgPerCategory: categories.length > 0
+      ? Math.round(categories.reduce((sum, c) => sum + (c.count || 0), 0) / categories.length)
+      : 0,
+  }), [categories]);
+
+  const resetForm = () => {
+    setFormData({ name: "", slug: "" });
+  };
+
+  const handleCreate = async () => {
+    if (!formData.name) {
+      toast.error("Le nom est obligatoire");
+      return;
+    }
+    try {
+      await createCategory.mutateAsync(formData as CreateCategoryInput);
+      toast.success("Catégorie créée");
+      setCreateDialogOpen(false);
+      resetForm();
+    } catch {
+      toast.error("Erreur lors de la création");
+    }
+  };
+
+  const handleEdit = (category: typeof categories[0]) => {
+    setSelectedCategory(category);
+    setFormData({
+      name: category.name,
+      slug: category.slug,
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleUpdate = async () => {
+    if (!selectedCategory) return;
+    try {
+      await updateCategory.mutateAsync({
+        id: selectedCategory.id,
+        data: formData,
+      });
+      toast.success("Catégorie mise à jour");
+      setEditDialogOpen(false);
+      setSelectedCategory(null);
+      resetForm();
+    } catch {
+      toast.error("Erreur lors de la mise à jour");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!selectedCategory) return;
+    try {
+      await deleteCategory.mutateAsync(selectedCategory.id);
+      toast.success("Catégorie supprimée");
+      setDeleteDialogOpen(false);
+      setSelectedCategory(null);
+    } catch {
+      toast.error("Erreur lors de la suppression");
+    }
+  };
+
+  const renderForm = () => (
+    <div className="grid gap-4 py-4">
+      <div className="space-y-2">
+        <Label htmlFor="name">Nom *</Label>
+        <Input
+          id="name"
+          placeholder="Nom de la catégorie"
+          value={formData.name}
+          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="slug">Slug</Label>
+        <Input
+          id="slug"
+          placeholder="nom-categorie (généré automatiquement)"
+          value={formData.slug}
+          onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+        />
+      </div>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Tags className="h-6 w-6" />
-            Catégories de formations
-          </h1>
-          <p className="text-muted-foreground">
-            Organisez vos formations par catégories
-          </p>
-        </div>
-        <Button>
+      <AdminPageHeader
+        icon={Tags}
+        title="Catégories de formations"
+        description="Organisez vos formations par catégories"
+      >
+        <Button onClick={() => setCreateDialogOpen(true)} size="sm">
           <Plus className="h-4 w-4 mr-2" />
           Nouvelle catégorie
         </Button>
-      </div>
+      </AdminPageHeader>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total catégories</CardTitle>
-            <FolderOpen className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{demoCategories.length}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Formations totales</CardTitle>
-            <GraduationCap className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{totalFormations}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Moyenne par catégorie</CardTitle>
-            <Tags className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {Math.round(totalFormations / demoCategories.length)}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      {isLoading ? (
+        <div className="grid gap-4 md:grid-cols-3">
+          {[1, 2, 3].map((i) => (
+            <Card key={i} className="border-0 bg-secondary/30">
+              <CardContent className="p-4">
+                <Skeleton className="h-4 w-20 mb-2" />
+                <Skeleton className="h-8 w-12" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card className="border-0 bg-secondary/30">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total catégories</CardTitle>
+              <FolderOpen className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.total}</div>
+            </CardContent>
+          </Card>
+          <Card className="border-0 bg-secondary/30">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Formations totales</CardTitle>
+              <GraduationCap className="h-4 w-4 text-blue-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-600">{stats.totalFormations}</div>
+            </CardContent>
+          </Card>
+          <Card className="border-0 bg-secondary/30">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Moyenne par catégorie</CardTitle>
+              <Tags className="h-4 w-4 text-green-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">{stats.avgPerCategory}</div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Search */}
-      <Card>
+      <Card className="border-0 bg-secondary/30">
         <CardContent className="p-4">
-          <div className="relative">
+          <div className="relative max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Rechercher une catégorie..."
@@ -176,85 +238,152 @@ export default function CategoriesPage() {
       </Card>
 
       {/* Table */}
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Ordre</TableHead>
-                <TableHead>Catégorie</TableHead>
-                <TableHead>Slug</TableHead>
-                <TableHead>Formations</TableHead>
-                <TableHead>Couleur</TableHead>
-                <TableHead className="w-[100px]">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredCategories.map((category) => (
-                <TableRow key={category.id} className="cursor-pointer hover:bg-muted/50">
-                  <TableCell>
-                    <Badge variant="outline">{category.order}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="font-medium">{category.name}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {category.description}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <code className="text-xs bg-muted px-2 py-1 rounded">
-                      {category.slug}
-                    </code>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline">
-                      <GraduationCap className="h-3 w-3 mr-1" />
-                      {category.formationsCount}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="h-6 w-6 rounded border"
-                        style={{ backgroundColor: category.color }}
-                      />
-                      <span className="text-xs text-muted-foreground">
-                        {category.color}
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem>
-                          <Edit className="h-4 w-4 mr-2" />
-                          Modifier
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive">
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Supprimer
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
+      {isLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : filteredCategories.length === 0 ? (
+        <EmptyState
+          icon={Tags}
+          title="Aucune catégorie"
+          description={searchQuery ? "Aucune catégorie ne correspond à votre recherche" : "Créez votre première catégorie"}
+        />
+      ) : (
+        <Card className="border-0 bg-secondary/30">
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow className={adminStyles.tableRowHeader}>
+                  <TableHead className={adminStyles.tableHead}>Catégorie</TableHead>
+                  <TableHead className={adminStyles.tableHead}>Slug</TableHead>
+                  <TableHead className={adminStyles.tableHead}>Formations</TableHead>
+                  <TableHead className={`${adminStyles.tableHead} text-right`}>Actions</TableHead>
                 </TableRow>
-              ))}
-              {filteredCategories.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                    Aucune catégorie trouvée
-                  </TableCell>
-                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredCategories.map((category) => (
+                  <TableRow key={category.id} className={adminStyles.tableRowClickable}>
+                    <TableCell className={adminStyles.tableCell}>
+                      <div className="font-medium">{category.name}</div>
+                    </TableCell>
+                    <TableCell className={adminStyles.tableCell}>
+                      <code className="text-xs bg-muted px-2 py-1 rounded">
+                        {category.slug}
+                      </code>
+                    </TableCell>
+                    <TableCell className={adminStyles.tableCell}>
+                      <Badge variant="outline">
+                        <GraduationCap className="h-3 w-3 mr-1" />
+                        {category.count || 0}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className={`${adminStyles.tableCell} text-right`}>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleEdit(category)}>
+                            <Edit className="h-4 w-4 mr-2" />
+                            Modifier
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="text-destructive"
+                            onClick={() => {
+                              setSelectedCategory(category);
+                              setDeleteDialogOpen(true);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Supprimer
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Create Dialog */}
+      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Nouvelle catégorie</DialogTitle>
+            <DialogDescription>
+              Créez une nouvelle catégorie de formations
+            </DialogDescription>
+          </DialogHeader>
+          {renderForm()}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
+              Annuler
+            </Button>
+            <Button onClick={handleCreate} disabled={createCategory.isPending}>
+              {createCategory.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Créer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Modifier la catégorie</DialogTitle>
+            <DialogDescription>
+              Modifiez les informations de la catégorie
+            </DialogDescription>
+          </DialogHeader>
+          {renderForm()}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+              Annuler
+            </Button>
+            <Button onClick={handleUpdate} disabled={updateCategory.isPending}>
+              {updateCategory.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Enregistrer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer cette catégorie ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {selectedCategory && (
+                <>
+                  La catégorie <strong>{selectedCategory.name}</strong> sera supprimée.
+                  {(selectedCategory.count || 0) > 0 && (
+                    <span className="text-amber-600"> Elle contient {selectedCategory.count} formation(s).</span>
+                  )}
+                </>
               )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleteCategory.isPending}
+            >
+              {deleteCategory.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
