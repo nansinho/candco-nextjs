@@ -51,7 +51,7 @@ async function fetchSession(id: string) {
         title,
         pole,
         pole_name,
-        duree_heures
+        duration
       ),
       formateurs:formateur_id (
         id,
@@ -64,7 +64,10 @@ async function fetchSession(id: string) {
     .eq("id", id)
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error("Error fetching session:", error);
+    throw error;
+  }
 
   // Get inscriptions count
   const { count } = await supabase
@@ -195,7 +198,7 @@ export default function SessionDetailPage({
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Durée</p>
-                <p className="font-medium">{formation?.duree_heures || "-"} heures</p>
+                <p className="font-medium">{formation?.duration || "-"}</p>
               </div>
             </div>
 
