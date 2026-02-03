@@ -82,7 +82,8 @@ const typeConfig: Record<string, { label: string; icon: typeof Mail; color: stri
 
 export default function NotificationsPage() {
   const { data: notifications = [], isLoading } = useNotifications();
-  const { data: users = [] } = useUsers();
+  const { data: usersData } = useUsers();
+  const users = usersData?.users ?? [];
   const { createNotification, markAsRead, deleteNotification } = useNotificationMutations();
 
   const [searchQuery, setSearchQuery] = useState("");
