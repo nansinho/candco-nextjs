@@ -18,8 +18,8 @@ export interface Invoice {
   created_at: string;
   updated_at: string;
   // Joined data
-  client_name?: string;
-  formation_title?: string;
+  client_name?: string | null;
+  formation_title?: string | null;
 }
 
 export interface CreateInvoiceInput {
@@ -80,10 +80,22 @@ async function fetchInvoices(): Promise<Invoice[]> {
   if (error) throw error;
   if (!data) return [];
 
-  return (data as RawInvoice[]).map((item) => ({
-    ...item,
-    client_name: item.clients?.nom || null,
-    formation_title: item.formations?.title || null,
+  return (data as RawInvoice[]).map((item): Invoice => ({
+    id: item.id,
+    number: item.number,
+    client_id: item.client_id,
+    formation_id: item.formation_id,
+    session_id: item.session_id,
+    amount: item.amount,
+    status: item.status,
+    date: item.date,
+    due_date: item.due_date,
+    paid_at: item.paid_at,
+    notes: item.notes,
+    created_at: item.created_at,
+    updated_at: item.updated_at,
+    client_name: item.clients?.nom ?? null,
+    formation_title: item.formations?.title ?? null,
   }));
 }
 
