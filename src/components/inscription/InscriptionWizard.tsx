@@ -11,10 +11,11 @@ import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 
 import { StepIndicator } from "./StepIndicator";
-import { StepTypeSelection } from "./steps/StepTypeSelection";
+import { StepTypeSelection, ProposedDateRange } from "./steps/StepTypeSelection";
 import { StepSessionSelection, AvailableSession } from "./steps/StepSessionSelection";
 import { StepNeedsAnalysis, NeedsQuestion } from "./steps/StepNeedsAnalysis";
 import { StepPersonalInfo, PersonalInfoData } from "./steps/StepPersonalInfo";
+import { format } from "date-fns";
 
 const STEPS = [
   { label: "Profil" },
@@ -90,6 +91,7 @@ export function InscriptionWizard({
   const [type, setType] = useState<"particulier" | "entreprise" | null>(null);
   const [sessions, setSessions] = useState<AvailableSession[]>([]);
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
+  const [proposedDateRange, setProposedDateRange] = useState<ProposedDateRange | null>(null);
   const [questions, setQuestions] = useState<NeedsQuestion[]>(DEFAULT_QUESTIONS);
   const [needsAnalysisResponses, setNeedsAnalysisResponses] = useState<Record<string, string | number>>({});
   const [personalInfo, setPersonalInfo] = useState<PersonalInfoData>({
@@ -136,7 +138,7 @@ export function InscriptionWizard({
 
       // Filter sessions with available places
       const availableSessions = (data || []).filter(
-        (s) => s.places_disponibles > 0
+        (s: AvailableSession) => s.places_disponibles > 0
       );
       setSessions(availableSessions);
     } catch (error) {
@@ -171,8 +173,14 @@ export function InscriptionWizard({
   };
 
   const handleSubmit = async () => {
-    if (!selectedSessionId || !type) {
-      toast.error("Veuillez sélectionner une session");
+    if (!type) {
+      toast.error("Veuillez sélectionner un type d'inscription");
+      return;
+    }
+
+    // Need either a session or proposed dates
+    if (!selectedSessionId && !proposedDateRange) {
+      toast.error("Veuillez sélectionner une session ou proposer des dates");
       return;
     }
 
@@ -180,6 +188,11 @@ export function InscriptionWizard({
     const supabase = createClient();
 
     try {
+      // Format proposed dates for storage
+      const datesSouhaitees = proposedDateRange
+        ? `${format(proposedDateRange.from, "yyyy-MM-dd")} - ${format(proposedDateRange.to, "yyyy-MM-dd")}`
+        : null;
+
       // 1. Create formation_request
       const { data: request, error: requestError } = await supabase
         .from("formation_requests")
@@ -199,8 +212,11 @@ export function InscriptionWizard({
           adresse: personalInfo.adresse || null,
           nombre_participants: personalInfo.nombre_participants || 1,
           urgence: "normale",
-          status: "nouvelle",
+          status: selectedSessionId ? "nouvelle" : "en_attente_dates",
           demandeur_est_participant: type === "particulier",
+          dates_souhaitees: datesSouhaitees,
+          date_souhaitee_debut: proposedDateRange?.from.toISOString() || null,
+          date_souhaitee_fin: proposedDateRange?.to.toISOString() || null,
         })
         .select()
         .single();
@@ -228,39 +244,42 @@ export function InscriptionWizard({
         }
       }
 
-      // 3. Create inscription
-      const { error: inscriptionError } = await supabase
-        .from("inscriptions")
-        .insert({
-          session_id: selectedSessionId,
-          formation_request_id: request.id,
-          needs_analysis_response_id: needsAnalysisId,
-          participant_prenom: personalInfo.prenom,
-          participant_nom: personalInfo.nom,
-          participant_email: personalInfo.email,
-          participant_telephone: personalInfo.telephone,
-          civilite: personalInfo.civilite,
-          type_inscription: type,
-          status: "en_attente",
-        });
+      // 3. Create inscription only if we have a session
+      if (selectedSessionId) {
+        const { error: inscriptionError } = await supabase
+          .from("inscriptions")
+          .insert({
+            session_id: selectedSessionId,
+            formation_request_id: request.id,
+            needs_analysis_response_id: needsAnalysisId,
+            participant_prenom: personalInfo.prenom,
+            participant_nom: personalInfo.nom,
+            participant_email: personalInfo.email,
+            participant_telephone: personalInfo.telephone,
+            civilite: personalInfo.civilite,
+            type_inscription: type,
+            status: "en_attente",
+          });
 
-      if (inscriptionError) throw inscriptionError;
+        if (inscriptionError) throw inscriptionError;
 
-      // 4. Decrement available places (using RPC if available, otherwise direct update)
-      const selectedSession = sessions.find((s) => s.id === selectedSessionId);
-      if (selectedSession) {
-        await supabase
-          .from("sessions")
-          .update({
-            places_disponibles: Math.max(0, selectedSession.places_disponibles - 1),
-          })
-          .eq("id", selectedSessionId);
+        // 4. Decrement available places (using RPC if available, otherwise direct update)
+        const selectedSession = sessions.find((s) => s.id === selectedSessionId);
+        if (selectedSession) {
+          await supabase
+            .from("sessions")
+            .update({
+              places_disponibles: Math.max(0, selectedSession.places_disponibles - 1),
+            })
+            .eq("id", selectedSessionId);
+        }
       }
 
-      toast.success(
-        "Inscription enregistrée ! Vous recevrez une confirmation par email.",
-        { duration: 5000 }
-      );
+      const successMessage = selectedSessionId
+        ? "Inscription enregistrée ! Vous recevrez une confirmation par email."
+        : "Demande enregistrée ! Nous vous contacterons pour confirmer les dates.";
+
+      toast.success(successMessage, { duration: 5000 });
       onOpenChange(false);
     } catch (error) {
       console.error("Inscription error:", error);
@@ -274,6 +293,7 @@ export function InscriptionWizard({
     setCurrentStep(0);
     setType(null);
     setSelectedSessionId(null);
+    setProposedDateRange(null);
     setNeedsAnalysisResponses({});
     setPersonalInfo({
       civilite: "",
@@ -327,6 +347,8 @@ export function InscriptionWizard({
               value={type}
               onChange={setType}
               onNext={() => setCurrentStep(1)}
+              proposedDates={proposedDateRange}
+              onDatesChange={setProposedDateRange}
             />
           )}
 
@@ -338,6 +360,7 @@ export function InscriptionWizard({
               onNext={goToNextStep}
               onBack={() => setCurrentStep(0)}
               isLoading={isLoadingSessions}
+              proposedDates={proposedDateRange}
             />
           )}
 
@@ -366,6 +389,7 @@ export function InscriptionWizard({
               isSubmitting={isSubmitting}
               formation={formation}
               session={selectedSession}
+              proposedDates={proposedDateRange}
             />
           )}
         </div>
