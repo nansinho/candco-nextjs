@@ -7,24 +7,28 @@ import { createClient } from "@/lib/supabase/client";
 export interface SessionMessage {
   id: string;
   conversation_id: string;
-  sender_id: string;
+  sender_id: string | null;
   sender_type: string;
-  sender_name?: string;
+  sender_name?: string | null;
   content: string;
   created_at: string;
-  read_at?: string;
-  edited_at?: string;
-  deleted_at?: string;
-  deleted_by?: string;
+  read_at?: string | null;
+  edited_at?: string | null;
+  deleted_at?: string | null;
+  deleted_by?: string | null;
 }
 
-async function fetchSessionMessages(sessionId: string): Promise<SessionMessage[]> {
+/**
+ * Fetch messages for a conversation
+ * @param conversationId - The ID from session_conversations table (NOT session.id)
+ */
+async function fetchMessages(conversationId: string): Promise<SessionMessage[]> {
   const supabase = createClient();
 
   const { data, error } = await supabase
     .from("session_messages")
     .select("*")
-    .eq("conversation_id", sessionId)
+    .eq("conversation_id", conversationId)
     .is("deleted_at", null)
     .order("created_at", { ascending: true });
 
@@ -36,32 +40,42 @@ async function fetchSessionMessages(sessionId: string): Promise<SessionMessage[]
   return data || [];
 }
 
-export function useSessionMessages(sessionId: string) {
-  const queryClient = useQueryClient();
+/**
+ * Hook to fetch and subscribe to messages for a conversation
+ * @param conversationId - The ID from session_conversations table (NOT session.id)
+ *
+ * Usage:
+ * 1. First get conversation with useSessionConversation(sessionId)
+ * 2. Then use this hook with conversation.id
+ */
+export function useSessionMessages(conversationId: string | null | undefined) {
   const [realtimeMessages, setRealtimeMessages] = useState<SessionMessage[]>([]);
 
   const query = useQuery({
-    queryKey: ["session-messages", sessionId],
-    queryFn: () => fetchSessionMessages(sessionId),
+    queryKey: ["session-messages", conversationId],
+    queryFn: () => fetchMessages(conversationId!),
     staleTime: 30 * 1000,
-    enabled: !!sessionId,
+    enabled: !!conversationId,
   });
 
   // Set up real-time subscription
   useEffect(() => {
-    if (!sessionId) return;
+    if (!conversationId) return;
+
+    // Clear realtime messages when conversation changes
+    setRealtimeMessages([]);
 
     const supabase = createClient();
 
     const channel = supabase
-      .channel(`session-messages-${sessionId}`)
+      .channel(`conversation-messages-${conversationId}`)
       .on(
         "postgres_changes",
         {
           event: "INSERT",
           schema: "public",
           table: "session_messages",
-          filter: `conversation_id=eq.${sessionId}`,
+          filter: `conversation_id=eq.${conversationId}`,
         },
         (payload) => {
           const newMessage = payload.new as SessionMessage;
@@ -73,7 +87,7 @@ export function useSessionMessages(sessionId: string) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [sessionId]);
+  }, [conversationId]);
 
   // Combine query data with realtime messages
   const allMessages = [
@@ -89,19 +103,22 @@ export function useSessionMessages(sessionId: string) {
   };
 }
 
+/**
+ * Hook for message mutations (send, etc.)
+ */
 export function useSessionMessageMutations() {
   const supabase = createClient();
   const queryClient = useQueryClient();
 
   const sendMessage = useMutation({
     mutationFn: async ({
-      sessionId,
+      conversationId,
       content,
       senderId,
       senderType = "admin",
       senderName,
     }: {
-      sessionId: string;
+      conversationId: string;
       content: string;
       senderId: string;
       senderType?: string;
@@ -110,7 +127,7 @@ export function useSessionMessageMutations() {
       const { data, error } = await supabase
         .from("session_messages")
         .insert({
-          conversation_id: sessionId,
+          conversation_id: conversationId,
           sender_id: senderId,
           sender_type: senderType,
           sender_name: senderName,
@@ -124,7 +141,7 @@ export function useSessionMessageMutations() {
       return data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["session-messages", variables.sessionId] });
+      queryClient.invalidateQueries({ queryKey: ["session-messages", variables.conversationId] });
     },
   });
 

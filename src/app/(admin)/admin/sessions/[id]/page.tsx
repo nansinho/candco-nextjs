@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useFormateurs } from "@/hooks/admin/useFormateurs";
 import { useClients } from "@/hooks/admin/useClients";
 import { useSessionInscriptionMutations } from "@/hooks/admin/useSessionInscriptions";
+import { useSessionConversation } from "@/hooks/admin/useSessionConversation";
 import { useSessionMessages, useSessionMessageMutations } from "@/hooks/admin/useSessionMessages";
 import { useSessionActivities, useSessionActivityMutations, ACTIVITY_TYPES } from "@/hooks/admin/useSessionActivities";
 import { Button } from "@/components/ui/button";
@@ -205,8 +206,12 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
   const clients = clientsData?.clients || [];
 
   const { addParticipant, cancelInscription } = useSessionInscriptionMutations();
-  const { data: messages = [] } = useSessionMessages(id);
+
+  // Get or create conversation for this session, then fetch messages
+  const { data: conversation } = useSessionConversation(id);
+  const { data: messages = [] } = useSessionMessages(conversation?.id);
   const { sendMessage } = useSessionMessageMutations();
+
   const { data: activities = [] } = useSessionActivities(id);
   const { logActivity } = useSessionActivityMutations();
 
@@ -278,10 +283,10 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
   };
 
   const handleSendMessage = async () => {
-    if (!messageInput.trim()) return;
+    if (!messageInput.trim() || !conversation?.id) return;
     try {
       await sendMessage.mutateAsync({
-        sessionId: id,
+        conversationId: conversation.id,
         content: messageInput,
         senderId: "admin",
         senderType: "admin",
