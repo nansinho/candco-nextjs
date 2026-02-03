@@ -283,8 +283,9 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
       await sendMessage.mutateAsync({
         sessionId: id,
         content: messageInput,
-        userId: "admin",
-        userName: "Admin",
+        senderId: "admin",
+        senderType: "admin",
+        senderName: "Admin",
       });
       setMessageInput("");
     } catch {
@@ -760,7 +761,7 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
                         </div>
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
-                            <p className="font-medium text-sm">{message.user_name || "Utilisateur"}</p>
+                            <p className="font-medium text-sm">{message.sender_name || "Utilisateur"}</p>
                             <span className="text-xs text-muted-foreground">
                               {formatDistanceToNow(parseISO(message.created_at), { addSuffix: true, locale: fr })}
                             </span>

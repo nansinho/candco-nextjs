@@ -6,12 +6,16 @@ import { createClient } from "@/lib/supabase/client";
 
 export interface SessionMessage {
   id: string;
-  session_id: string;
-  user_id: string;
+  conversation_id: string;
+  sender_id: string;
+  sender_type: string;
+  sender_name?: string;
   content: string;
   created_at: string;
-  user_name?: string;
-  user_email?: string;
+  read_at?: string;
+  edited_at?: string;
+  deleted_at?: string;
+  deleted_by?: string;
 }
 
 async function fetchSessionMessages(sessionId: string): Promise<SessionMessage[]> {
@@ -20,7 +24,8 @@ async function fetchSessionMessages(sessionId: string): Promise<SessionMessage[]
   const { data, error } = await supabase
     .from("session_messages")
     .select("*")
-    .eq("session_id", sessionId)
+    .eq("conversation_id", sessionId)
+    .is("deleted_at", null)
     .order("created_at", { ascending: true });
 
   if (error) {
@@ -56,7 +61,7 @@ export function useSessionMessages(sessionId: string) {
           event: "INSERT",
           schema: "public",
           table: "session_messages",
-          filter: `session_id=eq.${sessionId}`,
+          filter: `conversation_id=eq.${sessionId}`,
         },
         (payload) => {
           const newMessage = payload.new as SessionMessage;
@@ -92,21 +97,24 @@ export function useSessionMessageMutations() {
     mutationFn: async ({
       sessionId,
       content,
-      userId,
-      userName,
+      senderId,
+      senderType = "admin",
+      senderName,
     }: {
       sessionId: string;
       content: string;
-      userId: string;
-      userName?: string;
+      senderId: string;
+      senderType?: string;
+      senderName?: string;
     }) => {
       const { data, error } = await supabase
         .from("session_messages")
         .insert({
-          session_id: sessionId,
-          user_id: userId,
+          conversation_id: sessionId,
+          sender_id: senderId,
+          sender_type: senderType,
+          sender_name: senderName,
           content,
-          user_name: userName,
           created_at: new Date().toISOString(),
         })
         .select()
