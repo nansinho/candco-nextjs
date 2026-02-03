@@ -1,14 +1,23 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
+import { useFormateurs } from "@/hooks/admin/useFormateurs";
+import { useClients } from "@/hooks/admin/useClients";
+import { useSessionInscriptionMutations } from "@/hooks/admin/useSessionInscriptions";
+import { useSessionMessages, useSessionMessageMutations } from "@/hooks/admin/useSessionMessages";
+import { useSessionActivities, useSessionActivityMutations, ACTIVITY_TYPES } from "@/hooks/admin/useSessionActivities";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Table,
   TableBody,
@@ -17,6 +26,27 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Calendar,
   ArrowLeft,
@@ -29,6 +59,7 @@ import {
   Eye,
   FileText,
   UserCheck,
+  UserPlus,
   ClipboardList,
   MessageSquare,
   History,
@@ -39,21 +70,20 @@ import {
   Star,
   Mail,
   Phone,
-  Globe,
   Send,
   Download,
   Trash2,
   MoreHorizontal,
+  Plus,
+  Loader2,
+  RefreshCw,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
 } from "lucide-react";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 import Link from "next/link";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 
 const statusLabels: Record<string, string> = {
@@ -84,82 +114,49 @@ interface Inscription {
   client_name: string | null;
 }
 
-interface SessionActivity {
-  id: string;
-  type: string;
-  description: string;
-  created_at: string;
-  metadata: Record<string, unknown> | null;
-}
-
 async function fetchSession(id: string) {
   const supabase = createClient();
 
-  // First, fetch just the session
   const { data: session, error: sessionError } = await supabase
     .from("sessions")
     .select("*")
     .eq("id", id)
     .single();
 
-  if (sessionError) {
-    console.error("Error fetching session:", sessionError);
-    throw new Error(`Session error: ${sessionError.message}`);
-  }
+  if (sessionError) throw new Error(`Session error: ${sessionError.message}`);
+  if (!session) throw new Error("Session not found");
 
-  if (!session) {
-    throw new Error("Session not found");
-  }
-
-  // Fetch formation separately
   let formation = null;
   if (session.formation_id) {
-    const { data: formationData } = await supabase
+    const { data } = await supabase
       .from("formations")
       .select("id, title, pole, pole_name, duration, description")
       .eq("id", session.formation_id)
       .single();
-    formation = formationData;
+    formation = data;
   }
 
-  // Fetch formateur separately
   let formateur = null;
   if (session.formateur_id) {
-    const { data: formateurData } = await supabase
+    const { data } = await supabase
       .from("formateurs")
       .select("id, nom, prenom, email, telephone, specialites, bio")
       .eq("id", session.formateur_id)
       .single();
-    formateur = formateurData;
+    formateur = data;
   }
 
-  // Get inscriptions with participant details
   const { data: inscriptions } = await supabase
     .from("inscriptions")
-    .select(`
-      id,
-      status,
-      created_at,
-      participant_nom,
-      participant_prenom,
-      participant_email,
-      participant_telephone,
-      client_id
-    `)
+    .select("id, status, created_at, participant_nom, participant_prenom, participant_email, participant_telephone, client_id")
     .eq("session_id", id)
     .order("created_at", { ascending: false });
 
-  // Get client names for inscriptions
   const clientIds = [...new Set((inscriptions || []).filter(i => i.client_id).map(i => i.client_id))];
-  let clientsMap: Record<string, string> = {};
+  const clientsMap: Record<string, string> = {};
   if (clientIds.length > 0) {
-    const { data: clients } = await supabase
-      .from("clients")
-      .select("id, nom")
-      .in("id", clientIds);
-    clients?.forEach(c => {
-      clientsMap[c.id] = c.nom;
-    });
+    const { data: clients } = await supabase.from("clients").select("id, nom").in("id", clientIds);
+    clients?.forEach(c => { clientsMap[c.id] = c.nom; });
   }
 
   const inscriptionsWithClients = (inscriptions || []).map(i => ({
@@ -167,64 +164,150 @@ async function fetchSession(id: string) {
     client_name: i.client_id ? clientsMap[i.client_id] || null : null,
   }));
 
-  // Get activity logs if the table exists
-  let activities: SessionActivity[] = [];
-  try {
-    const { data: activityData } = await supabase
-      .from("session_activities")
-      .select("*")
-      .eq("session_id", id)
-      .order("created_at", { ascending: false })
-      .limit(10);
-    activities = activityData || [];
-  } catch {
-    // Table might not exist
-  }
-
   return {
     ...session,
     formations: formation,
     formateurs: formateur,
     inscriptions: inscriptionsWithClients,
     inscriptions_count: inscriptionsWithClients.filter(i => i.status !== "annulee").length,
-    activities,
   };
 }
 
-export default function SessionDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default function SessionDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("overview");
 
+  // Dialogs
+  const [addParticipantOpen, setAddParticipantOpen] = useState(false);
+  const [assignFormateurOpen, setAssignFormateurOpen] = useState(false);
+
+  // Form states
+  const [participantForm, setParticipantForm] = useState({
+    prenom: "", nom: "", email: "", telephone: "", client_id: "",
+  });
+  const [selectedFormateur, setSelectedFormateur] = useState("");
+  const [messageInput, setMessageInput] = useState("");
+
+  // Refs
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Queries & Mutations
   const { data: session, isLoading, error } = useQuery({
     queryKey: ["admin-session-detail", id],
     queryFn: () => fetchSession(id),
     staleTime: 60 * 1000,
   });
 
-  const handleQuickAction = (action: string) => {
-    toast.info(`Action "${action}" - À implémenter`);
+  const { data: formateurs = [] } = useFormateurs();
+  const { data: clientsData } = useClients();
+  const clients = clientsData?.clients || [];
+
+  const { addParticipant, cancelInscription } = useSessionInscriptionMutations();
+  const { data: messages = [] } = useSessionMessages(id);
+  const { sendMessage } = useSessionMessageMutations();
+  const { data: activities = [] } = useSessionActivities(id);
+  const { logActivity } = useSessionActivityMutations();
+
+  // Scroll to bottom of messages
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const handleAddParticipant = async () => {
+    if (!participantForm.prenom || !participantForm.nom) {
+      toast.error("Prénom et nom requis");
+      return;
+    }
+    try {
+      await addParticipant.mutateAsync({
+        session_id: id,
+        participant_prenom: participantForm.prenom,
+        participant_nom: participantForm.nom,
+        participant_email: participantForm.email || undefined,
+        participant_telephone: participantForm.telephone || undefined,
+        client_id: participantForm.client_id || undefined,
+        status: "confirmee",
+      });
+      toast.success("Participant ajouté");
+      setAddParticipantOpen(false);
+      setParticipantForm({ prenom: "", nom: "", email: "", telephone: "", client_id: "" });
+    } catch {
+      toast.error("Erreur lors de l'ajout");
+    }
+  };
+
+  const handleAssignFormateur = async () => {
+    if (!selectedFormateur) {
+      toast.error("Sélectionnez un formateur");
+      return;
+    }
+    try {
+      const supabase = createClient();
+      const formateurData = formateurs.find(f => f.id === selectedFormateur);
+
+      await supabase.from("sessions").update({ formateur_id: selectedFormateur }).eq("id", id);
+
+      await logActivity.mutateAsync({
+        sessionId: id,
+        type: "formateur_assigned",
+        description: `${formateurData?.prenom} ${formateurData?.nom} assigné comme formateur`,
+      });
+
+      queryClient.invalidateQueries({ queryKey: ["admin-session-detail", id] });
+      toast.success("Formateur assigné");
+      setAssignFormateurOpen(false);
+      setSelectedFormateur("");
+    } catch {
+      toast.error("Erreur lors de l'assignation");
+    }
+  };
+
+  const handleCancelInscription = async (inscription: Inscription) => {
+    try {
+      await cancelInscription.mutateAsync({
+        id: inscription.id,
+        sessionId: id,
+        participantName: `${inscription.participant_prenom} ${inscription.participant_nom}`,
+      });
+      toast.success("Inscription annulée");
+    } catch {
+      toast.error("Erreur lors de l'annulation");
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!messageInput.trim()) return;
+    try {
+      await sendMessage.mutateAsync({
+        sessionId: id,
+        content: messageInput,
+        userId: "admin",
+        userName: "Admin",
+      });
+      setMessageInput("");
+    } catch {
+      toast.error("Erreur lors de l'envoi");
+    }
+  };
+
+  const handleQuickAction = async (action: string) => {
+    toast.info(`Action "${action}" - Fonctionnalité à venir`);
+    await logActivity.mutateAsync({
+      sessionId: id,
+      type: action === "rappel" ? "notification_sent" : "document_generated",
+      description: `Action: ${action}`,
+    });
   };
 
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center gap-4">
-          <Skeleton className="h-9 w-9" />
-          <div>
-            <Skeleton className="h-6 w-48 mb-2" />
-            <Skeleton className="h-4 w-32" />
-          </div>
-        </div>
+        <Skeleton className="h-10 w-64" />
         <Skeleton className="h-12 w-full" />
         <div className="grid gap-6 lg:grid-cols-3">
-          <div className="lg:col-span-2">
-            <Skeleton className="h-96" />
-          </div>
+          <div className="lg:col-span-2"><Skeleton className="h-96" /></div>
           <Skeleton className="h-96" />
         </div>
       </div>
@@ -235,12 +318,7 @@ export default function SessionDetailPage({
     return (
       <div className="text-center py-12">
         <p className="text-muted-foreground">Session non trouvée</p>
-        {error && (
-          <p className="text-sm text-destructive mt-2">
-            Erreur: {error instanceof Error ? error.message : "Erreur inconnue"}
-          </p>
-        )}
-        <p className="text-xs text-muted-foreground mt-1">ID: {id}</p>
+        {error && <p className="text-sm text-destructive mt-2">{error instanceof Error ? error.message : "Erreur"}</p>}
         <Button variant="outline" className="mt-4" onClick={() => router.push("/admin/sessions")}>
           Retour aux sessions
         </Button>
@@ -257,11 +335,7 @@ export default function SessionDetailPage({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => router.push("/admin/sessions")}
-          >
+          <Button variant="ghost" size="icon" onClick={() => router.push("/admin/sessions")}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
@@ -299,7 +373,7 @@ export default function SessionDetailPage({
           </CardContent>
         </Card>
 
-        <Card className="border-0 bg-secondary/30">
+        <Card className="border-0 bg-secondary/30 cursor-pointer hover:bg-secondary/50 transition-colors" onClick={() => setAssignFormateurOpen(true)}>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
@@ -307,9 +381,7 @@ export default function SessionDetailPage({
                   {formateur ? `${formateur.prenom} ${formateur.nom}` : "Non assigné"}
                 </p>
                 <p className="text-sm text-muted-foreground">Formateur</p>
-                {formateur && (
-                  <p className="text-xs text-muted-foreground mt-1">Formateur assigné</p>
-                )}
+                <p className="text-xs text-primary mt-1">Cliquer pour modifier</p>
               </div>
               <GraduationCap className="h-8 w-8 text-muted-foreground" />
             </div>
@@ -340,11 +412,7 @@ export default function SessionDetailPage({
           <TabsTrigger value="participants" className="flex items-center gap-2">
             <UserCheck className="h-4 w-4" />
             Participants
-            {inscriptions.length > 0 && (
-              <Badge variant="secondary" className="ml-1 h-5 px-1.5">
-                {inscriptions.length}
-              </Badge>
-            )}
+            {inscriptions.length > 0 && <Badge variant="secondary" className="ml-1 h-5 px-1.5">{inscriptions.length}</Badge>}
           </TabsTrigger>
           <TabsTrigger value="formateur" className="flex items-center gap-2">
             <GraduationCap className="h-4 w-4" />
@@ -357,17 +425,18 @@ export default function SessionDetailPage({
           <TabsTrigger value="timeline" className="flex items-center gap-2">
             <History className="h-4 w-4" />
             Timeline
+            {activities.length > 0 && <Badge variant="secondary" className="ml-1 h-5 px-1.5">{activities.length}</Badge>}
           </TabsTrigger>
           <TabsTrigger value="messages" className="flex items-center gap-2">
             <MessageSquare className="h-4 w-4" />
             Messages
+            {messages.length > 0 && <Badge variant="secondary" className="ml-1 h-5 px-1.5">{messages.length}</Badge>}
           </TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-6">
           <div className="grid gap-6 lg:grid-cols-3">
-            {/* Session Details */}
             <div className="lg:col-span-2 space-y-6">
               <Card className="border-0 bg-secondary/30">
                 <CardHeader className="pb-3">
@@ -386,48 +455,26 @@ export default function SessionDetailPage({
                       </p>
                     </div>
                   </div>
-
-                  {(session.horaire_matin || session.horaire_aprem) && (
-                    <div className="flex items-start gap-3">
-                      <Clock className="h-5 w-5 text-muted-foreground mt-0.5" />
-                      <div>
-                        <p className="font-medium">Horaires</p>
-                        {session.horaire_matin && (
-                          <p className="text-sm text-muted-foreground">Matin : {session.horaire_matin}</p>
-                        )}
-                        {session.horaire_aprem && (
-                          <p className="text-sm text-muted-foreground">Après-midi : {session.horaire_aprem}</p>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
                   <div className="flex items-start gap-3">
                     <MapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
                     <div>
                       <p className="font-medium">Format & Lieu</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge variant="outline" className="bg-orange-500/10 text-orange-600 border-orange-500/20">
-                          {session.format_type === "distanciel" ? "Distanciel" : "Présentiel"}
-                        </Badge>
-                      </div>
+                      <Badge variant="outline" className="bg-orange-500/10 text-orange-600 border-orange-500/20 mt-1">
+                        {session.format_type === "distanciel" ? "Distanciel" : "Présentiel"}
+                      </Badge>
                       <p className="text-sm text-muted-foreground mt-1">{session.lieu}</p>
                     </div>
                   </div>
-
                   <div className="flex items-start gap-3">
                     <FileText className="h-5 w-5 text-muted-foreground mt-0.5" />
                     <div>
                       <p className="font-medium">{formation?.title}</p>
-                      <Badge variant="outline" className="mt-1">
-                        {formation?.pole_name || formation?.pole}
-                      </Badge>
+                      <Badge variant="outline" className="mt-1">{formation?.pole_name || formation?.pole}</Badge>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Activity */}
               <Card className="border-0 bg-secondary/30">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base flex items-center gap-2">
@@ -436,27 +483,26 @@ export default function SessionDetailPage({
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {session.activities && session.activities.length > 0 ? (
-                    <div className="space-y-4">
-                      {session.activities.map((activity: SessionActivity) => (
+                  {activities.length > 0 ? (
+                    <div className="space-y-3">
+                      {activities.slice(0, 5).map((activity) => (
                         <div key={activity.id} className="flex items-start gap-3">
-                          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                             <History className="h-4 w-4 text-primary" />
                           </div>
-                          <div>
-                            <p className="font-medium text-sm">{activity.type}</p>
-                            <p className="text-xs text-muted-foreground">{activity.description}</p>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {format(parseISO(activity.created_at), "d MMM yyyy à HH:mm", { locale: fr })}
+                          <div className="min-w-0">
+                            <p className="font-medium text-sm truncate">{activity.description}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {formatDistanceToNow(parseISO(activity.created_at), { addSuffix: true, locale: fr })}
                             </p>
                           </div>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-8 text-muted-foreground">
+                    <div className="text-center py-6 text-muted-foreground">
                       <History className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                      <p className="text-sm">Aucune activité récente</p>
+                      <p className="text-sm">Aucune activité</p>
                     </div>
                   )}
                 </CardContent>
@@ -464,77 +510,31 @@ export default function SessionDetailPage({
             </div>
 
             {/* Quick Actions */}
-            <div className="space-y-6">
-              <Card className="border-0 bg-secondary/30">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <ClipboardList className="h-4 w-4" />
-                    Actions rapides
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-start h-auto py-3"
-                    onClick={() => handleQuickAction("rappel")}
-                  >
-                    <Bell className="h-5 w-5 mr-3 text-amber-500" />
+            <Card className="border-0 bg-secondary/30">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <ClipboardList className="h-4 w-4" />
+                  Actions rapides
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {[
+                  { key: "rappel", icon: Bell, color: "text-amber-500", title: "Envoyer un rappel", desc: "Email aux participants" },
+                  { key: "convention", icon: FileCheck, color: "text-blue-500", title: "Générer la convention", desc: "Document contractuel" },
+                  { key: "feuille", icon: ClipboardCheck, color: "text-emerald-500", title: "Feuille de présence", desc: "Émargement participants" },
+                  { key: "certificats", icon: Award, color: "text-purple-500", title: "Générer les certificats", desc: "Attestations de réussite" },
+                  { key: "satisfaction", icon: Star, color: "text-orange-500", title: "Questionnaire satisfaction", desc: "Évaluation post-formation" },
+                ].map(({ key, icon: Icon, color, title, desc }) => (
+                  <Button key={key} variant="ghost" className="w-full justify-start h-auto py-3" onClick={() => handleQuickAction(key)}>
+                    <Icon className={`h-5 w-5 mr-3 ${color}`} />
                     <div className="text-left">
-                      <p className="font-medium">Envoyer un rappel</p>
-                      <p className="text-xs text-muted-foreground">Email aux participants</p>
+                      <p className="font-medium">{title}</p>
+                      <p className="text-xs text-muted-foreground">{desc}</p>
                     </div>
                   </Button>
-
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-start h-auto py-3"
-                    onClick={() => handleQuickAction("convention")}
-                  >
-                    <FileCheck className="h-5 w-5 mr-3 text-blue-500" />
-                    <div className="text-left">
-                      <p className="font-medium">Générer la convention</p>
-                      <p className="text-xs text-muted-foreground">Document contractuel</p>
-                    </div>
-                  </Button>
-
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-start h-auto py-3"
-                    onClick={() => handleQuickAction("feuille")}
-                  >
-                    <ClipboardCheck className="h-5 w-5 mr-3 text-emerald-500" />
-                    <div className="text-left">
-                      <p className="font-medium">Feuille de présence</p>
-                      <p className="text-xs text-muted-foreground">Émargement participants</p>
-                    </div>
-                  </Button>
-
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-start h-auto py-3"
-                    onClick={() => handleQuickAction("certificats")}
-                  >
-                    <Award className="h-5 w-5 mr-3 text-purple-500" />
-                    <div className="text-left">
-                      <p className="font-medium">Générer les certificats</p>
-                      <p className="text-xs text-muted-foreground">Attestations de réussite</p>
-                    </div>
-                  </Button>
-
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-start h-auto py-3"
-                    onClick={() => handleQuickAction("satisfaction")}
-                  >
-                    <Star className="h-5 w-5 mr-3 text-orange-500" />
-                    <div className="text-left">
-                      <p className="font-medium">Questionnaire satisfaction</p>
-                      <p className="text-xs text-muted-foreground">Évaluation post-formation</p>
-                    </div>
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
+                ))}
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
 
@@ -542,11 +542,9 @@ export default function SessionDetailPage({
         <TabsContent value="participants" className="space-y-4">
           <Card className="border-0 bg-secondary/30">
             <CardHeader className="flex flex-row items-center justify-between pb-3">
-              <CardTitle className="text-base">
-                Inscriptions ({inscriptions.length})
-              </CardTitle>
-              <Button size="sm">
-                <UserCheck className="mr-2 h-4 w-4" />
+              <CardTitle className="text-base">Inscriptions ({inscriptions.length})</CardTitle>
+              <Button size="sm" onClick={() => setAddParticipantOpen(true)}>
+                <UserPlus className="mr-2 h-4 w-4" />
                 Ajouter un participant
               </Button>
             </CardHeader>
@@ -574,11 +572,9 @@ export default function SessionDetailPage({
                         <TableCell>{inscription.client_name || "Individuel"}</TableCell>
                         <TableCell>
                           <Badge variant="outline" className={
-                            inscription.status === "confirmee"
-                              ? "bg-emerald-500/10 text-emerald-600"
-                              : inscription.status === "annulee"
-                              ? "bg-destructive/10 text-destructive"
-                              : "bg-blue-500/10 text-blue-600"
+                            inscription.status === "confirmee" ? "bg-emerald-500/10 text-emerald-600" :
+                            inscription.status === "annulee" ? "bg-destructive/10 text-destructive" :
+                            "bg-blue-500/10 text-blue-600"
                           }>
                             {inscription.status}
                           </Badge>
@@ -586,22 +582,13 @@ export default function SessionDetailPage({
                         <TableCell>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
+                              <Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4" /></Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem>
-                                <Mail className="mr-2 h-4 w-4" />
-                                Envoyer un email
-                              </DropdownMenuItem>
-                              <DropdownMenuItem>
-                                <Download className="mr-2 h-4 w-4" />
-                                Télécharger convention
-                              </DropdownMenuItem>
-                              <DropdownMenuItem className="text-destructive">
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Annuler inscription
+                              <DropdownMenuItem><Mail className="mr-2 h-4 w-4" />Envoyer un email</DropdownMenuItem>
+                              <DropdownMenuItem><Download className="mr-2 h-4 w-4" />Télécharger convention</DropdownMenuItem>
+                              <DropdownMenuItem className="text-destructive" onClick={() => handleCancelInscription(inscription)}>
+                                <Trash2 className="mr-2 h-4 w-4" />Annuler inscription
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -614,7 +601,7 @@ export default function SessionDetailPage({
                 <div className="text-center py-12">
                   <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                   <p className="text-muted-foreground">Aucun participant inscrit</p>
-                  <Button variant="outline" className="mt-4">
+                  <Button variant="outline" className="mt-4" onClick={() => setAddParticipantOpen(true)}>
                     Ajouter le premier participant
                   </Button>
                 </div>
@@ -626,8 +613,12 @@ export default function SessionDetailPage({
         {/* Formateur Tab */}
         <TabsContent value="formateur" className="space-y-4">
           <Card className="border-0 bg-secondary/30">
-            <CardHeader className="pb-3">
+            <CardHeader className="flex flex-row items-center justify-between pb-3">
               <CardTitle className="text-base">Formateur assigné</CardTitle>
+              <Button size="sm" variant="outline" onClick={() => setAssignFormateurOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                {formateur ? "Changer" : "Assigner"}
+              </Button>
             </CardHeader>
             <CardContent>
               {formateur ? (
@@ -637,13 +628,10 @@ export default function SessionDetailPage({
                       <GraduationCap className="h-8 w-8 text-primary" />
                     </div>
                     <div>
-                      <p className="text-lg font-semibold">
-                        {formateur.prenom} {formateur.nom}
-                      </p>
+                      <p className="text-lg font-semibold">{formateur.prenom} {formateur.nom}</p>
                       <p className="text-sm text-muted-foreground">Formateur</p>
                     </div>
                   </div>
-
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="flex items-center gap-3">
                       <Mail className="h-5 w-5 text-muted-foreground" />
@@ -662,32 +650,18 @@ export default function SessionDetailPage({
                       </div>
                     )}
                   </div>
-
-                  {formateur.bio && (
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-2">Biographie</p>
-                      <p className="text-sm">{formateur.bio}</p>
-                    </div>
-                  )}
-
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm">
-                      <Mail className="mr-2 h-4 w-4" />
-                      Contacter
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      <Link href={`/admin/formateurs/${formateur.id}`} className="flex items-center">
-                        <Eye className="mr-2 h-4 w-4" />
-                        Voir le profil
-                      </Link>
-                    </Button>
+                    <Button variant="outline" size="sm"><Mail className="mr-2 h-4 w-4" />Contacter</Button>
+                    <Link href={`/admin/formateurs/${formateur.id}`}>
+                      <Button variant="outline" size="sm"><Eye className="mr-2 h-4 w-4" />Voir le profil</Button>
+                    </Link>
                   </div>
                 </div>
               ) : (
                 <div className="text-center py-12">
                   <GraduationCap className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                   <p className="text-muted-foreground">Aucun formateur assigné</p>
-                  <Button variant="outline" className="mt-4" onClick={() => router.push(`/admin/sessions/${id}/edit`)}>
+                  <Button variant="outline" className="mt-4" onClick={() => setAssignFormateurOpen(true)}>
                     Assigner un formateur
                   </Button>
                 </div>
@@ -699,62 +673,25 @@ export default function SessionDetailPage({
         {/* Documents Tab */}
         <TabsContent value="documents" className="space-y-4">
           <Card className="border-0 bg-secondary/30">
-            <CardHeader className="flex flex-row items-center justify-between pb-3">
+            <CardHeader className="pb-3">
               <CardTitle className="text-base">Documents de la session</CardTitle>
-              <Button size="sm">
-                <FileText className="mr-2 h-4 w-4" />
-                Ajouter un document
-              </Button>
             </CardHeader>
             <CardContent>
               <div className="grid gap-4 md:grid-cols-2">
-                <Button
-                  variant="outline"
-                  className="h-auto py-4 justify-start"
-                  onClick={() => handleQuickAction("convention")}
-                >
-                  <FileCheck className="h-8 w-8 mr-4 text-blue-500" />
-                  <div className="text-left">
-                    <p className="font-medium">Convention de formation</p>
-                    <p className="text-xs text-muted-foreground">Générer ou télécharger</p>
-                  </div>
-                </Button>
-
-                <Button
-                  variant="outline"
-                  className="h-auto py-4 justify-start"
-                  onClick={() => handleQuickAction("feuille")}
-                >
-                  <ClipboardCheck className="h-8 w-8 mr-4 text-emerald-500" />
-                  <div className="text-left">
-                    <p className="font-medium">Feuille de présence</p>
-                    <p className="text-xs text-muted-foreground">Émargement participants</p>
-                  </div>
-                </Button>
-
-                <Button
-                  variant="outline"
-                  className="h-auto py-4 justify-start"
-                  onClick={() => handleQuickAction("certificats")}
-                >
-                  <Award className="h-8 w-8 mr-4 text-purple-500" />
-                  <div className="text-left">
-                    <p className="font-medium">Certificats</p>
-                    <p className="text-xs text-muted-foreground">Attestations de réussite</p>
-                  </div>
-                </Button>
-
-                <Button
-                  variant="outline"
-                  className="h-auto py-4 justify-start"
-                  onClick={() => handleQuickAction("programme")}
-                >
-                  <FileText className="h-8 w-8 mr-4 text-amber-500" />
-                  <div className="text-left">
-                    <p className="font-medium">Programme de formation</p>
-                    <p className="text-xs text-muted-foreground">Contenu pédagogique</p>
-                  </div>
-                </Button>
+                {[
+                  { key: "convention", icon: FileCheck, color: "text-blue-500", title: "Convention de formation", desc: "Générer ou télécharger" },
+                  { key: "feuille", icon: ClipboardCheck, color: "text-emerald-500", title: "Feuille de présence", desc: "Émargement participants" },
+                  { key: "certificats", icon: Award, color: "text-purple-500", title: "Certificats", desc: "Attestations de réussite" },
+                  { key: "programme", icon: FileText, color: "text-amber-500", title: "Programme de formation", desc: "Contenu pédagogique" },
+                ].map(({ key, icon: Icon, color, title, desc }) => (
+                  <Button key={key} variant="outline" className="h-auto py-4 justify-start" onClick={() => handleQuickAction(key)}>
+                    <Icon className={`h-8 w-8 mr-4 ${color}`} />
+                    <div className="text-left">
+                      <p className="font-medium">{title}</p>
+                      <p className="text-xs text-muted-foreground">{desc}</p>
+                    </div>
+                  </Button>
+                ))}
               </div>
             </CardContent>
           </Card>
@@ -764,25 +701,32 @@ export default function SessionDetailPage({
         <TabsContent value="timeline" className="space-y-4">
           <Card className="border-0 bg-secondary/30">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Historique des modifications</CardTitle>
+              <CardTitle className="text-base">Historique des activités</CardTitle>
             </CardHeader>
             <CardContent>
-              {session.activities && session.activities.length > 0 ? (
+              {activities.length > 0 ? (
                 <div className="space-y-4">
-                  {session.activities.map((activity: SessionActivity, index: number) => (
+                  {activities.map((activity, index) => (
                     <div key={activity.id} className="flex gap-4">
                       <div className="flex flex-col items-center">
-                        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                          <History className="h-4 w-4 text-primary" />
+                        <div className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${
+                          activity.type.includes("added") || activity.type.includes("created") ? "bg-emerald-500/10" :
+                          activity.type.includes("cancelled") || activity.type.includes("removed") ? "bg-destructive/10" :
+                          "bg-blue-500/10"
+                        }`}>
+                          {activity.type.includes("added") || activity.type.includes("created") ? (
+                            <CheckCircle className="h-5 w-5 text-emerald-500" />
+                          ) : activity.type.includes("cancelled") || activity.type.includes("removed") ? (
+                            <XCircle className="h-5 w-5 text-destructive" />
+                          ) : (
+                            <RefreshCw className="h-5 w-5 text-blue-500" />
+                          )}
                         </div>
-                        {index < session.activities.length - 1 && (
-                          <div className="w-px h-full bg-border mt-2" />
-                        )}
+                        {index < activities.length - 1 && <div className="w-px flex-1 bg-border mt-2" />}
                       </div>
                       <div className="flex-1 pb-4">
-                        <p className="font-medium">{activity.type}</p>
-                        <p className="text-sm text-muted-foreground">{activity.description}</p>
-                        <p className="text-xs text-muted-foreground mt-1">
+                        <p className="font-medium">{activity.description}</p>
+                        <p className="text-sm text-muted-foreground">
                           {format(parseISO(activity.created_at), "d MMMM yyyy à HH:mm", { locale: fr })}
                         </p>
                       </div>
@@ -802,26 +746,132 @@ export default function SessionDetailPage({
         {/* Messages Tab */}
         <TabsContent value="messages" className="space-y-4">
           <Card className="border-0 bg-secondary/30">
-            <CardHeader className="flex flex-row items-center justify-between pb-3">
-              <CardTitle className="text-base">Messages</CardTitle>
-              <Button size="sm">
-                <Send className="mr-2 h-4 w-4" />
-                Nouveau message
-              </Button>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Messages de la session</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="text-center py-12">
-                <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">Aucun message pour cette session</p>
-                <Button variant="outline" className="mt-4">
-                  Envoyer un message aux participants
-                </Button>
+            <CardContent className="p-0">
+              <ScrollArea className="h-[400px] px-6">
+                {messages.length > 0 ? (
+                  <div className="space-y-4 py-4">
+                    {messages.map((message) => (
+                      <div key={message.id} className="flex gap-3">
+                        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                          <Users className="h-4 w-4 text-primary" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium text-sm">{message.user_name || "Utilisateur"}</p>
+                            <span className="text-xs text-muted-foreground">
+                              {formatDistanceToNow(parseISO(message.created_at), { addSuffix: true, locale: fr })}
+                            </span>
+                          </div>
+                          <p className="text-sm mt-1">{message.content}</p>
+                        </div>
+                      </div>
+                    ))}
+                    <div ref={messagesEndRef} />
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground">Aucun message</p>
+                  </div>
+                )}
+              </ScrollArea>
+              <div className="border-t p-4">
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Écrire un message..."
+                    value={messageInput}
+                    onChange={(e) => setMessageInput(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSendMessage()}
+                  />
+                  <Button onClick={handleSendMessage} disabled={!messageInput.trim() || sendMessage.isPending}>
+                    {sendMessage.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Add Participant Dialog */}
+      <Dialog open={addParticipantOpen} onOpenChange={setAddParticipantOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Ajouter un participant</DialogTitle>
+            <DialogDescription>Ajoutez un nouveau participant à cette session.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Prénom *</Label>
+                <Input value={participantForm.prenom} onChange={(e) => setParticipantForm({ ...participantForm, prenom: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <Label>Nom *</Label>
+                <Input value={participantForm.nom} onChange={(e) => setParticipantForm({ ...participantForm, nom: e.target.value })} />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <Input type="email" value={participantForm.email} onChange={(e) => setParticipantForm({ ...participantForm, email: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label>Téléphone</Label>
+              <Input value={participantForm.telephone} onChange={(e) => setParticipantForm({ ...participantForm, telephone: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label>Client (optionnel)</Label>
+              <Select value={participantForm.client_id} onValueChange={(v) => setParticipantForm({ ...participantForm, client_id: v })}>
+                <SelectTrigger><SelectValue placeholder="Sélectionner un client" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Aucun (individuel)</SelectItem>
+                  {clients.map((client) => (
+                    <SelectItem key={client.id} value={client.id}>{client.nom}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAddParticipantOpen(false)}>Annuler</Button>
+            <Button onClick={handleAddParticipant} disabled={addParticipant.isPending}>
+              {addParticipant.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Ajouter
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Assign Formateur Dialog */}
+      <Dialog open={assignFormateurOpen} onOpenChange={setAssignFormateurOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assigner un formateur</DialogTitle>
+            <DialogDescription>Sélectionnez un formateur pour cette session.</DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Select value={selectedFormateur} onValueChange={setSelectedFormateur}>
+              <SelectTrigger><SelectValue placeholder="Sélectionner un formateur" /></SelectTrigger>
+              <SelectContent>
+                {formateurs.filter(f => f.active).map((f) => (
+                  <SelectItem key={f.id} value={f.id}>
+                    {f.prenom} {f.nom} - {f.email}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAssignFormateurOpen(false)}>Annuler</Button>
+            <Button onClick={handleAssignFormateur} disabled={!selectedFormateur}>
+              Assigner
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
-
