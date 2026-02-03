@@ -19,6 +19,7 @@ import {
   FileText,
   ArrowRight,
 } from "lucide-react";
+import { InscriptionButton } from "@/components/inscription/InscriptionButton";
 
 type Props = {
   params: Promise<{ pole: string; formationId: string }>;
@@ -771,14 +772,23 @@ export default async function FormationDetailPage({ params }: Props) {
                     </div>
                   )}
 
-                  {/* CTA */}
-                  <Link
-                    href={`/contact?formation=${encodeURIComponent(formation.title)}`}
-                    className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
-                  >
-                    Demander un devis
-                    <ArrowRight className="w-4 h-4" />
-                  </Link>
+                  {/* CTA Buttons */}
+                  <div className="space-y-3">
+                    <InscriptionButton
+                      formation={{
+                        id: formation.id,
+                        title: formation.title,
+                        price: formation.price,
+                      }}
+                    />
+                    <Link
+                      href={`/contact?formation=${encodeURIComponent(formation.title)}`}
+                      className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 border border-primary/20 text-foreground rounded-lg font-medium hover:bg-secondary transition-colors"
+                    >
+                      Demander un devis
+                      <ArrowRight className="w-4 h-4" />
+                    </Link>
+                  </div>
                 </div>
 
                 {/* Qualiopi Badge */}
