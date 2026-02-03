@@ -114,9 +114,57 @@ export function useSessions() {
   });
 }
 
+export interface CreateSessionInput {
+  formation_id: string;
+  start_date: string;
+  end_date?: string | null;
+  lieu: string;
+  places_max: number;
+  formateur_id?: string | null;
+  format_type?: string;
+  status?: string;
+}
+
+export interface UpdateSessionInput {
+  formation_id?: string;
+  start_date?: string;
+  end_date?: string | null;
+  lieu?: string;
+  places_max?: number;
+  places_disponibles?: number;
+  formateur_id?: string | null;
+  format_type?: string;
+  status?: string;
+}
+
 export function useSessionMutations() {
   const supabase = createClient();
   const queryClient = useQueryClient();
+
+  const createSession = useMutation({
+    mutationFn: async (input: CreateSessionInput) => {
+      const { error, data } = await supabase.from("sessions").insert({
+        ...input,
+        status: input.status || "planifiee",
+        places_disponibles: input.places_max,
+      }).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.sessions.all });
+    },
+  });
+
+  const updateSession = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: UpdateSessionInput }) => {
+      const { error } = await supabase.from("sessions").update(data).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.sessions.all });
+    },
+  });
 
   const deleteSession = useMutation({
     mutationFn: async (id: string) => {
@@ -143,5 +191,5 @@ export function useSessionMutations() {
     },
   });
 
-  return { deleteSession, duplicateSession };
+  return { createSession, updateSession, deleteSession, duplicateSession };
 }
