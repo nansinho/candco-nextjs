@@ -392,7 +392,7 @@ export default async function SitemapPage() {
               <span>Vous êtes un robot ou un moteur de recherche ?</span>
             </div>
             <Link
-              href="/sitemap/xml"
+              href="/plan-du-site/xml"
               className="inline-flex items-center gap-2 text-primary hover:underline font-medium"
             >
               Consultez notre sitemap XML

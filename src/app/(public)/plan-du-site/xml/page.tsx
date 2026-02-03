@@ -43,7 +43,7 @@ async function getSitemapData(): Promise<SitemapEntry[]> {
     { path: "/mon-compte", priority: 0.5, changeFrequency: "monthly" },
     { path: "/auth", priority: 0.5, changeFrequency: "monthly" },
     { path: "/s-inscrire", priority: 0.5, changeFrequency: "monthly" },
-    { path: "/sitemap", priority: 0.5, changeFrequency: "weekly" },
+    { path: "/plan-du-site", priority: 0.5, changeFrequency: "weekly" },
     { path: "/mentions-legales", priority: 0.3, changeFrequency: "yearly" },
     { path: "/confidentialite", priority: 0.3, changeFrequency: "yearly" },
     { path: "/cookies", priority: 0.3, changeFrequency: "yearly" },
@@ -164,7 +164,7 @@ export default async function SitemapXmlPage() {
               </span>
             </div>
             <Link
-              href="/sitemap"
+              href="/plan-du-site"
               className="inline-flex items-center gap-2 text-sm text-primary hover:underline font-medium"
             >
               Voir le plan du site HTML
