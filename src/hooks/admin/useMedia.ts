@@ -17,6 +17,18 @@ export interface MediaFile {
   url?: string;
 }
 
+interface RawMediaFile {
+  id: string;
+  name: string;
+  file_path: string;
+  file_type: string;
+  file_size: number | null;
+  alt_text: string | null;
+  description: string | null;
+  uploaded_by: string | null;
+  created_at: string;
+}
+
 async function fetchMedia(): Promise<MediaFile[]> {
   const supabase = createClient();
 
@@ -29,8 +41,16 @@ async function fetchMedia(): Promise<MediaFile[]> {
   if (!data) return [];
 
   // Build public URLs
-  return data.map((file) => ({
-    ...file,
+  return (data as RawMediaFile[]).map((file): MediaFile => ({
+    id: file.id,
+    name: file.name,
+    file_path: file.file_path,
+    file_type: file.file_type,
+    file_size: file.file_size,
+    alt_text: file.alt_text,
+    description: file.description,
+    uploaded_by: file.uploaded_by,
+    created_at: file.created_at,
     url: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${file.file_path}`,
   }));
 }
