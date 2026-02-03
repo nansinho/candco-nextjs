@@ -19,6 +19,7 @@ import PartnersSection from "@/components/home/PartnersSection";
 import Testimonials from "@/components/home/Testimonials";
 import BlogPreview from "@/components/home/BlogPreview";
 import HeroCarousel from "@/components/home/HeroCarousel";
+import { GoogleReviews } from "@/components/home/GoogleReviews";
 
 export const metadata: Metadata = {
   title: "C&Co Formation | Centre de Formation Professionnelle Certifié Qualiopi",
@@ -141,7 +142,7 @@ export default async function HomePage() {
       <PartnersSection />
 
       {/* Training Poles Section */}
-      <section className="section-padding">
+      <section className="section-padding bg-background">
         <div className="container-custom">
           <div className="max-w-2xl mb-16">
             <p className="text-sm text-muted-foreground tracking-widest uppercase mb-4">
@@ -236,7 +237,7 @@ export default async function HomePage() {
 
       {/* Featured Formations Section */}
       {formations && formations.length > 0 && (
-        <section className="section-padding border-t border-border/50">
+        <section className="section-padding bg-card border-y border-border">
           <div className="container-custom">
             <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-16">
               <div className="max-w-xl">
@@ -353,7 +354,7 @@ export default async function HomePage() {
       )}
 
       {/* Why Choose Us Section */}
-      <section className="section-padding border-t border-border/50">
+      <section className="section-padding bg-background">
         <div className="container-custom">
           <div className="max-w-2xl mb-16">
             <p className="text-sm text-muted-foreground tracking-widest uppercase mb-4">
@@ -393,6 +394,9 @@ export default async function HomePage() {
 
       {/* Testimonials Section */}
       <Testimonials />
+
+      {/* Google Reviews Section */}
+      <GoogleReviews />
 
       {/* Blog Preview Section */}
       <BlogPreview />
