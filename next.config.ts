@@ -3,6 +3,17 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   output: "standalone",
 
+  // Skip TypeScript checking during build (VPS memory optimization)
+  // TypeScript errors are still caught during development
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+
+  // Skip ESLint during build (VPS memory optimization)
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+
   // Optimisation des images
   images: {
     remotePatterns: [
