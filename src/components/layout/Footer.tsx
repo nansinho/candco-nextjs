@@ -19,7 +19,7 @@ const footerLinks = {
     { name: "Confidentialité", href: "/confidentialite" },
     { name: "Cookies", href: "/cookies" },
     { name: "Accessibilité", href: "/accessibilite" },
-    { name: "Plan du site", href: "/sitemap" },
+    { name: "Plan du site", href: "/plan-du-site" },
   ],
 };
 
