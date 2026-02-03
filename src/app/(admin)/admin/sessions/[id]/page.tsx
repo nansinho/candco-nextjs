@@ -42,31 +42,42 @@ const statusColors: Record<string, string> = {
 async function fetchSession(id: string) {
   const supabase = createClient();
 
-  const { data: session, error } = await supabase
+  // First, fetch just the session
+  const { data: session, error: sessionError } = await supabase
     .from("sessions")
-    .select(`
-      *,
-      formations:formation_id (
-        id,
-        title,
-        pole,
-        pole_name,
-        duration
-      ),
-      formateurs:formateur_id (
-        id,
-        nom,
-        prenom,
-        email,
-        telephone
-      )
-    `)
+    .select("*")
     .eq("id", id)
     .single();
 
-  if (error) {
-    console.error("Error fetching session:", error);
-    throw error;
+  if (sessionError) {
+    console.error("Error fetching session:", sessionError);
+    throw new Error(`Session error: ${sessionError.message}`);
+  }
+
+  if (!session) {
+    throw new Error("Session not found");
+  }
+
+  // Fetch formation separately
+  let formation = null;
+  if (session.formation_id) {
+    const { data: formationData } = await supabase
+      .from("formations")
+      .select("id, title, pole, pole_name, duration")
+      .eq("id", session.formation_id)
+      .single();
+    formation = formationData;
+  }
+
+  // Fetch formateur separately
+  let formateur = null;
+  if (session.formateur_id) {
+    const { data: formateurData } = await supabase
+      .from("formateurs")
+      .select("id, nom, prenom, email, telephone")
+      .eq("id", session.formateur_id)
+      .single();
+    formateur = formateurData;
   }
 
   // Get inscriptions count
@@ -78,6 +89,8 @@ async function fetchSession(id: string) {
 
   return {
     ...session,
+    formations: formation,
+    formateurs: formateur,
     inscriptions_count: count || 0,
   };
 }
@@ -118,6 +131,12 @@ export default function SessionDetailPage({
     return (
       <div className="text-center py-12">
         <p className="text-muted-foreground">Session non trouvée</p>
+        {error && (
+          <p className="text-sm text-destructive mt-2">
+            Erreur: {error instanceof Error ? error.message : "Erreur inconnue"}
+          </p>
+        )}
+        <p className="text-xs text-muted-foreground mt-1">ID: {id}</p>
         <Button variant="outline" className="mt-4" onClick={() => router.push("/admin/sessions")}>
           Retour aux sessions
         </Button>
