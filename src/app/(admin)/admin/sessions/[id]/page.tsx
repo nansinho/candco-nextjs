@@ -107,10 +107,10 @@ interface Inscription {
   id: string;
   status: string;
   created_at: string;
-  participant_nom: string | null;
-  participant_prenom: string | null;
-  participant_email: string | null;
-  participant_telephone: string | null;
+  nom: string | null;
+  prenom: string | null;
+  email: string | null;
+  telephone: string | null;
   client_id: string | null;
   client_name: string | null;
 }
@@ -149,18 +149,19 @@ async function fetchSession(id: string) {
 
   const { data: inscriptions } = await supabase
     .from("inscriptions")
-    .select("id, status, created_at, participant_nom, participant_prenom, participant_email, participant_telephone, client_id")
+    .select("id, status, created_at, nom, prenom, email, telephone, client_id")
     .eq("session_id", id)
     .order("created_at", { ascending: false });
 
-  const clientIds = [...new Set((inscriptions || []).filter(i => i.client_id).map(i => i.client_id))];
+  type InscriptionRow = { id: string; status: string; created_at: string; nom: string | null; prenom: string | null; email: string | null; telephone: string | null; client_id: string | null };
+  const clientIds = [...new Set((inscriptions || []).filter((i: InscriptionRow) => i.client_id).map((i: InscriptionRow) => i.client_id))];
   const clientsMap: Record<string, string> = {};
   if (clientIds.length > 0) {
     const { data: clients } = await supabase.from("clients").select("id, nom").in("id", clientIds);
-    clients?.forEach(c => { clientsMap[c.id] = c.nom; });
+    clients?.forEach((c: { id: string; nom: string }) => { clientsMap[c.id] = c.nom; });
   }
 
-  const inscriptionsWithClients = (inscriptions || []).map(i => ({
+  const inscriptionsWithClients = (inscriptions || []).map((i: InscriptionRow) => ({
     ...i,
     client_name: i.client_id ? clientsMap[i.client_id] || null : null,
   }));
@@ -170,7 +171,7 @@ async function fetchSession(id: string) {
     formations: formation,
     formateurs: formateur,
     inscriptions: inscriptionsWithClients,
-    inscriptions_count: inscriptionsWithClients.filter(i => i.status !== "annulee").length,
+    inscriptions_count: inscriptionsWithClients.filter((i: InscriptionRow & { client_name: string | null }) => i.status !== "annulee").length,
   };
 }
 
@@ -202,14 +203,13 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
   });
 
   const { data: formateurs = [] } = useFormateurs();
-  const { data: clientsData } = useClients();
-  const clients = clientsData?.clients || [];
+  const { data: clients = [] } = useClients();
 
   const { addParticipant, cancelInscription } = useSessionInscriptionMutations();
 
   // Get or create conversation for this session, then fetch messages
-  const { data: conversation } = useSessionConversation(id);
-  const { data: messages = [] } = useSessionMessages(conversation?.id);
+  const { data: conversation, isLoading: conversationLoading, error: conversationError } = useSessionConversation(id);
+  const { data: messages = [], isLoading: messagesLoading } = useSessionMessages(conversation?.id);
   const { sendMessage } = useSessionMessageMutations();
 
   const { data: activities = [] } = useSessionActivities(id);
@@ -228,10 +228,10 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
     try {
       await addParticipant.mutateAsync({
         session_id: id,
-        participant_prenom: participantForm.prenom,
-        participant_nom: participantForm.nom,
-        participant_email: participantForm.email || undefined,
-        participant_telephone: participantForm.telephone || undefined,
+        prenom: participantForm.prenom,
+        nom: participantForm.nom,
+        email: participantForm.email || undefined,
+        telephone: participantForm.telephone || undefined,
         client_id: participantForm.client_id || undefined,
         status: "confirmee",
       });
@@ -274,7 +274,7 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
       await cancelInscription.mutateAsync({
         id: inscription.id,
         sessionId: id,
-        participantName: `${inscription.participant_prenom} ${inscription.participant_nom}`,
+        participantName: `${inscription.prenom} ${inscription.nom}`,
       });
       toast.success("Inscription annulée");
     } catch {
@@ -571,10 +571,10 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
                     {inscriptions.map((inscription) => (
                       <TableRow key={inscription.id}>
                         <TableCell className="font-medium">
-                          {inscription.participant_prenom} {inscription.participant_nom}
+                          {inscription.prenom} {inscription.nom}
                         </TableCell>
-                        <TableCell>{inscription.participant_email || "-"}</TableCell>
-                        <TableCell>{inscription.participant_telephone || "-"}</TableCell>
+                        <TableCell>{inscription.email || "-"}</TableCell>
+                        <TableCell>{inscription.telephone || "-"}</TableCell>
                         <TableCell>{inscription.client_name || "Individuel"}</TableCell>
                         <TableCell>
                           <Badge variant="outline" className={
@@ -757,7 +757,18 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
             </CardHeader>
             <CardContent className="p-0">
               <ScrollArea className="h-[400px] px-6">
-                {messages.length > 0 ? (
+                {conversationError ? (
+                  <div className="text-center py-12">
+                    <AlertCircle className="h-12 w-12 mx-auto text-destructive mb-4" />
+                    <p className="text-destructive font-medium">Erreur de chargement</p>
+                    <p className="text-sm text-muted-foreground mt-1">Impossible de charger la conversation</p>
+                  </div>
+                ) : conversationLoading || messagesLoading ? (
+                  <div className="text-center py-12">
+                    <Loader2 className="h-12 w-12 mx-auto text-muted-foreground mb-4 animate-spin" />
+                    <p className="text-muted-foreground">Chargement des messages...</p>
+                  </div>
+                ) : messages.length > 0 ? (
                   <div className="space-y-4 py-4">
                     {messages.map((message) => (
                       <div key={message.id} className="flex gap-3">
@@ -781,6 +792,7 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
                   <div className="text-center py-12">
                     <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                     <p className="text-muted-foreground">Aucun message</p>
+                    <p className="text-xs text-muted-foreground mt-1">Envoyez un message pour démarrer la conversation</p>
                   </div>
                 )}
               </ScrollArea>
@@ -791,8 +803,12 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
                     value={messageInput}
                     onChange={(e) => setMessageInput(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSendMessage()}
+                    disabled={!conversation || conversationLoading}
                   />
-                  <Button onClick={handleSendMessage} disabled={!messageInput.trim() || sendMessage.isPending}>
+                  <Button
+                    onClick={handleSendMessage}
+                    disabled={!messageInput.trim() || sendMessage.isPending || !conversation}
+                  >
                     {sendMessage.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                   </Button>
                 </div>

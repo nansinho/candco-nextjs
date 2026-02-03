@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { useSearch } from "@/components/search";
 import { createClient } from "@/lib/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -218,6 +219,7 @@ export default function Header() {
   const [loading, setLoading] = useState(true);
   const pathname = usePathname();
   const router = useRouter();
+  const { setOpen: setSearchOpen } = useSearch();
 
   // Swipe to close state
   const touchStartX = useRef<number | null>(null);
@@ -530,6 +532,7 @@ export default function Header() {
           {/* Desktop right side */}
           <div className="hidden xl:flex items-center gap-1.5 ml-auto">
             <button
+              onClick={() => setSearchOpen(true)}
               className="p-2 rounded-full hover:bg-secondary/50 transition-colors text-muted-foreground hover:text-foreground"
               aria-label="Rechercher"
             >
@@ -613,6 +616,7 @@ export default function Header() {
           {/* Mobile menu button */}
           <div className="xl:hidden flex items-center gap-2 ml-auto">
             <button
+              onClick={() => setSearchOpen(true)}
               className="p-2 rounded-full hover:bg-secondary/50 transition-colors text-muted-foreground hover:text-foreground"
               aria-label="Rechercher"
             >
