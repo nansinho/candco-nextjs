@@ -4,6 +4,7 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { ClientWidgets } from "@/components/ClientWidgets";
+import { SearchProvider } from "@/components/search";
 
 // SEO Metadata globales
 export const metadata: Metadata = {
@@ -275,11 +276,13 @@ export default function PublicLayout({
       </head>
       <body className="antialiased">
         <ThemeProvider>
-          <Header />
-          <main className="pt-16 lg:pt-20">{children}</main>
-          <Footer />
-          {/* Widgets lazy-loaded côté client */}
-          <ClientWidgets />
+          <SearchProvider>
+            <Header />
+            <main className="pt-16 lg:pt-20">{children}</main>
+            <Footer />
+            {/* Widgets lazy-loaded côté client */}
+            <ClientWidgets />
+          </SearchProvider>
         </ThemeProvider>
       </body>
     </html>
