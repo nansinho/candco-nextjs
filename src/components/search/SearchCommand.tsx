@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Command } from "cmdk";
+import { useSearch } from "./SearchProvider";
 import {
   Search,
   Home,
@@ -60,7 +61,7 @@ const getIconForType = (type: string, pole?: string) => {
 };
 
 export function SearchCommand() {
-  const [open, setOpen] = useState(false);
+  const { open, setOpen } = useSearch();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -71,7 +72,7 @@ export function SearchCommand() {
     const down = (e: KeyboardEvent) => {
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
-        setOpen((open) => !open);
+        setOpen(!open);
       }
       if (e.key === "Escape") {
         setOpen(false);
@@ -80,7 +81,7 @@ export function SearchCommand() {
 
     document.addEventListener("keydown", down);
     return () => document.removeEventListener("keydown", down);
-  }, []);
+  }, [open, setOpen]);
 
   // Search function
   const performSearch = useCallback(async (searchQuery: string) => {

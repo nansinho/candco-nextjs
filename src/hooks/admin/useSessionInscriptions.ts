@@ -5,19 +5,19 @@ import { createClient } from "@/lib/supabase/client";
 
 export interface CreateInscriptionInput {
   session_id: string;
-  participant_nom: string;
-  participant_prenom: string;
-  participant_email?: string;
-  participant_telephone?: string;
+  nom: string;
+  prenom: string;
+  email?: string;
+  telephone?: string;
   client_id?: string;
   status?: string;
 }
 
 export interface UpdateInscriptionInput {
-  participant_nom?: string;
-  participant_prenom?: string;
-  participant_email?: string;
-  participant_telephone?: string;
+  nom?: string;
+  prenom?: string;
+  email?: string;
+  telephone?: string;
   client_id?: string;
   status?: string;
 }
@@ -44,7 +44,7 @@ export function useSessionInscriptionMutations() {
       await supabase.from("session_activities").insert({
         session_id: input.session_id,
         type: "participant_added",
-        description: `${input.participant_prenom} ${input.participant_nom} a été ajouté`,
+        description: `${input.prenom} ${input.nom} a été ajouté`,
         created_at: new Date().toISOString(),
       }).catch(() => {});
 

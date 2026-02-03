@@ -37,7 +37,7 @@ export function GoogleReviews() {
         <div className="min-h-[200px]">
           <Script
             src="https://cdn.trustindex.io/loader.js?4c6f9f463da979114096634798b"
-            strategy="lazyOnload"
+            strategy="afterInteractive"
           />
         </div>
       </div>
