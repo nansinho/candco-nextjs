@@ -4,10 +4,11 @@ import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Calendar, MapPin, ArrowRight, ArrowLeft, Monitor, Users } from "lucide-react";
-import { format, parseISO } from "date-fns";
+import { Calendar, MapPin, ArrowRight, ArrowLeft, Monitor, Users, CalendarCheck } from "lucide-react";
+import { format, parseISO, differenceInDays } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { ProposedDateRange } from "./StepTypeSelection";
 
 export interface AvailableSession {
   id: string;
@@ -26,6 +27,7 @@ interface StepSessionSelectionProps {
   onNext: () => void;
   onBack: () => void;
   isLoading?: boolean;
+  proposedDates?: ProposedDateRange | null;
 }
 
 export function StepSessionSelection({
@@ -35,6 +37,7 @@ export function StepSessionSelection({
   onNext,
   onBack,
   isLoading,
+  proposedDates,
 }: StepSessionSelectionProps) {
   // Group sessions by month
   const sessionsByMonth = useMemo(() => {
@@ -73,12 +76,45 @@ export function StepSessionSelection({
       </div>
 
       {sessions.length === 0 ? (
-        <div className="text-center py-12 bg-secondary/30 rounded-xl border border-dashed">
-          <Calendar className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-          <p className="font-medium mb-2">Aucune session disponible</p>
-          <p className="text-sm text-muted-foreground max-w-xs mx-auto">
-            Contactez-nous pour organiser une session sur mesure ou être informé des prochaines dates
-          </p>
+        <div className="space-y-4">
+          <div className="text-center py-8 bg-secondary/30 rounded-xl border border-dashed">
+            <Calendar className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
+            <p className="font-medium mb-1">Aucune session planifiée</p>
+            <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+              Pas de session disponible actuellement pour cette formation
+            </p>
+          </div>
+
+          {proposedDates && (
+            <div className="p-4 rounded-xl bg-primary/5 border border-primary/20">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                  <CalendarCheck className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <p className="font-semibold text-primary">Vos dates souhaitées</p>
+                  <p className="text-sm text-muted-foreground mt-0.5">
+                    {format(proposedDates.from, "d MMMM yyyy", { locale: fr })} →{" "}
+                    {format(proposedDates.to, "d MMMM yyyy", { locale: fr })}{" "}
+                    <span className="text-primary font-medium">
+                      ({differenceInDays(proposedDates.to, proposedDates.from) + 1} jours)
+                    </span>
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Nous vous recontacterons pour confirmer la disponibilité
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {!proposedDates && (
+            <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30">
+              <p className="text-sm text-amber-700">
+                <strong>Astuce :</strong> Retournez à l'étape précédente pour proposer vos dates souhaitées via le calendrier.
+              </p>
+            </div>
+          )}
         </div>
       ) : (
         <ScrollArea className="h-[320px] pr-4">
@@ -170,7 +206,7 @@ export function StepSessionSelection({
         </Button>
         <Button
           onClick={onNext}
-          disabled={!selectedSessionId}
+          disabled={!selectedSessionId && !proposedDates}
           className="flex-1"
         >
           Continuer

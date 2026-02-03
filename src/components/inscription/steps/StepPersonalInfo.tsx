@@ -14,10 +14,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, Loader2, Calendar, MapPin, CheckCircle } from "lucide-react";
-import { format, parseISO } from "date-fns";
+import { ArrowLeft, Loader2, Calendar, MapPin, CheckCircle, CalendarClock } from "lucide-react";
+import { format, parseISO, differenceInDays } from "date-fns";
 import { fr } from "date-fns/locale";
 import Link from "next/link";
+import { ProposedDateRange } from "./StepTypeSelection";
 
 export interface PersonalInfoData {
   civilite: string;
@@ -44,6 +45,7 @@ interface StepPersonalInfoProps {
   isSubmitting: boolean;
   formation: { title: string; price?: string | null };
   session: { start_date: string; lieu: string; format_type: string } | null;
+  proposedDates?: ProposedDateRange | null;
 }
 
 export function StepPersonalInfo({
@@ -55,6 +57,7 @@ export function StepPersonalInfo({
   isSubmitting,
   formation,
   session,
+  proposedDates,
 }: StepPersonalInfoProps) {
   const [acceptTerms, setAcceptTerms] = useState(false);
 
@@ -76,7 +79,7 @@ export function StepPersonalInfo({
         </p>
       </div>
 
-      {/* Summary Card */}
+      {/* Summary Card - Session */}
       {session && (
         <div className="p-4 rounded-xl bg-primary/5 border border-primary/20">
           <div className="flex items-start gap-3">
@@ -98,6 +101,32 @@ export function StepPersonalInfo({
               {formation.price && (
                 <p className="text-primary font-semibold mt-2">{formation.price}</p>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Summary Card - Proposed Dates (no session) */}
+      {!session && proposedDates && (
+        <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center shrink-0">
+              <CalendarClock className="w-5 h-5 text-amber-600" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold truncate">{formation.title}</p>
+              <div className="text-sm text-muted-foreground mt-1">
+                <span className="flex items-center gap-1">
+                  <Calendar className="w-3.5 h-3.5" />
+                  Dates souhaitées : {format(proposedDates.from, "d MMM", { locale: fr })} → {format(proposedDates.to, "d MMM yyyy", { locale: fr })}
+                  <span className="text-amber-600 font-medium ml-1">
+                    ({differenceInDays(proposedDates.to, proposedDates.from) + 1} jours)
+                  </span>
+                </span>
+              </div>
+              <p className="text-xs text-amber-600 mt-2">
+                Nous vous contacterons pour confirmer la disponibilité
+              </p>
             </div>
           </div>
         </div>
