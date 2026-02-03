@@ -47,6 +47,24 @@ export interface UpdateInvoiceInput {
   notes?: string | null;
 }
 
+interface RawInvoice {
+  id: string;
+  number: string;
+  client_id: string | null;
+  formation_id: string | null;
+  session_id: string | null;
+  amount: number;
+  status: "draft" | "sent" | "paid" | "overdue" | "cancelled";
+  date: string;
+  due_date: string;
+  paid_at: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+  clients: { nom: string } | null;
+  formations: { title: string } | null;
+}
+
 async function fetchInvoices(): Promise<Invoice[]> {
   const supabase = createClient();
 
@@ -62,10 +80,10 @@ async function fetchInvoices(): Promise<Invoice[]> {
   if (error) throw error;
   if (!data) return [];
 
-  return data.map((item) => ({
+  return (data as RawInvoice[]).map((item) => ({
     ...item,
-    client_name: (item.clients as { nom: string } | null)?.nom || null,
-    formation_title: (item.formations as { title: string } | null)?.title || null,
+    client_name: item.clients?.nom || null,
+    formation_title: item.formations?.title || null,
   }));
 }
 
