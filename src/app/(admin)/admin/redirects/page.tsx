@@ -1,10 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { useRedirects, useRedirectMutations, type CreateRedirectInput } from "@/hooks/admin/useRedirects";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { EmptyState } from "@/components/admin/EmptyState";
+import { adminStyles } from "@/components/admin/AdminDesignSystem";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Table,
   TableBody,
@@ -21,6 +28,31 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   ArrowRightLeft,
   Search,
   Plus,
@@ -30,152 +62,176 @@ import {
   CheckCircle2,
   XCircle,
   MoreVertical,
+  Loader2,
 } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { format, parseISO } from "date-fns";
+import { fr } from "date-fns/locale";
+import { toast } from "sonner";
 
-interface Redirect {
-  id: string;
-  source: string;
-  destination: string;
-  type: "301" | "302" | "307" | "308";
-  hits: number;
-  active: boolean;
-  createdAt: string;
-}
-
-const demoRedirects: Redirect[] = [
-  {
-    id: "1",
-    source: "/formations-sst",
-    destination: "/formations/securite/sst",
-    type: "301",
-    hits: 245,
-    active: true,
-    createdAt: "2024-01-15",
-  },
-  {
-    id: "2",
-    source: "/contact-us",
-    destination: "/contact",
-    type: "301",
-    hits: 180,
-    active: true,
-    createdAt: "2024-01-10",
-  },
-  {
-    id: "3",
-    source: "/old-blog/*",
-    destination: "/actualites/:splat",
-    type: "301",
-    hits: 520,
-    active: true,
-    createdAt: "2024-01-05",
-  },
-  {
-    id: "4",
-    source: "/promo-janvier",
-    destination: "/formations?promo=janvier2024",
-    type: "302",
-    hits: 95,
-    active: false,
-    createdAt: "2024-01-01",
-  },
-  {
-    id: "5",
-    source: "/inscription",
-    destination: "/auth/register",
-    type: "301",
-    hits: 320,
-    active: true,
-    createdAt: "2023-12-20",
-  },
-];
-
-const typeConfig = {
-  "301": { label: "301 Permanent", color: "bg-green-500/15 text-green-600" },
-  "302": { label: "302 Temporaire", color: "bg-blue-500/15 text-blue-600" },
-  "307": { label: "307 Temporaire", color: "bg-amber-500/15 text-amber-600" },
-  "308": { label: "308 Permanent", color: "bg-purple-500/15 text-purple-600" },
+const typeConfig: Record<number, { label: string; color: string }> = {
+  301: { label: "301 Permanent", color: "bg-green-500/15 text-green-600" },
+  302: { label: "302 Temporaire", color: "bg-blue-500/15 text-blue-600" },
+  307: { label: "307 Temporaire", color: "bg-amber-500/15 text-amber-600" },
+  308: { label: "308 Permanent", color: "bg-purple-500/15 text-purple-600" },
 };
 
 export default function RedirectsPage() {
+  const { data: redirects = [], isLoading } = useRedirects();
+  const { createRedirect, updateRedirect, deleteRedirect, toggleActive } = useRedirectMutations();
+
   const [searchQuery, setSearchQuery] = useState("");
-  const [newRedirect, setNewRedirect] = useState<{
-    source: string;
-    destination: string;
-    type: "301" | "302" | "307" | "308";
-  }>({
-    source: "",
-    destination: "",
-    type: "301",
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedRedirect, setSelectedRedirect] = useState<typeof redirects[0] | null>(null);
+  const [newRedirect, setNewRedirect] = useState<Partial<CreateRedirectInput>>({
+    source_path: "",
+    target_path: "",
+    status_code: 301,
+    notes: "",
   });
 
-  const filteredRedirects = demoRedirects.filter(
-    (redirect) =>
-      redirect.source.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      redirect.destination.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredRedirects = useMemo(() => {
+    return redirects.filter((redirect) =>
+      redirect.source_path.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      redirect.target_path.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [redirects, searchQuery]);
 
-  const totalHits = demoRedirects.reduce((sum, r) => sum + r.hits, 0);
-  const activeCount = demoRedirects.filter((r) => r.active).length;
+  const stats = useMemo(() => ({
+    total: redirects.length,
+    active: redirects.filter((r) => r.is_active).length,
+    totalHits: redirects.reduce((sum, r) => sum + r.hit_count, 0),
+  }), [redirects]);
+
+  const handleCreate = async () => {
+    if (!newRedirect.source_path || !newRedirect.target_path) {
+      toast.error("Les chemins source et destination sont obligatoires");
+      return;
+    }
+    try {
+      await createRedirect.mutateAsync(newRedirect as CreateRedirectInput);
+      toast.success("Redirection créée");
+      setNewRedirect({
+        source_path: "",
+        target_path: "",
+        status_code: 301,
+        notes: "",
+      });
+    } catch {
+      toast.error("Erreur lors de la création");
+    }
+  };
+
+  const handleEdit = (redirect: typeof redirects[0]) => {
+    setSelectedRedirect(redirect);
+    setNewRedirect({
+      source_path: redirect.source_path,
+      target_path: redirect.target_path,
+      status_code: redirect.status_code,
+      notes: redirect.notes || "",
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleUpdate = async () => {
+    if (!selectedRedirect) return;
+    try {
+      await updateRedirect.mutateAsync({
+        id: selectedRedirect.id,
+        data: {
+          source_path: newRedirect.source_path,
+          target_path: newRedirect.target_path,
+          status_code: newRedirect.status_code,
+          notes: newRedirect.notes || null,
+        },
+      });
+      toast.success("Redirection mise à jour");
+      setEditDialogOpen(false);
+      setSelectedRedirect(null);
+    } catch {
+      toast.error("Erreur lors de la mise à jour");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!selectedRedirect) return;
+    try {
+      await deleteRedirect.mutateAsync(selectedRedirect.id);
+      toast.success("Redirection supprimée");
+      setDeleteDialogOpen(false);
+      setSelectedRedirect(null);
+    } catch {
+      toast.error("Erreur lors de la suppression");
+    }
+  };
+
+  const handleToggleActive = async (redirect: typeof redirects[0]) => {
+    try {
+      await toggleActive.mutateAsync({ id: redirect.id, is_active: !redirect.is_active });
+      toast.success(redirect.is_active ? "Redirection désactivée" : "Redirection activée");
+    } catch {
+      toast.error("Erreur lors de la mise à jour");
+    }
+  };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <ArrowRightLeft className="h-6 w-6" />
-            Redirections
-          </h1>
-          <p className="text-muted-foreground">
-            Gérez les redirections d'URL pour le SEO
-          </p>
-        </div>
-      </div>
+      <AdminPageHeader
+        icon={ArrowRightLeft}
+        title="Redirections"
+        description="Gérez les redirections d'URL pour le SEO"
+      />
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total redirections</CardTitle>
-            <ArrowRightLeft className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{demoRedirects.length}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Actives</CardTitle>
-            <CheckCircle2 className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{activeCount}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total hits</CardTitle>
-            <ArrowRight className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
-              {totalHits.toLocaleString()}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      {isLoading ? (
+        <div className="grid gap-4 md:grid-cols-3">
+          {[1, 2, 3].map((i) => (
+            <Card key={i} className="border-0 bg-secondary/30">
+              <CardContent className="p-4">
+                <Skeleton className="h-4 w-20 mb-2" />
+                <Skeleton className="h-8 w-12" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card className="border-0 bg-secondary/30">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total redirections</CardTitle>
+              <ArrowRightLeft className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.total}</div>
+            </CardContent>
+          </Card>
+          <Card className="border-0 bg-secondary/30">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Actives</CardTitle>
+              <CheckCircle2 className="h-4 w-4 text-green-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">{stats.active}</div>
+            </CardContent>
+          </Card>
+          <Card className="border-0 bg-secondary/30">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total hits</CardTitle>
+              <ArrowRight className="h-4 w-4 text-blue-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-600">
+                {stats.totalHits.toLocaleString()}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Add New Redirect */}
-      <Card>
+      <Card className="border-0 bg-secondary/30">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-base">
             <Plus className="h-5 w-5" />
             Nouvelle redirection
           </CardTitle>
@@ -188,27 +244,21 @@ export default function RedirectsPage() {
             <div className="flex-1">
               <Input
                 placeholder="URL source (ex: /ancien-chemin)"
-                value={newRedirect.source}
-                onChange={(e) =>
-                  setNewRedirect({ ...newRedirect, source: e.target.value })
-                }
+                value={newRedirect.source_path}
+                onChange={(e) => setNewRedirect({ ...newRedirect, source_path: e.target.value })}
               />
             </div>
             <ArrowRight className="h-4 w-4 text-muted-foreground self-center hidden sm:block" />
             <div className="flex-1">
               <Input
                 placeholder="URL destination (ex: /nouveau-chemin)"
-                value={newRedirect.destination}
-                onChange={(e) =>
-                  setNewRedirect({ ...newRedirect, destination: e.target.value })
-                }
+                value={newRedirect.target_path}
+                onChange={(e) => setNewRedirect({ ...newRedirect, target_path: e.target.value })}
               />
             </div>
             <Select
-              value={newRedirect.type}
-              onValueChange={(value: "301" | "302" | "307" | "308") =>
-                setNewRedirect({ ...newRedirect, type: value })
-              }
+              value={String(newRedirect.status_code)}
+              onValueChange={(value) => setNewRedirect({ ...newRedirect, status_code: parseInt(value) })}
             >
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Type" />
@@ -220,8 +270,12 @@ export default function RedirectsPage() {
                 <SelectItem value="308">308 Permanent</SelectItem>
               </SelectContent>
             </Select>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
+            <Button onClick={handleCreate} disabled={createRedirect.isPending}>
+              {createRedirect.isPending ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Plus className="h-4 w-4 mr-2" />
+              )}
               Ajouter
             </Button>
           </div>
@@ -229,9 +283,9 @@ export default function RedirectsPage() {
       </Card>
 
       {/* Search */}
-      <Card>
+      <Card className="border-0 bg-secondary/30">
         <CardContent className="p-4">
-          <div className="relative">
+          <div className="relative max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Rechercher une URL..."
@@ -244,103 +298,214 @@ export default function RedirectsPage() {
       </Card>
 
       {/* Redirects Table */}
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Source</TableHead>
-                <TableHead></TableHead>
-                <TableHead>Destination</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Hits</TableHead>
-                <TableHead>Statut</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredRedirects.map((redirect) => {
-                const typeInfo = typeConfig[redirect.type];
-                return (
-                  <TableRow key={redirect.id}>
-                    <TableCell>
-                      <code className="text-xs bg-muted px-2 py-1 rounded">
-                        {redirect.source}
-                      </code>
-                    </TableCell>
-                    <TableCell>
-                      <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                    </TableCell>
-                    <TableCell>
-                      <code className="text-xs bg-muted px-2 py-1 rounded">
-                        {redirect.destination}
-                      </code>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={typeInfo.color}>{typeInfo.label}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{redirect.hits}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      {redirect.active ? (
-                        <Badge className="bg-green-500/15 text-green-600">
-                          <CheckCircle2 className="h-3 w-3 mr-1" />
-                          Actif
-                        </Badge>
-                      ) : (
-                        <Badge className="bg-muted text-muted-foreground">
-                          <XCircle className="h-3 w-3 mr-1" />
-                          Inactif
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
-                            <Edit className="h-4 w-4 mr-2" />
-                            Modifier
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            {redirect.active ? (
-                              <>
-                                <XCircle className="h-4 w-4 mr-2" />
-                                Désactiver
-                              </>
-                            ) : (
-                              <>
-                                <CheckCircle2 className="h-4 w-4 mr-2" />
-                                Activer
-                              </>
-                            )}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive">
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Supprimer
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
+      {isLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : filteredRedirects.length === 0 ? (
+        <EmptyState
+          icon={ArrowRightLeft}
+          title="Aucune redirection"
+          description={searchQuery ? "Aucune redirection ne correspond à votre recherche" : "Créez votre première redirection"}
+        />
+      ) : (
+        <Card className="border-0 bg-secondary/30">
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className={adminStyles.tableRowHeader}>
+                    <TableHead className={adminStyles.tableHead}>Source</TableHead>
+                    <TableHead className={adminStyles.tableHead}></TableHead>
+                    <TableHead className={adminStyles.tableHead}>Destination</TableHead>
+                    <TableHead className={adminStyles.tableHead}>Type</TableHead>
+                    <TableHead className={adminStyles.tableHead}>Hits</TableHead>
+                    <TableHead className={adminStyles.tableHead}>Statut</TableHead>
+                    <TableHead className={`${adminStyles.tableHead} text-right`}>Actions</TableHead>
                   </TableRow>
-                );
-              })}
-              {filteredRedirects.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                    Aucune redirection trouvée
-                  </TableCell>
-                </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredRedirects.map((redirect) => {
+                    const typeInfo = typeConfig[redirect.status_code] || typeConfig[301];
+                    return (
+                      <TableRow key={redirect.id} className={adminStyles.tableRowClickable}>
+                        <TableCell className={adminStyles.tableCell}>
+                          <code className="text-xs bg-muted px-2 py-1 rounded">
+                            {redirect.source_path}
+                          </code>
+                        </TableCell>
+                        <TableCell className={adminStyles.tableCell}>
+                          <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                        </TableCell>
+                        <TableCell className={adminStyles.tableCell}>
+                          <code className="text-xs bg-muted px-2 py-1 rounded">
+                            {redirect.target_path}
+                          </code>
+                        </TableCell>
+                        <TableCell className={adminStyles.tableCell}>
+                          <Badge className={typeInfo.color}>{typeInfo.label}</Badge>
+                        </TableCell>
+                        <TableCell className={adminStyles.tableCell}>
+                          <Badge variant="outline">{redirect.hit_count}</Badge>
+                        </TableCell>
+                        <TableCell className={adminStyles.tableCell}>
+                          {redirect.is_active ? (
+                            <Badge className="bg-green-500/15 text-green-600">
+                              <CheckCircle2 className="h-3 w-3 mr-1" />
+                              Actif
+                            </Badge>
+                          ) : (
+                            <Badge className="bg-muted text-muted-foreground">
+                              <XCircle className="h-3 w-3 mr-1" />
+                              Inactif
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className={`${adminStyles.tableCell} text-right`}>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => handleEdit(redirect)}>
+                                <Edit className="h-4 w-4 mr-2" />
+                                Modifier
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleToggleActive(redirect)}>
+                                {redirect.is_active ? (
+                                  <>
+                                    <XCircle className="h-4 w-4 mr-2" />
+                                    Désactiver
+                                  </>
+                                ) : (
+                                  <>
+                                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                                    Activer
+                                  </>
+                                )}
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="text-destructive"
+                                onClick={() => {
+                                  setSelectedRedirect(redirect);
+                                  setDeleteDialogOpen(true);
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Supprimer
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Edit Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Modifier la redirection</DialogTitle>
+            <DialogDescription>
+              Modifiez les paramètres de cette redirection
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-source">URL source</Label>
+              <Input
+                id="edit-source"
+                placeholder="/ancien-chemin"
+                value={newRedirect.source_path}
+                onChange={(e) => setNewRedirect({ ...newRedirect, source_path: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-target">URL destination</Label>
+              <Input
+                id="edit-target"
+                placeholder="/nouveau-chemin"
+                value={newRedirect.target_path}
+                onChange={(e) => setNewRedirect({ ...newRedirect, target_path: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-type">Type de redirection</Label>
+              <Select
+                value={String(newRedirect.status_code)}
+                onValueChange={(value) => setNewRedirect({ ...newRedirect, status_code: parseInt(value) })}
+              >
+                <SelectTrigger id="edit-type">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="301">301 Permanent</SelectItem>
+                  <SelectItem value="302">302 Temporaire</SelectItem>
+                  <SelectItem value="307">307 Temporaire</SelectItem>
+                  <SelectItem value="308">308 Permanent</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-notes">Notes (optionnel)</Label>
+              <Textarea
+                id="edit-notes"
+                placeholder="Notes sur cette redirection..."
+                value={newRedirect.notes}
+                onChange={(e) => setNewRedirect({ ...newRedirect, notes: e.target.value })}
+                rows={2}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+              Annuler
+            </Button>
+            <Button onClick={handleUpdate} disabled={updateRedirect.isPending}>
+              {updateRedirect.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Enregistrer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer cette redirection ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {selectedRedirect && (
+                <>
+                  La redirection de <code className="bg-muted px-1 rounded">{selectedRedirect.source_path}</code> vers{" "}
+                  <code className="bg-muted px-1 rounded">{selectedRedirect.target_path}</code> sera supprimée.
+                  Cette action est irréversible.
+                </>
               )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleteRedirect.isPending}
+            >
+              {deleteRedirect.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

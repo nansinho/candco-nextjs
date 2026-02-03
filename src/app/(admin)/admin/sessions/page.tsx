@@ -3,12 +3,15 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useSessions, useSessionMutations, type SessionWithData } from "@/hooks/admin/useSessions";
+import { useSessions, useSessionMutations, type SessionWithData, type CreateSessionInput } from "@/hooks/admin/useSessions";
+import { useFormations } from "@/hooks/admin/useFormations";
+import { useFormateurs } from "@/hooks/admin/useFormateurs";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { adminStyles } from "@/components/admin/AdminDesignSystem";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -22,7 +25,22 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  Calendar,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Calendar as CalendarIcon,
   Plus,
   Search,
   MapPin,
@@ -38,6 +56,7 @@ import {
 } from "lucide-react";
 import { format, parseISO, isAfter, isBefore, startOfDay } from "date-fns";
 import { fr } from "date-fns/locale";
+import { toast } from "sonner";
 
 const statusLabels: Record<string, string> = {
   planifiee: "Planifiée",
@@ -66,10 +85,53 @@ function StatusBadge({ status }: { status: string }) {
 export default function AdminSessions() {
   const router = useRouter();
   const { data: sessions = [], isLoading } = useSessions();
-  const { deleteSession, duplicateSession } = useSessionMutations();
+  const { data: formations = [] } = useFormations();
+  const { data: formateurs = [] } = useFormateurs();
+  const { createSession, deleteSession, duplicateSession } = useSessionMutations();
 
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState("upcoming");
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [newSession, setNewSession] = useState<Partial<CreateSessionInput>>({
+    formation_id: "",
+    start_date: "",
+    end_date: "",
+    lieu: "",
+    places_max: 12,
+    formateur_id: "",
+    format_type: "presentiel",
+  });
+
+  const handleCreateSession = async () => {
+    if (!newSession.formation_id || !newSession.start_date || !newSession.lieu) {
+      toast.error("Veuillez remplir tous les champs obligatoires");
+      return;
+    }
+    try {
+      await createSession.mutateAsync({
+        formation_id: newSession.formation_id,
+        start_date: newSession.start_date,
+        end_date: newSession.end_date || null,
+        lieu: newSession.lieu,
+        places_max: newSession.places_max || 12,
+        formateur_id: newSession.formateur_id || null,
+        format_type: newSession.format_type || "presentiel",
+      });
+      toast.success("Session créée avec succès");
+      setCreateDialogOpen(false);
+      setNewSession({
+        formation_id: "",
+        start_date: "",
+        end_date: "",
+        lieu: "",
+        places_max: 12,
+        formateur_id: "",
+        format_type: "presentiel",
+      });
+    } catch (error) {
+      toast.error("Erreur lors de la création de la session");
+    }
+  };
 
   // Filter sessions based on search
   const filteredSessions = useMemo(() => {
@@ -186,7 +248,7 @@ export default function AdminSessions() {
                   </TableCell>
                   <TableCell className={adminStyles.tableCell}>
                     <div className="flex items-center gap-1">
-                      <Calendar className="h-3 w-3 text-muted-foreground" />
+                      <CalendarIcon className="h-3 w-3 text-muted-foreground" />
                       {format(parseISO(session.start_date), "dd MMM yyyy", { locale: fr })}
                     </div>
                   </TableCell>
@@ -272,7 +334,7 @@ export default function AdminSessions() {
                   <div className="flex-1 min-w-0">
                     <p className="font-medium truncate">{session.formation_title}</p>
                     <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
-                      <Calendar className="h-3 w-3" />
+                      <CalendarIcon className="h-3 w-3" />
                       {format(parseISO(session.start_date), "dd MMM yyyy", { locale: fr })}
                       <span>•</span>
                       <MapPin className="h-3 w-3" />
@@ -304,11 +366,11 @@ export default function AdminSessions() {
   return (
     <div className="space-y-4 sm:space-y-6">
       <AdminPageHeader
-        icon={Calendar}
+        icon={CalendarIcon}
         title="Sessions"
         description="Gérez les sessions de formation et les inscriptions"
       >
-        <Button size="sm">
+        <Button size="sm" onClick={() => setCreateDialogOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
           <span className="hidden sm:inline">Nouvelle session</span>
           <span className="sm:hidden">Ajouter</span>
@@ -427,6 +489,127 @@ export default function AdminSessions() {
           </>
         )}
       </Tabs>
+
+      {/* Dialog de création de session */}
+      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Nouvelle session</DialogTitle>
+            <DialogDescription>
+              Créez une nouvelle session de formation
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="formation">Formation *</Label>
+              <Select
+                value={newSession.formation_id}
+                onValueChange={(value) => setNewSession({ ...newSession, formation_id: value })}
+              >
+                <SelectTrigger id="formation">
+                  <SelectValue placeholder="Sélectionner une formation" />
+                </SelectTrigger>
+                <SelectContent>
+                  {formations.map((formation) => (
+                    <SelectItem key={formation.id} value={formation.id}>
+                      {formation.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="start_date">Date de début *</Label>
+                <Input
+                  id="start_date"
+                  type="date"
+                  value={newSession.start_date}
+                  onChange={(e) => setNewSession({ ...newSession, start_date: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="end_date">Date de fin</Label>
+                <Input
+                  id="end_date"
+                  type="date"
+                  value={newSession.end_date || ""}
+                  onChange={(e) => setNewSession({ ...newSession, end_date: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="lieu">Lieu *</Label>
+              <Input
+                id="lieu"
+                placeholder="Ex: Paris, Lyon, En ligne..."
+                value={newSession.lieu}
+                onChange={(e) => setNewSession({ ...newSession, lieu: e.target.value })}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="places_max">Nombre de places</Label>
+                <Input
+                  id="places_max"
+                  type="number"
+                  min={1}
+                  value={newSession.places_max}
+                  onChange={(e) => setNewSession({ ...newSession, places_max: parseInt(e.target.value) || 12 })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="format_type">Format</Label>
+                <Select
+                  value={newSession.format_type}
+                  onValueChange={(value) => setNewSession({ ...newSession, format_type: value })}
+                >
+                  <SelectTrigger id="format_type">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="presentiel">Présentiel</SelectItem>
+                    <SelectItem value="distanciel">Distanciel</SelectItem>
+                    <SelectItem value="hybride">Hybride</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="formateur">Formateur (optionnel)</Label>
+              <Select
+                value={newSession.formateur_id || "none"}
+                onValueChange={(value) => setNewSession({ ...newSession, formateur_id: value === "none" ? "" : value })}
+              >
+                <SelectTrigger id="formateur">
+                  <SelectValue placeholder="Sélectionner un formateur" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Aucun formateur assigné</SelectItem>
+                  {formateurs.filter(f => f.active).map((formateur) => (
+                    <SelectItem key={formateur.id} value={formateur.id}>
+                      {formateur.prenom} {formateur.nom}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
+              Annuler
+            </Button>
+            <Button onClick={handleCreateSession} disabled={createSession.isPending}>
+              {createSession.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Créer la session
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
