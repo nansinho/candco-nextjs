@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useFormations, useFormationMutations, type FormationWithData } from "@/hooks/admin/useFormations";
-import { usePoles, getPoleBadgeClasses, getPoleBadgeStyle } from "@/hooks/admin/usePoles";
+import { usePoles } from "@/hooks/admin/usePoles";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { adminStyles } from "@/components/admin/AdminDesignSystem";
@@ -50,14 +50,44 @@ export default function AdminFormations() {
   const [filterPole, setFilterPole] = useState("all");
   const [filterActive, setFilterActive] = useState("all");
 
+  // Couleurs hardcodées pour les pôles - correspondant au site vitrine
+  const POLE_COLORS: Record<string, { bg: string; text: string }> = {
+    "petite-enfance": { bg: "#8B5CF6", text: "#fff" },  // Violet
+    "securite": { bg: "#F97316", text: "#fff" },        // Orange
+    "sante": { bg: "#10B981", text: "#fff" },           // Vert
+  };
+
   // Créer un mapping dynamique des couleurs de pôles depuis la DB
+  // avec fallback sur les couleurs hardcodées
   const poleColors = useMemo(() => {
-    const colors: Record<string, { classes: string; style?: React.CSSProperties }> = {};
-    polesData.forEach((pole) => {
-      colors[pole.slug] = {
-        classes: getPoleBadgeClasses(pole.color),
-        style: getPoleBadgeStyle(pole.color),
+    const colors: Record<string, { classes: string; style: React.CSSProperties }> = {};
+
+    // D'abord ajouter les couleurs hardcodées comme base
+    Object.entries(POLE_COLORS).forEach(([slug, color]) => {
+      colors[slug] = {
+        classes: "",
+        style: { backgroundColor: color.bg, color: color.text, borderColor: color.bg },
       };
+    });
+
+    // Ensuite override avec les couleurs de la DB si disponibles
+    polesData.forEach((pole) => {
+      if (pole.color?.startsWith("#")) {
+        const isLight = (hex: string) => {
+          const r = parseInt(hex.slice(1, 3), 16);
+          const g = parseInt(hex.slice(3, 5), 16);
+          const b = parseInt(hex.slice(5, 7), 16);
+          return (r * 299 + g * 587 + b * 114) / 1000 > 128;
+        };
+        colors[pole.slug] = {
+          classes: "",
+          style: {
+            backgroundColor: pole.color,
+            color: isLight(pole.color) ? "#000" : "#fff",
+            borderColor: pole.color
+          },
+        };
+      }
     });
     return colors;
   }, [polesData]);
@@ -236,13 +266,12 @@ export default function AdminFormations() {
                       <span className="truncate block">{formation.title}</span>
                     </TableCell>
                     <TableCell className={adminStyles.tableCell}>
-                      <Badge
-                        variant="outline"
-                        className={poleColors[formation.pole]?.classes || ""}
-                        style={poleColors[formation.pole]?.style}
+                      <span
+                        className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
+                        style={poleColors[formation.pole]?.style || { backgroundColor: "#6366f1", color: "#fff" }}
                       >
                         {formation.pole_name}
-                      </Badge>
+                      </span>
                     </TableCell>
                     <TableCell className={adminStyles.tableCell}>
                       <div className="flex items-center gap-1">
@@ -316,13 +345,12 @@ export default function AdminFormations() {
                     <div className="flex-1 min-w-0">
                       <p className="font-medium truncate">{formation.title}</p>
                       <div className="flex items-center gap-2 mt-2 flex-wrap">
-                        <Badge
-                          variant="outline"
-                          className={`text-xs ${poleColors[formation.pole]?.classes || ""}`}
-                          style={poleColors[formation.pole]?.style}
+                        <span
+                          className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
+                          style={poleColors[formation.pole]?.style || { backgroundColor: "#6366f1", color: "#fff" }}
                         >
                           {formation.pole_name}
-                        </Badge>
+                        </span>
                         {formation.duration && (
                           <span className="text-xs text-muted-foreground">
                             {formation.duration}
