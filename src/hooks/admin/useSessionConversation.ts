@@ -19,7 +19,7 @@ export interface SessionConversation {
 async function getOrCreateSessionConversation(
   sessionId: string,
   type: string = "admin"
-): Promise<SessionConversation> {
+): Promise<SessionConversation | null> {
   const supabase = createClient();
 
   // First, try to find existing conversation for this session and type
@@ -30,11 +30,17 @@ async function getOrCreateSessionConversation(
     .eq("type", type)
     .maybeSingle();
 
-  if (existing && !fetchError) {
+  if (fetchError) {
+    console.error("Error fetching conversation:", fetchError);
+    // Don't throw - return null and let UI handle it gracefully
+    return null;
+  }
+
+  if (existing) {
     return existing;
   }
 
-  // If not found, create a new conversation
+  // If not found, try to create a new conversation
   const { data: created, error: createError } = await supabase
     .from("session_conversations")
     .insert({
@@ -48,7 +54,9 @@ async function getOrCreateSessionConversation(
 
   if (createError) {
     console.error("Error creating conversation:", createError);
-    throw createError;
+    // Don't throw - return null and let UI handle it gracefully
+    // This typically happens due to RLS policies or missing permissions
+    return null;
   }
 
   return created;
@@ -57,6 +65,7 @@ async function getOrCreateSessionConversation(
 /**
  * Hook to get or create a session conversation
  * Use the returned conversation.id for session_messages queries
+ * Returns null if conversation cannot be fetched/created (e.g., due to RLS policies)
  */
 export function useSessionConversation(sessionId: string, type: string = "admin") {
   return useQuery({
@@ -65,6 +74,6 @@ export function useSessionConversation(sessionId: string, type: string = "admin"
     staleTime: 10 * 60 * 1000, // Conversation IDs are stable, cache for 10 minutes
     gcTime: 30 * 60 * 1000,
     enabled: !!sessionId,
-    retry: 2,
+    retry: 1, // Only retry once since RLS failures won't change
   });
 }

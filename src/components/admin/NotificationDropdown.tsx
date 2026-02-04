@@ -2,14 +2,16 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Bell, FileText, Code, CheckCheck } from "lucide-react";
+import { Bell, FileText, Code, CheckCheck, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNotifications, useNotificationMutations } from "@/hooks/admin/useNotifications";
 import { useAuth } from "@/contexts/AuthContext";
@@ -25,7 +27,7 @@ export function NotificationDropdown() {
   const { markAsRead, markAllAsRead } = useNotificationMutations();
 
   const unreadCount = notifications.filter((n) => !n.read_at).length;
-  const recentNotifications = notifications.slice(0, 8);
+  const recentNotifications = notifications.slice(0, 15);
 
   // Compter par type
   const devCount = notifications.filter(
@@ -68,8 +70,8 @@ export function NotificationDropdown() {
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild>
         <Button
           variant="ghost"
           size="icon"
@@ -84,67 +86,72 @@ export function NotificationDropdown() {
             </Badge>
           )}
         </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-80 p-0" align="end" sideOffset={8}>
+      </SheetTrigger>
+      <SheetContent side="right" className="w-[400px] sm:w-[450px] p-0">
         {/* Header */}
-        <div className="flex items-center justify-between p-3 border-b border-border">
-          <div className="flex items-center gap-2">
-            <h4 className="font-semibold text-sm">Notifications</h4>
+        <SheetHeader className="p-4 border-b border-border">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <SheetTitle className="text-lg">Notifications</SheetTitle>
+              {unreadCount > 0 && (
+                <Badge variant="secondary" className="text-xs">
+                  {unreadCount} non lues
+                </Badge>
+              )}
+            </div>
             {unreadCount > 0 && (
-              <Badge variant="secondary" className="text-xs">
-                {unreadCount}
-              </Badge>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 text-xs text-muted-foreground hover:text-foreground"
+                onClick={handleMarkAllAsRead}
+              >
+                <CheckCheck className="h-3.5 w-3.5 mr-1.5" />
+                Tout marquer comme lu
+              </Button>
             )}
           </div>
-          {unreadCount > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 text-xs text-muted-foreground hover:text-foreground"
-              onClick={handleMarkAllAsRead}
-            >
-              <CheckCheck className="h-3 w-3 mr-1" />
-              Tout lu
-            </Button>
-          )}
-        </div>
+        </SheetHeader>
 
         {/* Compteurs par catégorie */}
-        <div className="flex gap-2 p-3 border-b border-border bg-secondary/30">
-          <div className="flex-1 text-center p-2 bg-background rounded-lg border border-border/50">
-            <Code className="h-4 w-4 mx-auto mb-1 text-blue-500" />
-            <div className="text-lg font-bold">{devCount}</div>
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wide">
-              Dev
+        <div className="flex gap-3 p-4 border-b border-border bg-secondary/30">
+          <div className="flex-1 text-center p-3 bg-background rounded-xl border border-border/50">
+            <Code className="h-5 w-5 mx-auto mb-1.5 text-blue-500" />
+            <div className="text-2xl font-bold">{devCount}</div>
+            <div className="text-xs text-muted-foreground uppercase tracking-wide">
+              Système
             </div>
           </div>
-          <div className="flex-1 text-center p-2 bg-background rounded-lg border border-border/50">
-            <FileText className="h-4 w-4 mx-auto mb-1 text-amber-500" />
-            <div className="text-lg font-bold">{demandesCount}</div>
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wide">
+          <div className="flex-1 text-center p-3 bg-background rounded-xl border border-border/50">
+            <FileText className="h-5 w-5 mx-auto mb-1.5 text-amber-500" />
+            <div className="text-2xl font-bold">{demandesCount}</div>
+            <div className="text-xs text-muted-foreground uppercase tracking-wide">
               Demandes
             </div>
           </div>
         </div>
 
         {/* Section "RÉCENTES" */}
-        <div className="px-3 py-2 border-b border-border">
-          <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+        <div className="px-4 py-3 border-b border-border">
+          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Récentes
           </span>
         </div>
 
         {/* Liste des notifications */}
-        <ScrollArea className="h-[280px]">
+        <ScrollArea className="h-[calc(100vh-320px)]">
           {isLoading ? (
-            <div className="p-4 text-center text-sm text-muted-foreground">
+            <div className="p-6 text-center text-sm text-muted-foreground">
               Chargement...
             </div>
           ) : recentNotifications.length === 0 ? (
-            <div className="p-8 text-center">
-              <Bell className="h-8 w-8 mx-auto text-muted-foreground/30 mb-2" />
+            <div className="p-12 text-center">
+              <Bell className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
               <p className="text-sm text-muted-foreground">
                 Aucune notification
+              </p>
+              <p className="text-xs text-muted-foreground/70 mt-1">
+                Les nouvelles notifications apparaîtront ici
               </p>
             </div>
           ) : (
@@ -153,12 +160,12 @@ export function NotificationDropdown() {
                 <div
                   key={notification.id}
                   className={cn(
-                    "flex items-start gap-3 p-3 hover:bg-secondary/50 cursor-pointer transition-colors",
+                    "flex items-start gap-3 p-4 hover:bg-secondary/50 cursor-pointer transition-colors",
                     !notification.read_at && "bg-primary/5"
                   )}
                   onClick={() => handleNotificationClick(notification)}
                 >
-                  <div className="mt-0.5 p-1.5 rounded-full bg-secondary">
+                  <div className="mt-0.5 p-2 rounded-full bg-secondary">
                     {getNotificationIcon(notification.type)}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -171,11 +178,11 @@ export function NotificationDropdown() {
                       {notification.title}
                     </p>
                     {notification.message && (
-                      <p className="text-xs text-muted-foreground truncate mt-0.5">
+                      <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
                         {notification.message}
                       </p>
                     )}
-                    <p className="text-[10px] text-muted-foreground/70 mt-1">
+                    <p className="text-xs text-muted-foreground/70 mt-1.5">
                       {notification.created_at
                         ? formatDistanceToNow(new Date(notification.created_at), {
                             addSuffix: true,
@@ -185,7 +192,7 @@ export function NotificationDropdown() {
                     </p>
                   </div>
                   {!notification.read_at && (
-                    <div className="w-2 h-2 rounded-full bg-primary mt-2 shrink-0" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-primary mt-2 shrink-0" />
                   )}
                 </div>
               ))}
@@ -194,19 +201,19 @@ export function NotificationDropdown() {
         </ScrollArea>
 
         {/* Footer */}
-        <div className="p-2 border-t border-border">
+        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-border bg-background">
           <Button
-            variant="ghost"
-            className="w-full h-9 text-sm font-medium"
+            variant="outline"
+            className="w-full h-10 text-sm font-medium"
             onClick={() => {
               setOpen(false);
               router.push("/admin/notifications");
             }}
           >
-            Voir le tableau de bord
+            Voir toutes les notifications
           </Button>
         </div>
-      </PopoverContent>
-    </Popover>
+      </SheetContent>
+    </Sheet>
   );
 }

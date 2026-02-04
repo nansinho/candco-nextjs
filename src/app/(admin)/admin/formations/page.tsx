@@ -316,7 +316,11 @@ export default function AdminFormations() {
                     <div className="flex-1 min-w-0">
                       <p className="font-medium truncate">{formation.title}</p>
                       <div className="flex items-center gap-2 mt-2 flex-wrap">
-                        <Badge variant="outline" className={`text-xs ${poleColors[formation.pole] || ""}`}>
+                        <Badge
+                          variant="outline"
+                          className={`text-xs ${poleColors[formation.pole]?.classes || ""}`}
+                          style={poleColors[formation.pole]?.style}
+                        >
                           {formation.pole_name}
                         </Badge>
                         {formation.duration && (
