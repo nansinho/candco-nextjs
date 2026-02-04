@@ -11,6 +11,7 @@ export interface UpcomingSession {
   lieu: string;
   places_max: number;
   places_disponibles: number;
+  inscriptions_count: number;
   status: string;
   formation_id: string;
   formation_title: string;
@@ -59,14 +60,29 @@ async function fetchDashboardData(): Promise<DashboardData> {
     console.error("Error fetching sessions:", sessionsError);
   }
 
-  // Get formation details for sessions
+  // Get formation details and inscriptions count for sessions
   let upcomingSessions: UpcomingSession[] = [];
   if (sessionsData && sessionsData.length > 0) {
     const formationIds = [...new Set(sessionsData.map((s) => s.formation_id))];
+    const sessionIds = sessionsData.map((s) => s.id);
+
+    // Fetch formations
     const { data: formationsData } = await supabase
       .from("formations")
       .select("id, title, pole")
       .in("id", formationIds);
+
+    // Count inscriptions per session (excluding cancelled)
+    const { data: inscriptionsData } = await supabase
+      .from("inscriptions")
+      .select("session_id")
+      .in("session_id", sessionIds)
+      .neq("status", "annulee");
+
+    const inscriptionsCounts: Record<string, number> = {};
+    inscriptionsData?.forEach((i: { session_id: string }) => {
+      inscriptionsCounts[i.session_id] = (inscriptionsCounts[i.session_id] || 0) + 1;
+    });
 
     const formationsMap: Record<string, { title: string; pole: string }> = {};
     formationsData?.forEach((f) => {
@@ -77,6 +93,7 @@ async function fetchDashboardData(): Promise<DashboardData> {
       ...session,
       formation_title: formationsMap[session.formation_id]?.title || "Formation inconnue",
       formation_pole: formationsMap[session.formation_id]?.pole || "",
+      inscriptions_count: inscriptionsCounts[session.id] || 0,
     }));
   }
 

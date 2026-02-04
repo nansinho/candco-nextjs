@@ -40,6 +40,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Calendar as CalendarIcon,
   Plus,
   Search,
@@ -53,6 +60,8 @@ import {
   History,
   CalendarCheck,
   GraduationCap,
+  MoreVertical,
+  Eye,
 } from "lucide-react";
 import { format, parseISO, isAfter, isBefore, startOfDay } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -276,8 +285,8 @@ export default function AdminSessions() {
                           style={{ width: `${getPlacesPercentage(session)}%` }}
                         />
                       </div>
-                      <span className="text-muted-foreground text-xs">
-                        {session.inscriptions_count}/{session.places_max}
+                      <span className="text-muted-foreground text-xs whitespace-nowrap">
+                        {session.inscriptions_count} / {session.places_max}
                       </span>
                     </div>
                   </TableCell>
@@ -285,34 +294,36 @@ export default function AdminSessions() {
                     <StatusBadge status={session.status} />
                   </TableCell>
                   <TableCell className={`${adminStyles.tableCell} text-right`}>
-                    <div
-                      className="flex items-center justify-end gap-0"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className={adminStyles.tableActionButton}
-                        onClick={() => router.push(`/admin/sessions/${session.id}/edit`)}
-                      >
-                        <Edit className="h-3 w-3" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className={adminStyles.tableActionButton}
-                        onClick={() => handleDuplicate(session)}
-                      >
-                        <Copy className="h-3 w-3" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className={`${adminStyles.tableActionButton} text-destructive`}
-                        onClick={() => handleDelete(session.id)}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className={adminStyles.tableActionButton}>
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => router.push(`/admin/sessions/${session.id}`)}>
+                            <Eye className="mr-2 h-4 w-4" />
+                            Voir
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => router.push(`/admin/sessions/${session.id}/edit`)}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Modifier
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDuplicate(session)}>
+                            <Copy className="mr-2 h-4 w-4" />
+                            Dupliquer
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onClick={() => handleDelete(session.id)}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Supprimer
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </TableCell>
                 </TableRow>
