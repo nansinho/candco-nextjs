@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useFormations, useFormationMutations, type FormationWithData } from "@/hooks/admin/useFormations";
 import { usePoles } from "@/hooks/admin/usePoles";
+import { getPoleColor } from "@/lib/pole-colors";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { adminStyles } from "@/components/admin/AdminDesignSystem";
@@ -50,47 +51,11 @@ export default function AdminFormations() {
   const [filterPole, setFilterPole] = useState("all");
   const [filterActive, setFilterActive] = useState("all");
 
-  // Couleurs hardcodées pour les pôles - correspondant au site vitrine
-  const POLE_COLORS: Record<string, { bg: string; text: string }> = {
-    "petite-enfance": { bg: "#8B5CF6", text: "#fff" },  // Violet
-    "securite-prevention": { bg: "#F97316", text: "#fff" },  // Orange
-    "sante": { bg: "#10B981", text: "#fff" },           // Vert
-  };
-
-  // Créer un mapping dynamique des couleurs de pôles depuis la DB
-  // avec fallback sur les couleurs hardcodées
-  const poleColors = useMemo(() => {
-    const colors: Record<string, { classes: string; style: React.CSSProperties }> = {};
-
-    // D'abord ajouter les couleurs hardcodées comme base
-    Object.entries(POLE_COLORS).forEach(([slug, color]) => {
-      colors[slug] = {
-        classes: "",
-        style: { backgroundColor: color.bg, color: color.text, borderColor: color.bg },
-      };
-    });
-
-    // Ensuite override avec les couleurs de la DB si disponibles
-    polesData.forEach((pole) => {
-      if (pole.color?.startsWith("#")) {
-        const isLight = (hex: string) => {
-          const r = parseInt(hex.slice(1, 3), 16);
-          const g = parseInt(hex.slice(3, 5), 16);
-          const b = parseInt(hex.slice(5, 7), 16);
-          return (r * 299 + g * 587 + b * 114) / 1000 > 128;
-        };
-        colors[pole.slug] = {
-          classes: "",
-          style: {
-            backgroundColor: pole.color,
-            color: isLight(pole.color) ? "#000" : "#fff",
-            borderColor: pole.color
-          },
-        };
-      }
-    });
-    return colors;
-  }, [polesData]);
+  // Fonction pour obtenir le style d'un badge de pôle (utilise l'utilitaire centralisé)
+  const getPoleStyle = (slug: string): React.CSSProperties => ({
+    backgroundColor: getPoleColor(slug),
+    color: "#fff",
+  });
 
   // Get unique poles from formations (pour le filtre)
   const poles = useMemo(() => {
@@ -268,7 +233,7 @@ export default function AdminFormations() {
                     <TableCell className={adminStyles.tableCell}>
                       <span
                         className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
-                        style={poleColors[formation.pole]?.style || { backgroundColor: "#6366f1", color: "#fff" }}
+                        style={getPoleStyle(formation.pole)}
                       >
                         {formation.pole_name}
                       </span>
@@ -347,7 +312,7 @@ export default function AdminFormations() {
                       <div className="flex items-center gap-2 mt-2 flex-wrap">
                         <span
                           className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
-                          style={poleColors[formation.pole]?.style || { backgroundColor: "#6366f1", color: "#fff" }}
+                          style={getPoleStyle(formation.pole)}
                         >
                           {formation.pole_name}
                         </span>
