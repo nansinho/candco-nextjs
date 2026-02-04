@@ -227,10 +227,15 @@ export function QuestionnairesTab({
                             <GraduationCap className="h-4 w-4 text-muted-foreground" />
                             <span className="text-sm">{template.formation_name}</span>
                           </div>
-                        ) : (
+                        ) : template.is_default ? (
                           <div className="flex items-center gap-2 text-muted-foreground">
                             <Globe className="h-4 w-4" />
                             <span className="text-sm">Toutes</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Lock className="h-4 w-4" />
+                            <span className="text-sm">Privé</span>
                           </div>
                         )}
                       </TableCell>
@@ -345,7 +350,23 @@ export function QuestionnairesTab({
                             {template.description}
                           </p>
                         )}
-                        <div className="flex items-center gap-2 mt-1">
+                        <div className="flex items-center gap-2 mt-1 flex-wrap">
+                          {template.formation_name ? (
+                            <Badge variant="outline" className="text-xs">
+                              <GraduationCap className="h-3 w-3 mr-1" />
+                              {template.formation_name}
+                            </Badge>
+                          ) : template.is_default ? (
+                            <Badge variant="outline" className="text-xs">
+                              <Globe className="h-3 w-3 mr-1" />
+                              Toutes
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-xs">
+                              <Lock className="h-3 w-3 mr-1" />
+                              Privé
+                            </Badge>
+                          )}
                           <Badge variant="outline" className="text-xs">
                             {template.questions_count} questions
                           </Badge>
