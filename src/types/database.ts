@@ -2911,6 +2911,50 @@ export type Database = {
           },
         ]
       }
+      needs_analysis_invitations: {
+        Row: {
+          id: string
+          template_id: string
+          token: string
+          recipient_name: string | null
+          recipient_email: string
+          expires_at: string
+          used_at: string | null
+          created_at: string | null
+          created_by: string | null
+        }
+        Insert: {
+          id?: string
+          template_id: string
+          token: string
+          recipient_name?: string | null
+          recipient_email: string
+          expires_at: string
+          used_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+        }
+        Update: {
+          id?: string
+          template_id?: string
+          token?: string
+          recipient_name?: string | null
+          recipient_email?: string
+          expires_at?: string
+          used_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "needs_analysis_invitations_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "needs_analysis_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       offers: {
         Row: {
           active: boolean | null

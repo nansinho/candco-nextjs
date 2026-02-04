@@ -41,7 +41,7 @@ async function fetchNeedsAnalysis(): Promise<NeedsAnalysisResponse[]> {
   if (error) throw error;
   if (!data) return [];
 
-  return data.map((item) => {
+  return data.map((item: Record<string, unknown>) => {
     // Determine status based on dates
     let status: "new" | "in_progress" | "completed" | "pending" = "new";
     if (item.analyzed_at) {

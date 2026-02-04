@@ -122,6 +122,21 @@ export const queryKeys = {
     notifications: {
       all: ["admin-notifications"] as const,
     },
+
+    // Needs Analysis
+    needsAnalysis: {
+      all: ["admin-needs-analysis"] as const,
+      list: () => [...queryKeys.admin.needsAnalysis.all, "list"] as const,
+      templates: {
+        all: ["admin-needs-analysis-templates"] as const,
+        list: () => [...queryKeys.admin.needsAnalysis.templates.all, "list"] as const,
+        detail: (id: string) => [...queryKeys.admin.needsAnalysis.templates.all, id] as const,
+      },
+      responses: {
+        all: ["admin-needs-analysis-responses"] as const,
+        list: () => [...queryKeys.admin.needsAnalysis.responses.all, "list"] as const,
+      },
+    },
   },
 
   // ============================================
