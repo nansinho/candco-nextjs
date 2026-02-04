@@ -638,7 +638,7 @@ export default function Header() {
             )}
 
             <button
-              className="p-2.5 text-muted-foreground hover:text-foreground transition-colors rounded-full hover:bg-secondary/50"
+              className="p-2.5 text-foreground bg-secondary/80 hover:bg-secondary transition-colors rounded-lg border border-border/50 shadow-sm"
               onClick={() => setIsOpen(!isOpen)}
               aria-label={isOpen ? "Fermer le menu" : "Ouvrir le menu"}
             >
