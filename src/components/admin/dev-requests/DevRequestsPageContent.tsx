@@ -6,7 +6,8 @@
  * Ce composant est chargé dynamiquement avec ssr: false pour éviter les erreurs d'hydratation
  */
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,6 +42,9 @@ import { DevRequestDetail } from "./DevRequestDetail";
 type ViewMode = "kanban" | "list";
 
 export default function DevRequestsPageContent() {
+  const searchParams = useSearchParams();
+  const requestIdFromUrl = searchParams.get("requestId");
+
   const [viewMode, setViewMode] = useState<ViewMode>("kanban");
   const [searchQuery, setSearchQuery] = useState("");
   const [priorityFilter, setPriorityFilter] = useState<DevRequestPriority | "all">("all");
@@ -50,6 +54,17 @@ export default function DevRequestsPageContent() {
 
   // false = exclude resolved/archived requests from the Kanban view
   const { data: requests = [], isLoading } = useDevRequests(false);
+
+  // Open detail panel when requestId is in URL (from notification click)
+  useEffect(() => {
+    if (requestIdFromUrl && requests.length > 0 && !detailOpen) {
+      const request = requests.find(r => r.id === requestIdFromUrl);
+      if (request) {
+        setSelectedRequest(request);
+        setDetailOpen(true);
+      }
+    }
+  }, [requestIdFromUrl, requests, detailOpen]);
 
   // Filter requests based on search and priority
   const filteredRequests = useMemo(() => {

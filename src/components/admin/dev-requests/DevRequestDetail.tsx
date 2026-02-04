@@ -20,7 +20,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { MentionTextarea, parseCommentWithMentions } from "./MentionTextarea";
+import { ImageDropZone } from "./ImageDropZone";
 import {
   Select,
   SelectContent,
@@ -55,6 +56,8 @@ import {
   RotateCcw,
   Undo2,
   Send,
+  FileText,
+  ExternalLink,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -88,6 +91,8 @@ export function DevRequestDetail({ request, open, onOpenChange }: DevRequestDeta
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [editedDescription, setEditedDescription] = useState("");
   const [newComment, setNewComment] = useState("");
+  const [commentImages, setCommentImages] = useState<File[]>([]);
+  const [commentPreviews, setCommentPreviews] = useState<string[]>([]);
 
   const titleInputRef = useRef<HTMLInputElement>(null);
   const descriptionRef = useRef<HTMLTextAreaElement>(null);
@@ -206,8 +211,17 @@ export function DevRequestDetail({ request, open, onOpenChange }: DevRequestDeta
     addComment.mutate({
       request_id: currentRequest.id,
       content: newComment.trim(),
+      images: commentImages.length > 0 ? commentImages : undefined,
     });
     setNewComment("");
+    // Clear images
+    commentPreviews.forEach(preview => {
+      if (!preview.startsWith('pdf:')) {
+        URL.revokeObjectURL(preview);
+      }
+    });
+    setCommentImages([]);
+    setCommentPreviews([]);
   };
 
   const availableStatuses: DevRequestStatus[] = [...ACTIVE_COLUMNS, 'resolue'];
@@ -503,12 +517,23 @@ export function DevRequestDetail({ request, open, onOpenChange }: DevRequestDeta
 
               <TabsContent value="comments" className="mt-4 space-y-4">
                 {/* Add comment form */}
-                <div className="flex gap-2">
-                  <Textarea
+                <div className="space-y-3">
+                  <MentionTextarea
                     value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    placeholder="Ajouter un commentaire..."
-                    className="min-h-[80px] resize-none"
+                    onChange={setNewComment}
+                    placeholder="Ajouter un commentaire... Tapez @ pour mentionner"
+                    users={adminUsers || []}
+                  />
+                  <ImageDropZone
+                    images={commentImages}
+                    previews={commentPreviews}
+                    onImagesChange={(images, previews) => {
+                      setCommentImages(images);
+                      setCommentPreviews(previews);
+                    }}
+                    maxImages={5}
+                    compact
+                    acceptPdf
                   />
                 </div>
                 <Button
@@ -537,7 +562,52 @@ export function DevRequestDetail({ request, open, onOpenChange }: DevRequestDeta
                           {format(new Date(comment.created_at), 'dd MMM yyyy HH:mm', { locale: fr })}
                         </span>
                       </div>
-                      <p className="text-sm whitespace-pre-wrap">{comment.content}</p>
+                      <p className="text-sm whitespace-pre-wrap">{parseCommentWithMentions(comment.content)}</p>
+
+                      {/* Display comment images */}
+                      {comment.images && comment.images.length > 0 && (
+                        <div className="grid grid-cols-2 gap-2 mt-3">
+                          {comment.images.map((img) => {
+                            const isPdf = img.file_name?.toLowerCase().endsWith('.pdf');
+                            const url = img.display_url || img.image_url;
+
+                            if (isPdf) {
+                              return (
+                                <a
+                                  key={img.id}
+                                  href={url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center gap-2 p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                                >
+                                  <FileText className="h-8 w-8 text-red-500 shrink-0" />
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium truncate">{img.file_name || 'Document.pdf'}</p>
+                                    <p className="text-xs text-muted-foreground">PDF</p>
+                                  </div>
+                                  <ExternalLink className="h-4 w-4 text-muted-foreground shrink-0" />
+                                </a>
+                              );
+                            }
+
+                            return (
+                              <a
+                                key={img.id}
+                                href={url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="block rounded-lg overflow-hidden border hover:opacity-90 transition-opacity"
+                              >
+                                <img
+                                  src={url}
+                                  alt={img.file_name || "Image"}
+                                  className="w-full h-24 object-cover"
+                                />
+                              </a>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   ))}
                   {(!comments || comments.length === 0) && (
