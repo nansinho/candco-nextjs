@@ -16,6 +16,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { LogOut, User, Building2, Home, Sun, Moon, ChevronDown, ArrowLeft, GitCommit } from "lucide-react";
+import { NotificationDropdown } from "./NotificationDropdown";
 import {
   Tooltip,
   TooltipContent,
@@ -215,6 +216,9 @@ export function AdminHeader() {
         </div>
 
         <div className="flex items-center gap-1.5">
+          {/* Notifications */}
+          <NotificationDropdown />
+
           {/* Toggle Dark/Light Mode */}
           <Button
             variant="ghost"
