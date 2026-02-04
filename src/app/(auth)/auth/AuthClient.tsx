@@ -329,20 +329,24 @@ export function AuthClient() {
       variants={containerVariants}
     >
       {/* Left Side - Branding (hidden on mobile) */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-primary/20 via-background to-background">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-30">
-          <div className="absolute top-20 left-20 w-72 h-72 bg-primary/20 rounded-full blur-3xl" />
-          <div className="absolute bottom-20 right-20 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
-          <div className="absolute top-1/2 left-1/3 w-48 h-48 bg-primary/15 rounded-full blur-2xl" />
-        </div>
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
+        {/* Background Image */}
+        <Image
+          src="/auth-hero.jpg"
+          alt="Formation professionnelle"
+          fill
+          className="object-cover"
+          priority
+        />
+        {/* Dark Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/60 to-primary/40" />
 
         {/* Content */}
         <div className="relative z-10 flex flex-col justify-between p-12 w-full">
           {/* Back button */}
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors w-fit"
+            className="inline-flex items-center gap-2 text-white/80 hover:text-white transition-colors w-fit"
           >
             <ArrowLeft className="w-4 h-4" />
             <span className="text-sm font-medium">Retour au site</span>
@@ -361,14 +365,14 @@ export function AuthClient() {
                   alt="C&Co Formation"
                   width={180}
                   height={60}
-                  className="mx-auto dark:invert"
+                  className="mx-auto invert"
                   priority
                 />
               </div>
-              <h1 className="text-3xl font-bold text-foreground mb-4">
+              <h1 className="text-3xl font-bold text-white mb-4">
                 Bienvenue sur C&Co Formation
               </h1>
-              <p className="text-muted-foreground max-w-md mx-auto text-lg">
+              <p className="text-white/80 max-w-md mx-auto text-lg">
                 Votre partenaire pour des formations professionnelles de qualité
               </p>
             </motion.div>
@@ -387,19 +391,19 @@ export function AuthClient() {
               ].map((feature, index) => (
                 <div
                   key={index}
-                  className="flex items-center gap-3 text-left bg-card/50 backdrop-blur-sm p-4 rounded-xl border border-border/30"
+                  className="flex items-center gap-3 text-left bg-white/10 backdrop-blur-sm p-4 rounded-xl border border-white/20"
                 >
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                    <Sparkles className="w-4 h-4 text-primary" />
+                  <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                    <Sparkles className="w-4 h-4 text-white" />
                   </div>
-                  <span className="text-sm text-foreground">{feature}</span>
+                  <span className="text-sm text-white">{feature}</span>
                 </div>
               ))}
             </motion.div>
           </div>
 
           {/* Footer */}
-          <div className="text-center text-xs text-muted-foreground">
+          <div className="text-center text-xs text-white/60">
             © {new Date().getFullYear()} C&Co Formation. Tous droits réservés.
           </div>
         </div>
