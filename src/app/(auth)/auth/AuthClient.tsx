@@ -332,14 +332,14 @@ export function AuthClient() {
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
         {/* Background Image */}
         <Image
-          src="/auth-hero.jpg"
+          src="/hero-training.jpg"
           alt="Formation professionnelle"
           fill
           className="object-cover"
           priority
         />
         {/* Dark Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/60 to-primary/40" />
+        <div className="absolute inset-0 bg-black/80" />
 
         {/* Content */}
         <div className="relative z-10 flex flex-col justify-between p-12 w-full">
