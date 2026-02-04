@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { PageHero } from "@/components/PageHero";
+import { IconCaptcha } from "@/components/captcha";
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -16,6 +17,7 @@ export default function ContactPage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [captchaVerified, setCaptchaVerified] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -260,9 +262,14 @@ export default function ContactPage() {
                   />
                 </div>
 
+                <IconCaptcha
+                  onVerify={setCaptchaVerified}
+                  disabled={isSubmitting}
+                />
+
                 <button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || !captchaVerified}
                   className="w-full sm:w-auto px-8 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSubmitting ? "Envoi en cours..." : "Envoyer le message"}
