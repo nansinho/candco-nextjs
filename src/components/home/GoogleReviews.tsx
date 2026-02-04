@@ -1,11 +1,43 @@
 "use client";
 
-import Script from "next/script";
+import { useEffect, useRef } from "react";
 import { Star } from "lucide-react";
 
 export function GoogleReviews() {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const scriptLoadedRef = useRef(false);
+
+  useEffect(() => {
+    // Éviter de charger le script plusieurs fois
+    if (scriptLoadedRef.current) return;
+
+    const loadTrustindex = () => {
+      if (typeof window !== "undefined" && containerRef.current) {
+        // Supprimer tout script existant pour éviter les doublons
+        const existingScript = document.querySelector('script[src*="trustindex.io"]');
+        if (existingScript) {
+          existingScript.remove();
+        }
+
+        // Créer et insérer le script dans notre conteneur
+        const script = document.createElement("script");
+        script.src = "https://cdn.trustindex.io/loader.js?4c6f9f463da979114096634798b";
+        script.async = true;
+        script.defer = true;
+
+        // Insérer le script DANS notre conteneur pour que le widget apparaisse ici
+        containerRef.current.appendChild(script);
+        scriptLoadedRef.current = true;
+      }
+    };
+
+    // Petit délai pour s'assurer que le DOM est prêt
+    const timer = setTimeout(loadTrustindex, 100);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
-    <section className="section-padding bg-card border-y border-border">
+    <section id="google-reviews" className="section-padding bg-card border-y border-border">
       <div className="container-custom">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
@@ -33,13 +65,11 @@ export function GoogleReviews() {
           </div>
         </div>
 
-        {/* Trustindex Widget Container */}
-        <div className="min-h-[200px]">
-          <Script
-            src="https://cdn.trustindex.io/loader.js?4c6f9f463da979114096634798b"
-            strategy="afterInteractive"
-          />
-        </div>
+        {/* Trustindex Widget Container - Le widget s'injectera ici */}
+        <div
+          ref={containerRef}
+          className="min-h-[200px] trustindex-widget-container"
+        />
       </div>
     </section>
   );

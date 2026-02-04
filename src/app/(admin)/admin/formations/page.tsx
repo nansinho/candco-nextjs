@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useFormations, useFormationMutations, type FormationWithData } from "@/hooks/admin/useFormations";
+import { usePoles, getPoleBadgeClasses } from "@/hooks/admin/usePoles";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { adminStyles } from "@/components/admin/AdminDesignSystem";
@@ -39,22 +40,26 @@ import {
   Loader2,
 } from "lucide-react";
 
-const poleColors: Record<string, string> = {
-  "securite-prevention": "bg-red-500/10 text-red-600 border-red-500/20",
-  "petite-enfance": "bg-purple-500/10 text-purple-600 border-purple-500/20",
-  sante: "bg-blue-500/10 text-blue-600 border-blue-500/20",
-};
-
 export default function AdminFormations() {
   const router = useRouter();
   const { data: formations = [], isLoading } = useFormations();
+  const { data: polesData = [] } = usePoles();
   const { deleteFormation, toggleActive } = useFormationMutations();
 
   const [search, setSearch] = useState("");
   const [filterPole, setFilterPole] = useState("all");
   const [filterActive, setFilterActive] = useState("all");
 
-  // Get unique poles
+  // Créer un mapping dynamique des couleurs de pôles depuis la DB
+  const poleColors = useMemo(() => {
+    const colors: Record<string, string> = {};
+    polesData.forEach((pole) => {
+      colors[pole.slug] = getPoleBadgeClasses(pole.color);
+    });
+    return colors;
+  }, [polesData]);
+
+  // Get unique poles from formations (pour le filtre)
   const poles = useMemo(() => {
     const uniquePoles = new Map<string, string>();
     formations.forEach((f) => {
