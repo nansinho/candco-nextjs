@@ -444,7 +444,6 @@ export function QuestionnaireDialog({
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [visibility, setVisibility] = useState<string>("all"); // "all" | "private" | formation_id
-  const [isDefault, setIsDefault] = useState(false);
   const [active, setActive] = useState(true);
   const [sections, setSections] = useState<Section[]>([]);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
@@ -482,7 +481,6 @@ export function QuestionnaireDialog({
         } else {
           setVisibility("private");
         }
-        setIsDefault(template.is_default || false);
         setActive(template.active ?? true);
         setSections(template.questions || []);
         setExpandedSections(new Set(template.questions?.map(s => s.id) || []));
@@ -491,7 +489,6 @@ export function QuestionnaireDialog({
         setName("");
         setDescription("");
         setVisibility("all");
-        setIsDefault(false);
         setActive(true);
         const initialSection = {
           id: uuidv4(),
@@ -522,9 +519,12 @@ export function QuestionnaireDialog({
       return;
     }
 
-    // Determine formation_id based on visibility
+    // Determine formation_id and is_default based on visibility
     const formationId = visibility === "all" || visibility === "private" ? null : visibility;
-    const shouldBeDefault = visibility === "all" ? isDefault : false;
+    // "all" → is_default=true (public for all formations)
+    // "private" → is_default=false (private questionnaire)
+    // formation_id → is_default=false (specific formation)
+    const shouldBeDefault = visibility === "all";
 
     try {
       if (isEditing && template) {
@@ -762,25 +762,11 @@ export function QuestionnaireDialog({
                   />
                 </div>
 
-                <div className="flex flex-wrap items-center gap-4 sm:gap-6">
-                  {visibility === "all" && (
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        id="is-default"
-                        checked={isDefault}
-                        onCheckedChange={setIsDefault}
-                      />
-                      <Label htmlFor="is-default" className="cursor-pointer text-sm">
-                        Par défaut
-                      </Label>
-                    </div>
-                  )}
-                  <div className="flex items-center gap-2">
-                    <Switch id="active" checked={active} onCheckedChange={setActive} />
-                    <Label htmlFor="active" className="cursor-pointer text-sm">
-                      Actif
-                    </Label>
-                  </div>
+                <div className="flex items-center gap-2">
+                  <Switch id="active" checked={active} onCheckedChange={setActive} />
+                  <Label htmlFor="active" className="cursor-pointer text-sm">
+                    Actif
+                  </Label>
                 </div>
               </div>
 
