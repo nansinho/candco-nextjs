@@ -6,6 +6,7 @@ import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/client";
+import { usePoles } from "@/hooks/admin/usePoles";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -212,11 +213,7 @@ const formationSchema = z.object({
 
 type FormationFormData = z.infer<typeof formationSchema>;
 
-const poles = [
-  { id: "securite-prevention", name: "Sécurité" },
-  { id: "petite-enfance", name: "Petite Enfance" },
-  { id: "sante", name: "Santé" },
-];
+// Les pôles sont maintenant chargés dynamiquement depuis la base de données
 
 const priceIntraUnits = [
   { value: "€ TTC la journée", label: "€ TTC la journée" },
@@ -246,6 +243,13 @@ export default function AdminFormationEdit() {
   const [manualValidations, setManualValidations] = useState<Record<string, boolean>>({});
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("general");
+
+  // Charger les pôles depuis la base de données
+  const { data: polesData = [] } = usePoles();
+  const poles = useMemo(() =>
+    polesData.map((p) => ({ id: p.slug, name: p.name })),
+    [polesData]
+  );
 
   const supabase = createClient();
 

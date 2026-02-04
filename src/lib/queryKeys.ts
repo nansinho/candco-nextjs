@@ -20,6 +20,8 @@ export const queryKeys = {
 
   poles: {
     all: ["poles"] as const,
+    active: () => [...queryKeys.poles.all, "active"] as const,
+    detail: (id: string) => [...queryKeys.poles.all, id] as const,
     counts: () => [...queryKeys.poles.all, "counts"] as const,
   },
 

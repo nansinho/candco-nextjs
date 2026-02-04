@@ -92,7 +92,11 @@ export function SearchCommand() {
 
     setIsLoading(true);
     const supabase = createClient();
-    const searchTerm = searchQuery.toLowerCase();
+    // Normaliser le terme de recherche pour gérer les accents
+    const searchTerm = searchQuery
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
 
     try {
       // Search formations

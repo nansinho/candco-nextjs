@@ -45,6 +45,7 @@ import {
   Bell,
   Zap,
   Briefcase,
+  Layers,
 } from "lucide-react";
 import {
   Sidebar,
@@ -100,6 +101,7 @@ const allMenuCategories: MenuCategory[] = [
     icon: GraduationCap,
     items: [
       { title: "Catalogue", url: "/admin/formations", icon: FolderOpen },
+      { title: "Pôles", url: "/admin/poles", icon: Layers },
       { title: "Sessions", url: "/admin/sessions", icon: Calendar },
       { title: "Formateurs", url: "/admin/formateurs", icon: UserCog },
       { title: "Clients", url: "/admin/clients", icon: Building2 },
