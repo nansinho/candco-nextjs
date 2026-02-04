@@ -214,23 +214,30 @@ export function usePoleMutations() {
 }
 
 /**
- * Mapping des couleurs CSS pour les badges
+ * Mapping des couleurs CSS pour les badges - Fond SOLIDE comme l'ancien Lovable
  */
 export function getPoleBadgeClasses(color: string): string {
-  // Si c'est une variable CSS comme "pole-securite"
-  if (color.startsWith("pole-")) {
-    return `bg-[hsl(var(--${color}))]/10 text-[hsl(var(--${color}))] border-[hsl(var(--${color}))]/20`;
-  }
-  // Fallback pour les couleurs Tailwind classiques
-  const colorMap: Record<string, string> = {
-    red: "bg-red-500/10 text-red-600 border-red-500/20",
-    blue: "bg-blue-500/10 text-blue-600 border-blue-500/20",
-    green: "bg-green-500/10 text-green-600 border-green-500/20",
-    purple: "bg-purple-500/10 text-purple-600 border-purple-500/20",
-    orange: "bg-orange-500/10 text-orange-600 border-orange-500/20",
-    yellow: "bg-yellow-500/10 text-yellow-600 border-yellow-500/20",
-    pink: "bg-pink-500/10 text-pink-600 border-pink-500/20",
-    cyan: "bg-cyan-500/10 text-cyan-600 border-cyan-500/20",
+  // Couleurs CSS variables avec fond SOLIDE
+  const poleColorMap: Record<string, string> = {
+    "pole-securite": "bg-pole-securite text-pole-securite-foreground",
+    "pole-petite-enfance": "bg-pole-petite-enfance text-pole-petite-enfance-foreground",
+    "pole-sante": "bg-pole-sante text-pole-sante-foreground",
   };
-  return colorMap[color] || "bg-primary/10 text-primary border-primary/20";
+
+  if (poleColorMap[color]) {
+    return poleColorMap[color];
+  }
+
+  // Fallback pour les couleurs Tailwind classiques avec fond solide
+  const colorMap: Record<string, string> = {
+    red: "bg-red-500 text-white",
+    blue: "bg-blue-500 text-white",
+    green: "bg-green-500 text-white",
+    purple: "bg-purple-500 text-white",
+    orange: "bg-orange-500 text-white",
+    yellow: "bg-yellow-500 text-yellow-900",
+    pink: "bg-pink-500 text-white",
+    cyan: "bg-cyan-500 text-white",
+  };
+  return colorMap[color] || "bg-primary text-primary-foreground";
 }
