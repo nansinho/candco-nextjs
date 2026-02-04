@@ -39,7 +39,11 @@ import {
   Euro,
   FileText,
   Calendar,
+  CalendarDays,
 } from "lucide-react";
+import { FormateurPlanningTab } from "@/components/admin/formateurs/FormateurPlanningTab";
+import { MultiSelect } from "@/components/ui/multi-select";
+import { useSpecialites } from "@/hooks/admin/useFormateurs";
 import { toast } from "sonner";
 import Link from "next/link";
 
@@ -64,6 +68,7 @@ interface Formateur {
   numero_tva: string | null;
   is_active: boolean;
   statut: string | null;
+  specialites: string[] | null;
   created_at: string;
 }
 
@@ -90,6 +95,7 @@ export default function AdminFormateurDetail() {
     is_active: true,
     assujetti_tva: false,
     statut: "Vacataire",
+    specialites: [],
   });
   const [sessions, setSessions] = useState<Session[]>([]);
   const [isLoading, setIsLoading] = useState(!isNew);
@@ -97,6 +103,9 @@ export default function AdminFormateurDetail() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const supabase = createClient();
+
+  // Fetch specialites list
+  const { data: specialitesList = [] } = useSpecialites();
 
   useEffect(() => {
     if (!isNew && id) {
@@ -271,6 +280,12 @@ export default function AdminFormateurDetail() {
             <Calendar className="h-4 w-4 mr-2" />
             Sessions ({sessions.length})
           </TabsTrigger>
+          {!isNew && (
+            <TabsTrigger value="planning">
+              <CalendarDays className="h-4 w-4 mr-2" />
+              Planning
+            </TabsTrigger>
+          )}
         </TabsList>
 
         {/* Identity Tab */}
@@ -366,6 +381,21 @@ export default function AdminFormateurDetail() {
                   <Label>Actif</Label>
                   <Switch checked={formateur.is_active} onCheckedChange={(v) => updateField("is_active", v)} />
                 </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 bg-secondary/30 md:col-span-2">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Spécialités</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <MultiSelect
+                  options={specialitesList.map((s) => ({ value: s.name, label: s.name }))}
+                  selected={formateur.specialites || []}
+                  onChange={(selected) => updateField("specialites", selected)}
+                  placeholder="Sélectionner les spécialités..."
+                  emptyMessage="Aucune spécialité trouvée"
+                />
               </CardContent>
             </Card>
 
@@ -521,6 +551,16 @@ export default function AdminFormateurDetail() {
             </div>
           )}
         </TabsContent>
+
+        {/* Planning Tab */}
+        {!isNew && (
+          <TabsContent value="planning">
+            <FormateurPlanningTab
+              formateurId={id}
+              formateurUserId={formateur.user_id || null}
+            />
+          </TabsContent>
+        )}
       </Tabs>
 
       {/* Delete Dialog */}

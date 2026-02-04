@@ -43,7 +43,8 @@ type ViewMode = "kanban" | "list";
 
 export default function DevRequestsPageContent() {
   const searchParams = useSearchParams();
-  const requestIdFromUrl = searchParams.get("requestId");
+  // Support both "requestId" (new) and "request" (legacy) URL parameters
+  const requestIdFromUrl = searchParams.get("requestId") || searchParams.get("request");
 
   const [viewMode, setViewMode] = useState<ViewMode>("kanban");
   const [searchQuery, setSearchQuery] = useState("");
