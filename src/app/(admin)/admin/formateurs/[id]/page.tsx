@@ -39,7 +39,9 @@ import {
   Euro,
   FileText,
   Calendar,
+  CalendarDays,
 } from "lucide-react";
+import { FormateurPlanningTab } from "@/components/admin/formateurs/FormateurPlanningTab";
 import { toast } from "sonner";
 import Link from "next/link";
 
@@ -271,6 +273,12 @@ export default function AdminFormateurDetail() {
             <Calendar className="h-4 w-4 mr-2" />
             Sessions ({sessions.length})
           </TabsTrigger>
+          {!isNew && (
+            <TabsTrigger value="planning">
+              <CalendarDays className="h-4 w-4 mr-2" />
+              Planning
+            </TabsTrigger>
+          )}
         </TabsList>
 
         {/* Identity Tab */}
@@ -521,6 +529,16 @@ export default function AdminFormateurDetail() {
             </div>
           )}
         </TabsContent>
+
+        {/* Planning Tab */}
+        {!isNew && (
+          <TabsContent value="planning">
+            <FormateurPlanningTab
+              formateurId={id}
+              formateurUserId={formateur.user_id || null}
+            />
+          </TabsContent>
+        )}
       </Tabs>
 
       {/* Delete Dialog */}
