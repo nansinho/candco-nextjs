@@ -100,6 +100,21 @@ function getPoleBadgeStyle(color: string) {
   return undefined;
 }
 
+// Mapping des noms de classes CSS vers les variables CSS
+const CSS_CLASS_TO_COLOR: Record<string, string> = {
+  "pole-securite": "hsl(var(--pole-securite))",
+  "pole-petite-enfance": "hsl(var(--pole-petite-enfance))",
+  "pole-sante": "hsl(var(--pole-sante))",
+};
+
+// Obtenir la couleur d'affichage (hex ou variable CSS)
+function getDisplayColor(color: string): string {
+  if (color?.startsWith("#")) {
+    return color;
+  }
+  return CSS_CLASS_TO_COLOR[color] || "#6366f1";
+}
+
 function getIconComponent(iconName: string) {
   const found = availableIcons.find((i) => i.name === iconName);
   return found?.icon || BookOpen;
@@ -422,9 +437,9 @@ export default function PolesPage() {
                         <div className="flex items-center gap-3">
                           <div
                             className="p-2 rounded-lg"
-                            style={{ backgroundColor: pole.color ? `${pole.color}20` : undefined }}
+                            style={{ backgroundColor: pole.color?.startsWith("#") ? `${pole.color}20` : undefined }}
                           >
-                            <IconComponent className="h-4 w-4" style={{ color: pole.color }} />
+                            <IconComponent className="h-4 w-4" style={{ color: getDisplayColor(pole.color) }} />
                           </div>
                           <div>
                             <p className="font-medium">{pole.name}</p>
@@ -440,7 +455,7 @@ export default function PolesPage() {
                         <div className="flex items-center gap-2">
                           <div
                             className="w-6 h-6 rounded-full border"
-                            style={{ backgroundColor: pole.color }}
+                            style={{ backgroundColor: getDisplayColor(pole.color) }}
                           />
                           <code className="text-xs text-muted-foreground">{pole.color}</code>
                         </div>

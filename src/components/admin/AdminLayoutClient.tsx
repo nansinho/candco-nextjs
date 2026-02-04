@@ -32,7 +32,7 @@ export function AdminLayoutClient({ children }: AdminLayoutClientProps) {
 
   return (
     <SidebarProvider>
-      <div className="fixed inset-0 z-[100] h-screen flex w-full bg-background overflow-hidden max-w-[100vw]">
+      <div className="fixed inset-0 z-40 h-screen flex w-full bg-background overflow-hidden max-w-[100vw]">
         <AdminSidebar />
         <div className="flex-1 flex flex-col min-w-0 max-w-full">
           <AdminHeader />

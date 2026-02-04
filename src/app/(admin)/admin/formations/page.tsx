@@ -53,7 +53,7 @@ export default function AdminFormations() {
   // Couleurs hardcodées pour les pôles - correspondant au site vitrine
   const POLE_COLORS: Record<string, { bg: string; text: string }> = {
     "petite-enfance": { bg: "#8B5CF6", text: "#fff" },  // Violet
-    "securite": { bg: "#F97316", text: "#fff" },        // Orange
+    "securite-prevention": { bg: "#F97316", text: "#fff" },  // Orange
     "sante": { bg: "#10B981", text: "#fff" },           // Vert
   };
 
