@@ -43,6 +43,7 @@ interface SendEmailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   template: NeedsAnalysisTemplate | null;
+  templates?: NeedsAnalysisTemplate[];
 }
 
 interface Recipient {
@@ -53,8 +54,9 @@ interface Recipient {
 
 type SendMethod = "email" | "link";
 
-export function SendEmailDialog({ open, onOpenChange, template }: SendEmailDialogProps) {
+export function SendEmailDialog({ open, onOpenChange, template, templates }: SendEmailDialogProps) {
   const [sendMethod, setSendMethod] = useState<SendMethod>("email");
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>(template?.id || "");
   const [recipients, setRecipients] = useState<Recipient[]>([
     { id: uuidv4(), name: "", email: "" },
   ]);
@@ -76,10 +78,14 @@ L'équipe C&CO Formation`
   const [generatedLinks, setGeneratedLinks] = useState<{ name: string; link: string }[]>([]);
   const [showSuccess, setShowSuccess] = useState(false);
 
+  // Get the currently selected template
+  const currentTemplate = templates?.find(t => t.id === selectedTemplateId) || template;
+
   const resetState = () => {
     setRecipients([{ id: uuidv4(), name: "", email: "" }]);
     setGeneratedLinks([]);
     setShowSuccess(false);
+    setSelectedTemplateId(template?.id || templates?.[0]?.id || "");
   };
 
   const handleClose = () => {
@@ -125,7 +131,7 @@ L'équipe C&CO Formation`
   };
 
   const handleSend = async () => {
-    if (!template) return;
+    if (!currentTemplate) return;
     if (!validateRecipients()) return;
 
     setIsSending(true);
@@ -146,7 +152,7 @@ L'équipe C&CO Formation`
           .from("needs_analysis_invitations")
           .insert({
             id: uuidv4(),
-            template_id: template.id,
+            template_id: currentTemplate.id,
             token,
             recipient_name: recipient.name || null,
             recipient_email: recipient.email,
@@ -175,7 +181,7 @@ L'équipe C&CO Formation`
                 subject: emailSubject,
                 message: emailMessage,
                 link,
-                templateName: template.name,
+                templateName: currentTemplate.name,
               }),
             });
           } catch (emailError) {
@@ -219,7 +225,8 @@ L'équipe C&CO Formation`
     }
   };
 
-  if (!template) return null;
+  // Show nothing if no template selected and no templates available
+  if (!currentTemplate && (!templates || templates.length === 0)) return null;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -230,7 +237,9 @@ L'équipe C&CO Formation`
             Envoyer le questionnaire
           </DialogTitle>
           <DialogDescription>
-            Envoyez "{template.name}" par email ou générez des liens
+            {currentTemplate
+              ? `Envoyez "${currentTemplate.name}" par email ou générez des liens`
+              : "Sélectionnez un questionnaire à envoyer"}
           </DialogDescription>
         </DialogHeader>
 
@@ -286,6 +295,34 @@ L'équipe C&CO Formation`
         ) : (
           <ScrollArea className="flex-1 -mx-6 px-6">
             <div className="space-y-6 py-4">
+              {/* Template Selector - shown when multiple templates available */}
+              {templates && templates.length > 0 && (
+                <div className="space-y-2">
+                  <Label>Questionnaire à envoyer</Label>
+                  <Select
+                    value={selectedTemplateId}
+                    onValueChange={(value) => {
+                      setSelectedTemplateId(value);
+                      const newTemplate = templates.find(t => t.id === value);
+                      if (newTemplate) {
+                        setEmailSubject(`Questionnaire: ${newTemplate.name}`);
+                      }
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner un questionnaire" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {templates.filter(t => t.active).map((t) => (
+                        <SelectItem key={t.id} value={t.id}>
+                          {t.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
               {/* Send Method */}
               <div className="space-y-2">
                 <Label>Méthode d'envoi</Label>

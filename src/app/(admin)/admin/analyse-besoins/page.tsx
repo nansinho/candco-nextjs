@@ -204,6 +204,7 @@ export default function AnalyseBesoinsPage() {
         open={sendEmailDialogOpen}
         onOpenChange={setSendEmailDialogOpen}
         template={selectedTemplate || templates[0] || null}
+        templates={templates}
       />
 
       <PreviewDialog
