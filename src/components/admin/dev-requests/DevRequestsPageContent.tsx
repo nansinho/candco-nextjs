@@ -7,7 +7,7 @@
  */
 
 import { useState, useMemo, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,6 +43,7 @@ type ViewMode = "kanban" | "list";
 
 export default function DevRequestsPageContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   // Support both "requestId" (new) and "request" (legacy) URL parameters
   const requestIdFromUrl = searchParams.get("requestId") || searchParams.get("request");
 
@@ -88,6 +89,14 @@ export default function DevRequestsPageContent() {
   const handleRequestClick = (request: DevRequest) => {
     setSelectedRequest(request);
     setDetailOpen(true);
+  };
+
+  const handleDetailOpenChange = (open: boolean) => {
+    setDetailOpen(open);
+    // Clear URL params when closing (to prevent reopening via useEffect)
+    if (!open && requestIdFromUrl) {
+      router.replace("/admin/analyse-besoins", { scroll: false });
+    }
   };
 
   const clearFilters = () => {
@@ -245,7 +254,7 @@ export default function DevRequestsPageContent() {
       <DevRequestDetail
         request={selectedRequest}
         open={detailOpen}
-        onOpenChange={setDetailOpen}
+        onOpenChange={handleDetailOpenChange}
       />
     </div>
   );
