@@ -52,7 +52,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Search,
   Filter,
@@ -182,7 +181,7 @@ export function ResponsesTab() {
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <div className="grid gap-4 md:grid-cols-4">
+        <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
             <Card key={i} className="border-0 bg-secondary/30">
               <CardContent className="p-4">
@@ -199,88 +198,90 @@ export function ResponsesTab() {
   return (
     <div className="space-y-4">
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-3 grid-cols-2 md:grid-cols-4">
         <Card className="border-0 bg-secondary/30">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total réponses</CardTitle>
-            <MessageSquare className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 pt-3 md:px-6 md:pt-6">
+            <CardTitle className="text-xs md:text-sm font-medium">Total réponses</CardTitle>
+            <MessageSquare className="h-4 w-4 text-muted-foreground hidden sm:block" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.total}</div>
+          <CardContent className="px-3 pb-3 md:px-6 md:pb-6">
+            <div className="text-xl md:text-2xl font-bold">{stats.total}</div>
           </CardContent>
         </Card>
         <Card className="border-0 bg-secondary/30">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Nouvelles</CardTitle>
-            <AlertCircle className="h-4 w-4 text-blue-600" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 pt-3 md:px-6 md:pt-6">
+            <CardTitle className="text-xs md:text-sm font-medium">Nouvelles</CardTitle>
+            <AlertCircle className="h-4 w-4 text-blue-600 hidden sm:block" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{stats.new}</div>
+          <CardContent className="px-3 pb-3 md:px-6 md:pb-6">
+            <div className="text-xl md:text-2xl font-bold text-blue-600">{stats.new}</div>
           </CardContent>
         </Card>
         <Card className="border-0 bg-secondary/30">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">En cours</CardTitle>
-            <Clock className="h-4 w-4 text-amber-600" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 pt-3 md:px-6 md:pt-6">
+            <CardTitle className="text-xs md:text-sm font-medium">En cours</CardTitle>
+            <Clock className="h-4 w-4 text-amber-600 hidden sm:block" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-amber-600">{stats.inProgress}</div>
+          <CardContent className="px-3 pb-3 md:px-6 md:pb-6">
+            <div className="text-xl md:text-2xl font-bold text-amber-600">{stats.inProgress}</div>
           </CardContent>
         </Card>
         <Card className="border-0 bg-secondary/30">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Terminées</CardTitle>
-            <CheckCircle2 className="h-4 w-4 text-green-600" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 pt-3 md:px-6 md:pt-6">
+            <CardTitle className="text-xs md:text-sm font-medium">Terminées</CardTitle>
+            <CheckCircle2 className="h-4 w-4 text-green-600 hidden sm:block" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{stats.completed}</div>
+          <CardContent className="px-3 pb-3 md:px-6 md:pb-6">
+            <div className="text-xl md:text-2xl font-bold text-green-600">{stats.completed}</div>
           </CardContent>
         </Card>
       </div>
 
       {/* Filters */}
       <Card className="border-0 bg-secondary/30">
-        <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
+        <CardContent className="p-3 md:p-4">
+          <div className="flex flex-col gap-3">
+            <div className="relative w-full">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Rechercher par nom, email ou entreprise..."
+                placeholder="Rechercher..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
               />
             </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-[180px]">
-                <Filter className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Statut" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tous les statuts</SelectItem>
-                <SelectItem value="new">Nouveau</SelectItem>
-                <SelectItem value="in_progress">En cours</SelectItem>
-                <SelectItem value="completed">Terminé</SelectItem>
-                <SelectItem value="pending">En attente</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={templateFilter} onValueChange={setTemplateFilter}>
-              <SelectTrigger className="w-full sm:w-[200px]">
-                <SelectValue placeholder="Questionnaire" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tous les questionnaires</SelectItem>
-                {templates.map((t) => (
-                  <SelectItem key={t.id} value={t.id}>
-                    {t.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button onClick={handleExport} variant="outline" size="sm">
-              <Download className="h-4 w-4 mr-2" />
-              Exporter
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full sm:w-[140px]">
+                  <Filter className="h-4 w-4 mr-2 flex-shrink-0" />
+                  <SelectValue placeholder="Statut" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les statuts</SelectItem>
+                  <SelectItem value="new">Nouveau</SelectItem>
+                  <SelectItem value="in_progress">En cours</SelectItem>
+                  <SelectItem value="completed">Terminé</SelectItem>
+                  <SelectItem value="pending">En attente</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={templateFilter} onValueChange={setTemplateFilter}>
+                <SelectTrigger className="w-full sm:w-[160px]">
+                  <SelectValue placeholder="Questionnaire" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous</SelectItem>
+                  {templates.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button onClick={handleExport} variant="outline" size="sm" className="w-full sm:w-auto sm:ml-auto">
+                <Download className="h-4 w-4 sm:mr-2" />
+                <span className="sm:inline">Exporter</span>
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -319,7 +320,7 @@ export function ResponsesTab() {
                     return (
                       <TableRow
                         key={response.id}
-                        className={adminStyles.tableRowClickable}
+                        className={`${adminStyles.tableRowClickable} cursor-pointer`}
                         onClick={() => handleViewDetails(response)}
                       >
                         <TableCell className={adminStyles.tableCell}>
@@ -414,29 +415,30 @@ export function ResponsesTab() {
                 const status = statusConfig[response.status];
                 const StatusIcon = status.icon;
                 return (
-                  <div
+                  <button
                     key={response.id}
-                    className="p-4 cursor-pointer hover:bg-muted/50"
+                    type="button"
+                    className="w-full p-4 text-left hover:bg-muted/50 transition-colors"
                     onClick={() => handleViewDetails(response)}
                   >
                     <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="font-medium">{response.respondent_name || "Contact inconnu"}</p>
-                        <p className="text-sm text-muted-foreground">{response.respondent_email}</p>
-                        <p className="text-xs text-muted-foreground mt-1">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium truncate">{response.respondent_name || "Contact inconnu"}</p>
+                        <p className="text-sm text-muted-foreground truncate">{response.respondent_email}</p>
+                        <p className="text-xs text-muted-foreground mt-1 truncate">
                           {getTemplateName(response.template_id)}
                         </p>
                       </div>
-                      <Badge className={status.color}>
+                      <Badge className={`${status.color} flex-shrink-0`}>
                         <StatusIcon className="h-3 w-3 mr-1" />
-                        {status.label}
+                        <span className="hidden xs:inline">{status.label}</span>
                       </Badge>
                     </div>
                     <p className="text-xs text-muted-foreground mt-2">
                       {response.created_at &&
                         format(parseISO(response.created_at), "dd MMM yyyy", { locale: fr })}
                     </p>
-                  </div>
+                  </button>
                 );
               })}
             </div>
@@ -446,45 +448,46 @@ export function ResponsesTab() {
 
       {/* Detail Dialog */}
       <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
-        <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col">
-          <DialogHeader>
-            <DialogTitle>Détails de la réponse</DialogTitle>
-            <DialogDescription>
-              Réponse au questionnaire "{selectedResponse && getTemplateName(selectedResponse.template_id)}"
+        <DialogContent className="w-[95vw] max-w-2xl h-[90vh] max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden">
+          <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-4 border-b flex-shrink-0">
+            <DialogTitle className="text-lg">Détails de la réponse</DialogTitle>
+            <DialogDescription className="text-sm">
+              {selectedResponse && `Réponse au questionnaire "${getTemplateName(selectedResponse.template_id)}"`}
             </DialogDescription>
           </DialogHeader>
+
           {selectedResponse && (
-            <ScrollArea className="flex-1 -mx-6 px-6">
-              <div className="space-y-6 py-4">
+            <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4">
+              <div className="space-y-6">
                 {/* Contact Info */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <Label className="text-muted-foreground">Contact</Label>
-                    <p className="font-medium">{selectedResponse.respondent_name || "—"}</p>
+                    <Label className="text-muted-foreground text-xs uppercase tracking-wide">Contact</Label>
+                    <p className="font-medium mt-1">{selectedResponse.respondent_name || "—"}</p>
                   </div>
                   <div>
-                    <Label className="text-muted-foreground">Email</Label>
-                    <p className="font-medium">{selectedResponse.respondent_email || "—"}</p>
+                    <Label className="text-muted-foreground text-xs uppercase tracking-wide">Email</Label>
+                    <p className="font-medium mt-1 break-all">{selectedResponse.respondent_email || "—"}</p>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <Label className="text-muted-foreground">Entreprise</Label>
-                    <p className="font-medium">{selectedResponse.client_name || "—"}</p>
+                    <Label className="text-muted-foreground text-xs uppercase tracking-wide">Entreprise</Label>
+                    <p className="font-medium mt-1">{selectedResponse.client_name || "—"}</p>
                   </div>
                   <div>
-                    <Label className="text-muted-foreground">Rôle</Label>
-                    <p className="font-medium">{selectedResponse.respondent_role || "—"}</p>
+                    <Label className="text-muted-foreground text-xs uppercase tracking-wide">Rôle</Label>
+                    <p className="font-medium mt-1">{selectedResponse.respondent_role || "—"}</p>
                   </div>
                 </div>
 
                 {/* Formations */}
                 {selectedResponse.formations.length > 0 && (
                   <div>
-                    <Label className="text-muted-foreground">Formations souhaitées</Label>
-                    <div className="flex flex-wrap gap-1 mt-1">
+                    <Label className="text-muted-foreground text-xs uppercase tracking-wide">Formations souhaitées</Label>
+                    <div className="flex flex-wrap gap-1 mt-2">
                       {selectedResponse.formations.map((f, i) => (
-                        <Badge key={i} variant="outline">
+                        <Badge key={i} variant="outline" className="text-xs">
                           {f}
                         </Badge>
                       ))}
@@ -495,12 +498,12 @@ export function ResponsesTab() {
                 {/* Responses */}
                 {selectedResponse.responses && Object.keys(selectedResponse.responses).length > 0 && (
                   <div>
-                    <Label className="text-muted-foreground mb-2 block">Réponses</Label>
+                    <Label className="text-muted-foreground text-xs uppercase tracking-wide mb-3 block">Réponses</Label>
                     <div className="space-y-3">
                       {Object.entries(selectedResponse.responses).map(([key, value]) => (
                         <div key={key} className="p-3 bg-muted/30 rounded-lg">
                           <p className="text-sm font-medium text-muted-foreground">{key}</p>
-                          <p className="mt-1">
+                          <p className="mt-1 text-sm">
                             {Array.isArray(value) ? value.join(", ") : String(value)}
                           </p>
                         </div>
@@ -511,27 +514,29 @@ export function ResponsesTab() {
 
                 {/* Notes */}
                 <div>
-                  <Label htmlFor="notes">Notes d'analyse</Label>
+                  <Label htmlFor="notes" className="text-muted-foreground text-xs uppercase tracking-wide">Notes d'analyse</Label>
                   <Textarea
                     id="notes"
                     placeholder="Ajouter des notes sur cette analyse..."
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     rows={3}
-                    className="mt-1"
+                    className="mt-2 resize-none"
                   />
                 </div>
               </div>
-            </ScrollArea>
+            </div>
           )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDetailDialogOpen(false)}>
+
+          <DialogFooter className="px-4 sm:px-6 py-4 border-t flex-shrink-0 gap-2 flex-col sm:flex-row">
+            <Button variant="outline" onClick={() => setDetailDialogOpen(false)} className="w-full sm:w-auto">
               Fermer
             </Button>
             {selectedResponse && selectedResponse.status !== "completed" && (
               <Button
                 onClick={() => handleMarkAsCompleted(selectedResponse.id)}
                 disabled={updateStatus.isPending}
+                className="w-full sm:w-auto"
               >
                 {updateStatus.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Marquer comme terminé
@@ -543,18 +548,18 @@ export function ResponsesTab() {
 
       {/* Delete Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="w-[95vw] max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle>Supprimer cette réponse ?</AlertDialogTitle>
             <AlertDialogDescription>
               Cette action est irréversible. La réponse sera définitivement supprimée.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel className="w-full sm:w-auto">Annuler</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="w-full sm:w-auto bg-destructive text-destructive-foreground hover:bg-destructive/90"
               disabled={deleteAnalysis.isPending}
             >
               {deleteAnalysis.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
