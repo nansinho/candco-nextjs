@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { usePoles, usePoleMutations, type CreatePoleInput } from "@/hooks/admin/usePoles";
+import { getDisplayColor as getDisplayColorUtil } from "@/lib/pole-colors";
 import { ColorPicker } from "@/components/ui/color-picker";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { EmptyState } from "@/components/admin/EmptyState";

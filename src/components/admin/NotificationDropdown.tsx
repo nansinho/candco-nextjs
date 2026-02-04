@@ -43,17 +43,80 @@ export function NotificationDropdown() {
     }
   };
 
+  // Générer un lien basé sur le titre/type de notification
+  const generateNotificationLink = (notification: {
+    title: string;
+    message: string | null;
+    metadata: Record<string, unknown> | null;
+  }): string | null => {
+    const { title, metadata } = notification;
+
+    // Si la notification contient "demande" → Kanban développement
+    if (title.toLowerCase().includes("demande") || title.toLowerCase().includes("assignée")) {
+      const requestId = metadata?.request_id || metadata?.requestId;
+      if (requestId) {
+        return `/admin/developpement?requestId=${requestId}`;
+      }
+      return "/admin/developpement";
+    }
+
+    // Si la notification contient "commentaire" → Kanban développement
+    if (title.toLowerCase().includes("commentaire")) {
+      const requestId = metadata?.request_id || metadata?.requestId;
+      if (requestId) {
+        return `/admin/developpement?requestId=${requestId}`;
+      }
+      return "/admin/developpement";
+    }
+
+    // Si la notification contient "inscription" → Sessions
+    if (title.toLowerCase().includes("inscription")) {
+      const sessionId = metadata?.session_id || metadata?.sessionId;
+      if (sessionId) {
+        return `/admin/sessions/${sessionId}`;
+      }
+      return "/admin/sessions";
+    }
+
+    // Si la notification contient "message" ou "chat" → Sessions messages
+    if (title.toLowerCase().includes("message") || title.toLowerCase().includes("chat")) {
+      const sessionId = metadata?.session_id || metadata?.sessionId;
+      if (sessionId) {
+        return `/admin/sessions/${sessionId}?tab=messages`;
+      }
+      return "/admin/messages";
+    }
+
+    // Si la notification contient "statut" → Kanban développement
+    if (title.toLowerCase().includes("statut")) {
+      const requestId = metadata?.request_id || metadata?.requestId;
+      if (requestId) {
+        return `/admin/developpement?requestId=${requestId}`;
+      }
+      return "/admin/developpement";
+    }
+
+    return null;
+  };
+
   const handleNotificationClick = (notification: {
     id: string;
+    title: string;
+    message: string | null;
     link: string | null;
     read_at: string | null;
+    metadata: Record<string, unknown> | null;
   }) => {
     if (!notification.read_at) {
       markAsRead.mutate(notification.id);
     }
-    if (notification.link) {
+
+    // Utiliser le lien existant ou générer un lien basé sur le contenu
+    const link = notification.link || generateNotificationLink(notification);
+
+    if (link) {
       setOpen(false);
-      router.push(notification.link);
+      router.push(link);
     }
   };
 
