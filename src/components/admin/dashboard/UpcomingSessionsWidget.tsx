@@ -27,15 +27,15 @@ function getStatusBadge(status: string) {
   }
 }
 
-function getPlacesBadge(disponibles: number, max: number) {
-  const ratio = disponibles / max;
-  if (ratio <= 0) {
+function getPlacesBadge(inscrits: number, max: number) {
+  if (inscrits >= max) {
     return <Badge className="bg-red-500/20 text-red-600 border-red-500/30 text-xs">Complet</Badge>;
   }
-  if (ratio <= 0.3) {
-    return <Badge className="bg-orange-500/20 text-orange-600 border-orange-500/30 text-xs">{disponibles}/{max} places</Badge>;
+  const restantes = max - inscrits;
+  if (restantes <= 2) {
+    return <Badge className="bg-orange-500/20 text-orange-600 border-orange-500/30 text-xs">{inscrits} inscrits / {max} places</Badge>;
   }
-  return <Badge className="bg-emerald-500/20 text-emerald-600 border-emerald-500/30 text-xs">{disponibles}/{max} places</Badge>;
+  return <Badge className="bg-emerald-500/20 text-emerald-600 border-emerald-500/30 text-xs">{inscrits} inscrits / {max} places</Badge>;
 }
 
 export function UpcomingSessionsWidget({ sessions, isLoading }: UpcomingSessionsWidgetProps) {
@@ -98,7 +98,7 @@ export function UpcomingSessionsWidget({ sessions, isLoading }: UpcomingSessions
                     )}
                     <span className="flex items-center gap-1">
                       <Users className="w-3 h-3" />
-                      {getPlacesBadge(session.places_disponibles, session.places_max)}
+                      {getPlacesBadge(session.inscriptions_count, session.places_max)}
                     </span>
                   </div>
                 </div>

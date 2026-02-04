@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useFormations, useFormationMutations, type FormationWithData } from "@/hooks/admin/useFormations";
-import { usePoles, getPoleBadgeClasses } from "@/hooks/admin/usePoles";
+import { usePoles, getPoleBadgeClasses, getPoleBadgeStyle } from "@/hooks/admin/usePoles";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { adminStyles } from "@/components/admin/AdminDesignSystem";
@@ -52,9 +52,12 @@ export default function AdminFormations() {
 
   // Créer un mapping dynamique des couleurs de pôles depuis la DB
   const poleColors = useMemo(() => {
-    const colors: Record<string, string> = {};
+    const colors: Record<string, { classes: string; style?: React.CSSProperties }> = {};
     polesData.forEach((pole) => {
-      colors[pole.slug] = getPoleBadgeClasses(pole.color);
+      colors[pole.slug] = {
+        classes: getPoleBadgeClasses(pole.color),
+        style: getPoleBadgeStyle(pole.color),
+      };
     });
     return colors;
   }, [polesData]);
@@ -233,7 +236,11 @@ export default function AdminFormations() {
                       <span className="truncate block">{formation.title}</span>
                     </TableCell>
                     <TableCell className={adminStyles.tableCell}>
-                      <Badge variant="outline" className={poleColors[formation.pole] || ""}>
+                      <Badge
+                        variant="outline"
+                        className={poleColors[formation.pole]?.classes || ""}
+                        style={poleColors[formation.pole]?.style}
+                      >
                         {formation.pole_name}
                       </Badge>
                     </TableCell>

@@ -214,9 +214,41 @@ export function usePoleMutations() {
 }
 
 /**
+ * Helper pour déterminer si une couleur hex est claire
+ */
+function isLightColor(hex: string): boolean {
+  if (!hex || !hex.startsWith("#")) return false;
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return (r * 299 + g * 587 + b * 114) / 1000 > 128;
+}
+
+/**
+ * Retourne un style inline pour les badges avec couleur hex
+ * À utiliser avec l'attribut style= sur les badges
+ */
+export function getPoleBadgeStyle(color: string): React.CSSProperties | undefined {
+  if (color?.startsWith("#")) {
+    return {
+      backgroundColor: color,
+      color: isLightColor(color) ? "#000" : "#fff",
+      borderColor: color,
+    };
+  }
+  return undefined;
+}
+
+/**
  * Mapping des couleurs CSS pour les badges - Fond SOLIDE comme l'ancien Lovable
+ * @deprecated Utiliser getPoleBadgeStyle pour les couleurs hex
  */
 export function getPoleBadgeClasses(color: string): string {
+  // Si c'est une couleur hex, retourner une classe vide (utiliser getPoleBadgeStyle à la place)
+  if (color?.startsWith("#")) {
+    return "";
+  }
+
   // Couleurs CSS variables avec fond SOLIDE
   const poleColorMap: Record<string, string> = {
     "pole-securite": "bg-pole-securite text-pole-securite-foreground",

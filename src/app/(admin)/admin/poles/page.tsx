@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { usePoles, usePoleMutations, getPoleBadgeClasses, type CreatePoleInput } from "@/hooks/admin/usePoles";
+import { usePoles, usePoleMutations, type CreatePoleInput } from "@/hooks/admin/usePoles";
+import { ColorPicker } from "@/components/ui/color-picker";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { adminStyles } from "@/components/admin/AdminDesignSystem";
@@ -77,19 +78,27 @@ const availableIcons = [
   { name: "GraduationCap", icon: GraduationCap, label: "Diplôme" },
 ];
 
-// Couleurs disponibles
-const availableColors = [
-  { value: "pole-securite", label: "Rouge (Sécurité)", preview: "bg-red-500" },
-  { value: "pole-petite-enfance", label: "Cyan (Petite Enfance)", preview: "bg-cyan-500" },
-  { value: "pole-sante", label: "Bleu (Santé)", preview: "bg-blue-500" },
-  { value: "red", label: "Rouge", preview: "bg-red-500" },
-  { value: "blue", label: "Bleu", preview: "bg-blue-500" },
-  { value: "green", label: "Vert", preview: "bg-green-500" },
-  { value: "purple", label: "Violet", preview: "bg-purple-500" },
-  { value: "orange", label: "Orange", preview: "bg-orange-500" },
-  { value: "pink", label: "Rose", preview: "bg-pink-500" },
-  { value: "cyan", label: "Cyan", preview: "bg-cyan-500" },
-];
+// Helper pour déterminer si une couleur est claire
+function isLightColor(hex: string): boolean {
+  if (!hex || !hex.startsWith("#")) return false;
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return (r * 299 + g * 587 + b * 114) / 1000 > 128;
+}
+
+// Style dynamique pour les badges avec couleur hex
+function getPoleBadgeStyle(color: string) {
+  if (color?.startsWith("#")) {
+    return {
+      backgroundColor: color,
+      color: isLightColor(color) ? "#000" : "#fff",
+      borderColor: color,
+    };
+  }
+  // Fallback pour les anciennes valeurs
+  return undefined;
+}
 
 function getIconComponent(iconName: string) {
   const found = availableIcons.find((i) => i.name === iconName);
@@ -108,7 +117,7 @@ export default function PolesPage() {
   const [formData, setFormData] = useState<Partial<CreatePoleInput>>({
     name: "",
     slug: "",
-    color: "blue",
+    color: "#2563eb",
     icon: "BookOpen",
   });
 
@@ -124,7 +133,7 @@ export default function PolesPage() {
   }), [poles]);
 
   const resetForm = () => {
-    setFormData({ name: "", slug: "", color: "blue", icon: "BookOpen" });
+    setFormData({ name: "", slug: "", color: "#2563eb", icon: "BookOpen" });
   };
 
   const handleCreate = async () => {
@@ -240,25 +249,11 @@ export default function PolesPage() {
       </div>
 
       <div className="space-y-2">
-        <Label>Couleur *</Label>
-        <Select
-          value={formData.color}
-          onValueChange={(value) => setFormData({ ...formData, color: value })}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Choisir une couleur" />
-          </SelectTrigger>
-          <SelectContent>
-            {availableColors.map((item) => (
-              <SelectItem key={item.value} value={item.value}>
-                <div className="flex items-center gap-2">
-                  <div className={`h-4 w-4 rounded ${item.preview}`} />
-                  <span>{item.label}</span>
-                </div>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <ColorPicker
+          label="Couleur *"
+          value={formData.color || "#2563eb"}
+          onChange={(color) => setFormData({ ...formData, color })}
+        />
       </div>
 
       {/* Prévisualisation */}
@@ -268,11 +263,11 @@ export default function PolesPage() {
           <div className="flex items-center gap-3 p-4 rounded-lg border bg-card">
             {(() => {
               const IconComponent = getIconComponent(formData.icon);
-              return <IconComponent className="h-6 w-6 text-primary" />;
+              return <IconComponent className="h-6 w-6" style={{ color: formData.color }} />;
             })()}
             <div>
               <p className="font-medium">{formData.name}</p>
-              <Badge variant="outline" className={getPoleBadgeClasses(formData.color)}>
+              <Badge variant="outline" style={getPoleBadgeStyle(formData.color)}>
                 {formData.name}
               </Badge>
             </div>
@@ -366,7 +361,7 @@ export default function PolesPage() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Couleurs</p>
-                <p className="text-2xl font-bold">{availableColors.length}</p>
+                <p className="text-2xl font-bold">Personnalisées</p>
               </div>
             </div>
           </CardContent>
@@ -425,8 +420,11 @@ export default function PolesPage() {
                     <TableRow key={pole.id}>
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <div className="p-2 rounded-lg bg-primary/10">
-                            <IconComponent className="h-4 w-4 text-primary" />
+                          <div
+                            className="p-2 rounded-lg"
+                            style={{ backgroundColor: pole.color ? `${pole.color}20` : undefined }}
+                          >
+                            <IconComponent className="h-4 w-4" style={{ color: pole.color }} />
                           </div>
                           <div>
                             <p className="font-medium">{pole.name}</p>
@@ -439,9 +437,13 @@ export default function PolesPage() {
                         </code>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className={getPoleBadgeClasses(pole.color)}>
-                          {pole.color}
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="w-6 h-6 rounded-full border"
+                            style={{ backgroundColor: pole.color }}
+                          />
+                          <code className="text-xs text-muted-foreground">{pole.color}</code>
+                        </div>
                       </TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
