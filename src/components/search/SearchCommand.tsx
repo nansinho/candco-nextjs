@@ -60,6 +60,12 @@ const getIconForType = (type: string, pole?: string) => {
   return ArrowRight;
 };
 
+/**
+ * Normalise le texte pour la recherche (supprime accents et met en minuscules)
+ */
+const normalizeText = (text: string): string =>
+  text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
 export function SearchCommand() {
   const { open, setOpen } = useSearch();
   const [query, setQuery] = useState("");
@@ -83,7 +89,7 @@ export function SearchCommand() {
     return () => document.removeEventListener("keydown", down);
   }, [open, setOpen]);
 
-  // Search function
+  // Search function - Filtrage côté client pour gérer les accents
   const performSearch = useCallback(async (searchQuery: string) => {
     if (!searchQuery.trim()) {
       setResults([]);
@@ -93,71 +99,84 @@ export function SearchCommand() {
     setIsLoading(true);
     const supabase = createClient();
     // Normaliser le terme de recherche pour gérer les accents
-    const searchTerm = searchQuery
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "");
+    const searchTerm = normalizeText(searchQuery);
 
     try {
-      // Search formations
-      const { data: formations } = await supabase
-        .from("formations")
-        .select("id, title, subtitle, slug, pole")
-        .eq("active", true)
-        .or(`title.ilike.%${searchTerm}%,subtitle.ilike.%${searchTerm}%`)
-        .limit(5);
-
-      // Search articles
-      const { data: articles } = await supabase
-        .from("blog_articles")
-        .select("id, title, excerpt, slug")
-        .eq("published", true)
-        .or(`title.ilike.%${searchTerm}%,excerpt.ilike.%${searchTerm}%`)
-        .limit(3);
-
-      // Search FAQ
-      const { data: faqs } = await supabase
-        .from("faqs")
-        .select("id, question, answer, slug")
-        .eq("published", true)
-        .or(`question.ilike.%${searchTerm}%,keywords.ilike.%${searchTerm}%`)
-        .limit(3);
+      // Récupérer toutes les données (sans filtre ilike qui est accent-sensible)
+      const [formationsResult, articlesResult, faqsResult] = await Promise.all([
+        supabase
+          .from("formations")
+          .select("id, title, subtitle, slug, pole")
+          .eq("active", true)
+          .limit(100),
+        supabase
+          .from("blog_articles")
+          .select("id, title, excerpt, slug")
+          .eq("published", true)
+          .limit(50),
+        supabase
+          .from("faqs")
+          .select("id, question, answer, slug, keywords")
+          .eq("published", true)
+          .limit(50),
+      ]);
 
       const searchResults: SearchResult[] = [];
 
-      // Add formations
-      formations?.forEach((f: { id: string; title: string; subtitle: string | null; slug: string | null; pole: string }) => {
-        searchResults.push({
-          id: `formation-${f.id}`,
-          title: f.title,
-          subtitle: f.subtitle || undefined,
-          href: `/formations/${f.pole}/${f.slug || f.id}`,
-          type: "formation",
-          pole: f.pole,
+      // Filtrer formations côté client avec normalisation des deux côtés
+      formationsResult.data
+        ?.filter((f: { title: string; subtitle: string | null }) => {
+          const normalizedTitle = normalizeText(f.title);
+          const normalizedSubtitle = normalizeText(f.subtitle || "");
+          return normalizedTitle.includes(searchTerm) || normalizedSubtitle.includes(searchTerm);
+        })
+        .slice(0, 5)
+        .forEach((f: { id: string; title: string; subtitle: string | null; slug: string | null; pole: string }) => {
+          searchResults.push({
+            id: `formation-${f.id}`,
+            title: f.title,
+            subtitle: f.subtitle || undefined,
+            href: `/formations/${f.pole}/${f.slug || f.id}`,
+            type: "formation",
+            pole: f.pole,
+          });
         });
-      });
 
-      // Add articles
-      articles?.forEach((a: { id: string; title: string; excerpt: string | null; slug: string }) => {
-        searchResults.push({
-          id: `article-${a.id}`,
-          title: a.title,
-          subtitle: a.excerpt || undefined,
-          href: `/blog/${a.slug}`,
-          type: "article",
+      // Filtrer articles côté client
+      articlesResult.data
+        ?.filter((a: { title: string; excerpt: string | null }) => {
+          const normalizedTitle = normalizeText(a.title);
+          const normalizedExcerpt = normalizeText(a.excerpt || "");
+          return normalizedTitle.includes(searchTerm) || normalizedExcerpt.includes(searchTerm);
+        })
+        .slice(0, 3)
+        .forEach((a: { id: string; title: string; excerpt: string | null; slug: string }) => {
+          searchResults.push({
+            id: `article-${a.id}`,
+            title: a.title,
+            subtitle: a.excerpt || undefined,
+            href: `/blog/${a.slug}`,
+            type: "article",
+          });
         });
-      });
 
-      // Add FAQs
-      faqs?.forEach((f: { id: string; question: string; slug: string | null }) => {
-        searchResults.push({
-          id: `faq-${f.id}`,
-          title: f.question,
-          subtitle: "Question fréquente",
-          href: `/faq#${f.slug || f.id}`,
-          type: "faq",
+      // Filtrer FAQs côté client
+      faqsResult.data
+        ?.filter((f: { question: string; keywords?: string | null }) => {
+          const normalizedQuestion = normalizeText(f.question);
+          const normalizedKeywords = normalizeText(f.keywords || "");
+          return normalizedQuestion.includes(searchTerm) || normalizedKeywords.includes(searchTerm);
+        })
+        .slice(0, 3)
+        .forEach((f: { id: string; question: string; slug: string | null }) => {
+          searchResults.push({
+            id: `faq-${f.id}`,
+            title: f.question,
+            subtitle: "Question fréquente",
+            href: `/faq#${f.slug || f.id}`,
+            type: "faq",
+          });
         });
-      });
 
       setResults(searchResults);
     } catch (error) {
