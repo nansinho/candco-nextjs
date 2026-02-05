@@ -715,36 +715,12 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
 
         {/* Messages Tab */}
         <TabsContent value="messages" className="space-y-4">
-          <Tabs defaultValue="general" className="space-y-4">
-            <TabsList className="bg-secondary/30">
-              <TabsTrigger value="general" className="flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                Général
-              </TabsTrigger>
-              <TabsTrigger value="formateur" className="flex items-center gap-2">
-                <GraduationCap className="h-4 w-4" />
-                Formateur
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="general">
-              <SessionMessagesPanel
-                sessionId={id}
-                conversationType="general"
-                title="Messages Généraux"
-                placeholder="Message visible par tous..."
-              />
-            </TabsContent>
-
-            <TabsContent value="formateur">
-              <SessionMessagesPanel
-                sessionId={id}
-                conversationType="formateur"
-                title="Discussion avec le Formateur"
-                placeholder="Message privé au formateur..."
-              />
-            </TabsContent>
-          </Tabs>
+          <SessionMessagesPanel
+            sessionId={id}
+            conversationType="admin"
+            title="Messages de la session"
+            placeholder="Écrire un message..."
+          />
         </TabsContent>
       </Tabs>
 

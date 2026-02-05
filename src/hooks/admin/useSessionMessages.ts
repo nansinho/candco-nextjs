@@ -124,6 +124,8 @@ export function useSessionMessageMutations() {
       senderType?: string;
       senderName?: string;
     }) => {
+      console.log("[SessionMessages] Sending message to conversation:", conversationId);
+
       const { data, error } = await supabase
         .from("session_messages")
         .insert({
@@ -137,7 +139,12 @@ export function useSessionMessageMutations() {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("[SessionMessages] Error sending:", error.message, error.code, error.details);
+        throw error;
+      }
+
+      console.log("[SessionMessages] Message sent successfully:", data.id);
       return data;
     },
     onSuccess: (_, variables) => {
