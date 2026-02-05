@@ -174,6 +174,7 @@ export function SessionMessagesPanel({
         <div className="border-t p-4">
           <div className="flex gap-2">
             <Input
+              className="flex-1"
               placeholder={placeholder}
               value={messageInput}
               onChange={(e) => setMessageInput(e.target.value)}
@@ -181,6 +182,7 @@ export function SessionMessagesPanel({
               disabled={!conversation || conversationLoading}
             />
             <Button
+              className="shrink-0"
               onClick={handleSendMessage}
               disabled={!messageInput.trim() || sendMessage.isPending || !conversation}
             >
@@ -191,6 +193,16 @@ export function SessionMessagesPanel({
               )}
             </Button>
           </div>
+          {conversationError && (
+            <p className="text-xs text-destructive mt-2">
+              Erreur: impossible de charger la conversation. Rafraîchissez la page.
+            </p>
+          )}
+          {!conversation && !conversationLoading && !conversationError && (
+            <p className="text-xs text-amber-500 mt-2">
+              Création de la conversation en cours...
+            </p>
+          )}
         </div>
       </CardContent>
     </Card>
