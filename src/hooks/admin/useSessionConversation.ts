@@ -22,6 +22,8 @@ async function getOrCreateSessionConversation(
 ): Promise<SessionConversation | null> {
   const supabase = createClient();
 
+  console.log(`[SessionConversation] Looking for conversation: session=${sessionId}, type=${type}`);
+
   // First, try to find existing conversation for this session and type
   const { data: existing, error: fetchError } = await supabase
     .from("session_conversations")
@@ -31,14 +33,17 @@ async function getOrCreateSessionConversation(
     .maybeSingle();
 
   if (fetchError) {
-    console.error("Error fetching conversation:", fetchError);
+    console.error("[SessionConversation] Error fetching:", fetchError.message, fetchError.code);
     // Don't throw - return null and let UI handle it gracefully
     return null;
   }
 
   if (existing) {
+    console.log(`[SessionConversation] Found existing: ${existing.id}`);
     return existing;
   }
+
+  console.log(`[SessionConversation] Creating new conversation for type: ${type}`);
 
   // If not found, try to create a new conversation
   const { data: created, error: createError } = await supabase
@@ -53,12 +58,13 @@ async function getOrCreateSessionConversation(
     .single();
 
   if (createError) {
-    console.error("Error creating conversation:", createError);
+    console.error("[SessionConversation] Error creating:", createError.message, createError.code, createError.details);
     // Don't throw - return null and let UI handle it gracefully
     // This typically happens due to RLS policies or missing permissions
     return null;
   }
 
+  console.log(`[SessionConversation] Created: ${created.id}`);
   return created;
 }
 

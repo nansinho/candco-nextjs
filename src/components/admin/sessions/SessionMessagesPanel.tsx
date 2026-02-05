@@ -22,6 +22,7 @@ import {
   Send,
   Loader2,
   AlertCircle,
+  RefreshCw,
 } from "lucide-react";
 import { useSessionConversation } from "@/hooks/admin/useSessionConversation";
 import { useSessionMessages, useSessionMessageMutations } from "@/hooks/admin/useSessionMessages";
@@ -29,7 +30,7 @@ import { toast } from "sonner";
 
 interface SessionMessagesPanelProps {
   sessionId: string;
-  conversationType: "general" | "formateur" | "admin";
+  conversationType: "general" | "formateur" | "admin" | "participant";
   title?: string;
   placeholder?: string;
   senderName?: string;
@@ -50,6 +51,7 @@ export function SessionMessagesPanel({
     data: conversation,
     isLoading: conversationLoading,
     error: conversationError,
+    refetch: refetchConversation,
   } = useSessionConversation(sessionId, conversationType);
 
   // Fetch messages for this conversation
@@ -119,13 +121,25 @@ export function SessionMessagesPanel({
       </CardHeader>
       <CardContent className="p-0">
         <ScrollArea className="h-[350px] px-6">
-          {conversationError ? (
+          {conversationError || (!conversation && !conversationLoading) ? (
             <div className="text-center py-12">
               <AlertCircle className="h-12 w-12 mx-auto text-destructive mb-4" />
               <p className="text-destructive font-medium">Erreur de chargement</p>
               <p className="text-sm text-muted-foreground mt-1">
                 Impossible de charger la conversation
               </p>
+              <p className="text-xs text-muted-foreground mt-2">
+                Vérifiez la console pour plus de détails
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-4"
+                onClick={() => refetchConversation()}
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Réessayer
+              </Button>
             </div>
           ) : conversationLoading || messagesLoading ? (
             <div className="text-center py-12">
@@ -193,16 +207,6 @@ export function SessionMessagesPanel({
               )}
             </Button>
           </div>
-          {conversationError && (
-            <p className="text-xs text-destructive mt-2">
-              Erreur: impossible de charger la conversation. Rafraîchissez la page.
-            </p>
-          )}
-          {!conversation && !conversationLoading && !conversationError && (
-            <p className="text-xs text-amber-500 mt-2">
-              Création de la conversation en cours...
-            </p>
-          )}
         </div>
       </CardContent>
     </Card>
