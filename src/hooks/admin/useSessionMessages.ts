@@ -31,7 +31,6 @@ async function fetchMessages(conversationId: string): Promise<SessionMessage[]> 
     .from("session_messages")
     .select("*")
     .eq("conversation_id", conversationId)
-    .is("deleted_at", null)
     .order("created_at", { ascending: true });
 
   if (error) {
