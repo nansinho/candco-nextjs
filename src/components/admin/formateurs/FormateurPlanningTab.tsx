@@ -3,10 +3,11 @@
 /**
  * @file FormateurPlanningTab.tsx
  * @description Planning calendar component for formateur availability management
+ * Features: Week view, drag-select for date ranges, create/edit/delete disponibilités
  */
 
-import { useState, useMemo } from "react";
-import { format, startOfWeek, endOfWeek, addDays, addWeeks, subWeeks, isSameDay, parseISO } from "date-fns";
+import { useState, useMemo, useCallback } from "react";
+import { format, startOfWeek, endOfWeek, addDays, addWeeks, subWeeks, isSameDay, isWithinInterval, min, max } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -35,6 +36,7 @@ import {
   Plus,
   Loader2,
   Trash2,
+  MousePointer2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -64,9 +66,14 @@ const PERIODES = [
 
 export function FormateurPlanningTab({ formateurId, formateurUserId }: FormateurPlanningTabProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingDisponibilite, setEditingDisponibilite] = useState<FormateurDisponibilite | null>(null);
+
+  // Selection state for drag-select
+  const [isSelecting, setIsSelecting] = useState(false);
+  const [selectionStart, setSelectionStart] = useState<Date | null>(null);
+  const [selectionEnd, setSelectionEnd] = useState<Date | null>(null);
+  const [selectedDates, setSelectedDates] = useState<Date[]>([]);
 
   // Form state
   const [formType, setFormType] = useState<DisponibiliteType>("disponible");
@@ -86,7 +93,12 @@ export function FormateurPlanningTab({ formateurId, formateurUserId }: Formateur
     format(weekEnd, "yyyy-MM-dd")
   );
 
-  const { createDisponibilite, updateDisponibilite, deleteDisponibilite } = useFormateurPlanningMutations();
+  const {
+    createDisponibilite,
+    updateDisponibilite,
+    deleteDisponibilite,
+    bulkCreateDisponibilites
+  } = useFormateurPlanningMutations();
 
   // Generate days for the week
   const weekDays = useMemo(() => {
@@ -100,6 +112,14 @@ export function FormateurPlanningTab({ formateurId, formateurUserId }: Formateur
     return days;
   }, [weekStart, disponibilites]);
 
+  // Check if a date is within current selection range
+  const isDateInSelection = useCallback((date: Date) => {
+    if (!selectionStart || !selectionEnd) return false;
+    const rangeStart = min([selectionStart, selectionEnd]);
+    const rangeEnd = max([selectionStart, selectionEnd]);
+    return isWithinInterval(date, { start: rangeStart, end: rangeEnd });
+  }, [selectionStart, selectionEnd]);
+
   const navigateWeek = (direction: "prev" | "next") => {
     setCurrentDate((prev) => (direction === "prev" ? subWeeks(prev, 1) : addWeeks(prev, 1)));
   };
@@ -108,32 +128,84 @@ export function FormateurPlanningTab({ formateurId, formateurUserId }: Formateur
     setCurrentDate(new Date());
   };
 
+  // Single click on a day (with existing disponibilité)
   const handleDayClick = (day: DayCell) => {
-    setSelectedDate(day.date);
-
+    // If already has disponibilite, edit it
     if (day.disponibilite) {
-      // Edit existing
+      setSelectedDates([day.date]);
       setEditingDisponibilite(day.disponibilite);
       setFormType(day.disponibilite.type as DisponibiliteType);
       setFormPeriode(day.disponibilite.periode || "journee");
       setFormNotes(day.disponibilite.notes || "");
-    } else {
-      // Create new
-      setEditingDisponibilite(null);
-      setFormType("disponible");
-      setFormPeriode("journee");
-      setFormNotes("");
+      setEditDialogOpen(true);
+    }
+  };
+
+  // Mouse down - start selection
+  const handleMouseDown = (day: DayCell, e: React.MouseEvent) => {
+    // Don't start selection if clicking on existing disponibilite
+    if (day.disponibilite) return;
+
+    e.preventDefault();
+    setIsSelecting(true);
+    setSelectionStart(day.date);
+    setSelectionEnd(day.date);
+  };
+
+  // Mouse enter during selection
+  const handleMouseEnter = (day: DayCell) => {
+    if (isSelecting && selectionStart) {
+      setSelectionEnd(day.date);
+    }
+  };
+
+  // Mouse up - end selection
+  const handleMouseUp = () => {
+    if (isSelecting && selectionStart && selectionEnd) {
+      // Calculate all selected dates
+      const rangeStart = min([selectionStart, selectionEnd]);
+      const rangeEnd = max([selectionStart, selectionEnd]);
+
+      const dates: Date[] = [];
+      let current = rangeStart;
+      while (current <= rangeEnd) {
+        // Only add dates that don't have existing disponibilite
+        const dateStr = format(current, "yyyy-MM-dd");
+        const hasExisting = disponibilites.some((d) => d.date === dateStr);
+        if (!hasExisting) {
+          dates.push(new Date(current));
+        }
+        current = addDays(current, 1);
+      }
+
+      if (dates.length > 0) {
+        setSelectedDates(dates);
+        setEditingDisponibilite(null);
+        setFormType("disponible");
+        setFormPeriode("journee");
+        setFormNotes("");
+        setEditDialogOpen(true);
+      }
     }
 
-    setEditDialogOpen(true);
+    setIsSelecting(false);
+    setSelectionStart(null);
+    setSelectionEnd(null);
+  };
+
+  // Handle mouse leave from grid
+  const handleMouseLeave = () => {
+    if (isSelecting) {
+      handleMouseUp();
+    }
   };
 
   const handleSave = async () => {
-    if (!selectedDate || !userId) return;
+    if (selectedDates.length === 0 || !userId) return;
 
     try {
       if (editingDisponibilite) {
-        // Update
+        // Update single existing disponibilite
         await updateDisponibilite.mutateAsync({
           id: editingDisponibilite.id,
           type: formType,
@@ -141,19 +213,32 @@ export function FormateurPlanningTab({ formateurId, formateurUserId }: Formateur
           notes: formNotes || null,
         });
         toast.success("Disponibilité mise à jour");
-      } else {
-        // Create
+      } else if (selectedDates.length === 1) {
+        // Create single disponibilite
         await createDisponibilite.mutateAsync({
           user_id: userId,
-          date: format(selectedDate, "yyyy-MM-dd"),
+          date: format(selectedDates[0], "yyyy-MM-dd"),
           type: formType,
           periode: formPeriode as "matin" | "apres_midi" | "journee",
           notes: formNotes || null,
         });
         toast.success("Disponibilité ajoutée");
+      } else {
+        // Bulk create for multiple dates
+        await bulkCreateDisponibilites.mutateAsync(
+          selectedDates.map((date) => ({
+            user_id: userId,
+            date: format(date, "yyyy-MM-dd"),
+            type: formType,
+            periode: formPeriode as "matin" | "apres_midi" | "journee",
+            notes: formNotes || null,
+          }))
+        );
+        toast.success(`${selectedDates.length} disponibilités ajoutées`);
       }
 
       setEditDialogOpen(false);
+      setSelectedDates([]);
     } catch (error) {
       toast.error("Erreur lors de la sauvegarde");
     }
@@ -166,19 +251,32 @@ export function FormateurPlanningTab({ formateurId, formateurUserId }: Formateur
       await deleteDisponibilite.mutateAsync(editingDisponibilite.id);
       toast.success("Disponibilité supprimée");
       setEditDialogOpen(false);
+      setSelectedDates([]);
     } catch (error) {
       toast.error("Erreur lors de la suppression");
     }
   };
 
-  const isPending = createDisponibilite.isPending || updateDisponibilite.isPending || deleteDisponibilite.isPending;
+  const isPending = createDisponibilite.isPending || updateDisponibilite.isPending || deleteDisponibilite.isPending || bulkCreateDisponibilites.isPending;
+
+  // Format selected dates for dialog description
+  const getSelectionDescription = () => {
+    if (selectedDates.length === 0) return "";
+    if (selectedDates.length === 1) {
+      return format(selectedDates[0], "EEEE d MMMM yyyy", { locale: fr });
+    }
+    const sortedDates = [...selectedDates].sort((a, b) => a.getTime() - b.getTime());
+    const first = sortedDates[0];
+    const last = sortedDates[sortedDates.length - 1];
+    return `${format(first, "d MMM", { locale: fr })} - ${format(last, "d MMM yyyy", { locale: fr })} (${selectedDates.length} jours)`;
+  };
 
   return (
     <div className="space-y-4">
       {/* Header with navigation */}
       <Card className="border-0 bg-secondary/30">
         <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <CardTitle className="text-base flex items-center gap-2">
               <CalendarIcon className="h-4 w-4" />
               Planning des disponibilités
@@ -203,20 +301,26 @@ export function FormateurPlanningTab({ formateurId, formateurUserId }: Formateur
         </CardHeader>
       </Card>
 
-      {/* Legend */}
-      <div className="flex items-center gap-4 text-sm">
-        <span className="text-muted-foreground">Légende:</span>
-        <div className="flex items-center gap-1">
-          <div className="w-3 h-3 rounded bg-green-500" />
-          <span>Disponible</span>
+      {/* Legend and instructions */}
+      <div className="flex flex-wrap items-center justify-between gap-4 text-sm">
+        <div className="flex items-center gap-4">
+          <span className="text-muted-foreground">Légende:</span>
+          <div className="flex items-center gap-1">
+            <div className="w-3 h-3 rounded bg-green-500" />
+            <span>Disponible</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-3 h-3 rounded bg-orange-500" />
+            <span>Partiel</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-3 h-3 rounded bg-red-500" />
+            <span>Indisponible</span>
+          </div>
         </div>
-        <div className="flex items-center gap-1">
-          <div className="w-3 h-3 rounded bg-orange-500" />
-          <span>Partiel</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <div className="w-3 h-3 rounded bg-red-500" />
-          <span>Indisponible</span>
+        <div className="flex items-center gap-1 text-muted-foreground">
+          <MousePointer2 className="h-3 w-3" />
+          <span>Glisser pour sélectionner plusieurs jours</span>
         </div>
       </div>
 
@@ -226,7 +330,11 @@ export function FormateurPlanningTab({ formateurId, formateurUserId }: Formateur
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       ) : (
-        <div className="grid grid-cols-7 gap-2">
+        <div
+          className="grid grid-cols-7 gap-2 select-none"
+          onMouseLeave={handleMouseLeave}
+          onMouseUp={handleMouseUp}
+        >
           {/* Day headers */}
           {["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"].map((day) => (
             <div key={day} className="text-center text-sm font-medium text-muted-foreground py-2">
@@ -240,6 +348,7 @@ export function FormateurPlanningTab({ formateurId, formateurUserId }: Formateur
             const typeInfo = day.disponibilite
               ? getDisponibiliteTypeInfo(day.disponibilite.type as DisponibiliteType)
               : null;
+            const isInSelection = isSelecting && isDateInSelection(day.date) && !day.disponibilite;
 
             return (
               <Card
@@ -247,9 +356,12 @@ export function FormateurPlanningTab({ formateurId, formateurUserId }: Formateur
                 className={cn(
                   "border cursor-pointer transition-all hover:ring-2 hover:ring-primary/50",
                   isToday && "ring-2 ring-primary",
-                  day.disponibilite && typeInfo?.bgColor
+                  day.disponibilite && typeInfo?.bgColor,
+                  isInSelection && "ring-2 ring-blue-500 bg-blue-500/20"
                 )}
                 onClick={() => handleDayClick(day)}
+                onMouseDown={(e) => handleMouseDown(day, e)}
+                onMouseEnter={() => handleMouseEnter(day)}
               >
                 <CardContent className="p-3 min-h-[100px]">
                   <div className="flex flex-col h-full">
@@ -288,15 +400,23 @@ export function FormateurPlanningTab({ formateurId, formateurUserId }: Formateur
         </div>
       )}
 
-      {/* Edit Dialog */}
-      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+      {/* Edit/Create Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={(open) => {
+        setEditDialogOpen(open);
+        if (!open) setSelectedDates([]);
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {editingDisponibilite ? "Modifier" : "Ajouter"} la disponibilité
+              {editingDisponibilite
+                ? "Modifier la disponibilité"
+                : selectedDates.length > 1
+                  ? `Ajouter ${selectedDates.length} disponibilités`
+                  : "Ajouter une disponibilité"
+              }
             </DialogTitle>
             <DialogDescription>
-              {selectedDate && format(selectedDate, "EEEE d MMMM yyyy", { locale: fr })}
+              {getSelectionDescription()}
             </DialogDescription>
           </DialogHeader>
 
@@ -376,7 +496,12 @@ export function FormateurPlanningTab({ formateurId, formateurUserId }: Formateur
               </Button>
               <Button onClick={handleSave} disabled={isPending}>
                 {isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                {editingDisponibilite ? "Mettre à jour" : "Ajouter"}
+                {editingDisponibilite
+                  ? "Mettre à jour"
+                  : selectedDates.length > 1
+                    ? `Ajouter ${selectedDates.length} jours`
+                    : "Ajouter"
+                }
               </Button>
             </div>
           </DialogFooter>
