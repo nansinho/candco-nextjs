@@ -368,6 +368,7 @@ export function UnifiedMessaging({
           conversation_id: selectedConversation.id,
           content: newMessage.trim(),
           sender_type: senderType,
+          sender_id: user?.id || null,
         })
         .select("id, sender_name")
         .single();
