@@ -7,7 +7,7 @@
  */
 
 import { useState, useMemo, useEffect } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,6 +44,7 @@ type ViewMode = "kanban" | "list";
 export default function DevRequestsPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const pathname = usePathname();
   // Support both "requestId" (new) and "request" (legacy) URL parameters
   const requestIdFromUrl = searchParams.get("requestId") || searchParams.get("request");
 
@@ -95,7 +96,7 @@ export default function DevRequestsPageContent() {
     setDetailOpen(open);
     // Clear URL params when closing (to prevent reopening via useEffect)
     if (!open && requestIdFromUrl) {
-      router.replace("/admin/analyse-besoins", { scroll: false });
+      router.replace(pathname, { scroll: false });
     }
   };
 
