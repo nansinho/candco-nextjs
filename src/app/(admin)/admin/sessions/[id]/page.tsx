@@ -717,7 +717,7 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
         <TabsContent value="messages" className="space-y-4">
           <SessionMessagesPanel
             sessionId={id}
-            conversationType="admin"
+            conversationType="formateur"
             title="Messages de la session"
             placeholder="Écrire un message..."
           />
