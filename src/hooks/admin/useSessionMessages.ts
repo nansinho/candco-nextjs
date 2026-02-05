@@ -25,18 +25,20 @@ export interface SessionMessage {
 async function fetchMessages(conversationId: string): Promise<SessionMessage[]> {
   const supabase = createClient();
 
+  console.log("[SessionMessages] Fetching messages for conversation:", conversationId);
+
   const { data, error } = await supabase
     .from("session_messages")
     .select("*")
     .eq("conversation_id", conversationId)
-    .is("deleted_at", null)
     .order("created_at", { ascending: true });
 
   if (error) {
-    console.error("Error fetching messages:", error);
+    console.error("[SessionMessages] Error fetching:", error.message, error.code, error.details);
     return [];
   }
 
+  console.log("[SessionMessages] Fetched", data?.length || 0, "messages");
   return data || [];
 }
 
@@ -124,6 +126,8 @@ export function useSessionMessageMutations() {
       senderType?: string;
       senderName?: string;
     }) => {
+      console.log("[SessionMessages] Sending message to conversation:", conversationId);
+
       const { data, error } = await supabase
         .from("session_messages")
         .insert({
@@ -137,7 +141,12 @@ export function useSessionMessageMutations() {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("[SessionMessages] Error sending:", error.message, error.code, error.details);
+        throw error;
+      }
+
+      console.log("[SessionMessages] Message sent successfully:", data.id);
       return data;
     },
     onSuccess: (_, variables) => {
