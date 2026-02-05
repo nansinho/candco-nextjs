@@ -51,7 +51,11 @@ import {
   XCircle,
   AlertCircle,
   GraduationCap,
+  List,
+  CalendarDays,
 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { FormateursPlanningTab } from "@/components/admin/formateurs/FormateursPlanningTab";
 import {
   Tooltip,
   TooltipContent,
@@ -192,8 +196,22 @@ export default function AdminFormateurs() {
         </div>
       )}
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
+      {/* Tabs: Liste / Planning */}
+      <Tabs defaultValue="liste" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="liste">
+            <List className="h-4 w-4 mr-2" />
+            Liste
+          </TabsTrigger>
+          <TabsTrigger value="planning">
+            <CalendarDays className="h-4 w-4 mr-2" />
+            Planning
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="liste" className="space-y-4">
+          {/* Filters */}
+          <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -428,6 +446,12 @@ export default function AdminFormateurs() {
           </div>
         </>
       )}
+        </TabsContent>
+
+        <TabsContent value="planning">
+          <FormateursPlanningTab />
+        </TabsContent>
+      </Tabs>
 
       {/* Delete Dialog */}
       <AlertDialog open={!!formateurToDelete} onOpenChange={() => setFormateurToDelete(null)}>

@@ -1,24 +1,20 @@
 "use client";
 
-import { use, useState, useRef, useEffect } from "react";
+import { use, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import { useFormateurs } from "@/hooks/admin/useFormateurs";
 import { useClients } from "@/hooks/admin/useClients";
 import { useSessionInscriptionMutations } from "@/hooks/admin/useSessionInscriptions";
-import { useSessionConversation } from "@/hooks/admin/useSessionConversation";
-import { useSessionMessages, useSessionMessageMutations } from "@/hooks/admin/useSessionMessages";
 import { useSessionActivities, useSessionActivityMutations, ACTIVITY_TYPES } from "@/hooks/admin/useSessionActivities";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Table,
   TableBody,
@@ -71,7 +67,6 @@ import {
   Star,
   Mail,
   Phone,
-  Send,
   Download,
   Trash2,
   MoreHorizontal,
@@ -80,12 +75,12 @@ import {
   RefreshCw,
   CheckCircle,
   XCircle,
-  AlertCircle,
 } from "lucide-react";
 import { format, parseISO, formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 import Link from "next/link";
 import { toast } from "sonner";
+import { SessionMessagesPanel } from "@/components/admin/sessions/SessionMessagesPanel";
 
 const statusLabels: Record<string, string> = {
   planifiee: "Planifiée",
@@ -190,10 +185,6 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
     prenom: "", nom: "", email: "", telephone: "", client_id: "",
   });
   const [selectedFormateur, setSelectedFormateur] = useState("");
-  const [messageInput, setMessageInput] = useState("");
-
-  // Refs
-  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Queries & Mutations
   const { data: session, isLoading, error } = useQuery({
@@ -207,18 +198,8 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
 
   const { addParticipant, cancelInscription } = useSessionInscriptionMutations();
 
-  // Get or create conversation for this session, then fetch messages
-  const { data: conversation, isLoading: conversationLoading, error: conversationError } = useSessionConversation(id);
-  const { data: messages = [], isLoading: messagesLoading } = useSessionMessages(conversation?.id);
-  const { sendMessage } = useSessionMessageMutations();
-
   const { data: activities = [] } = useSessionActivities(id);
   const { logActivity } = useSessionActivityMutations();
-
-  // Scroll to bottom of messages
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
 
   const handleAddParticipant = async () => {
     if (!participantForm.prenom || !participantForm.nom) {
@@ -279,22 +260,6 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
       toast.success("Inscription annulée");
     } catch {
       toast.error("Erreur lors de l'annulation");
-    }
-  };
-
-  const handleSendMessage = async () => {
-    if (!messageInput.trim() || !conversation?.id) return;
-    try {
-      await sendMessage.mutateAsync({
-        conversationId: conversation.id,
-        content: messageInput,
-        senderId: "admin",
-        senderType: "admin",
-        senderName: "Admin",
-      });
-      setMessageInput("");
-    } catch {
-      toast.error("Erreur lors de l'envoi");
     }
   };
 
@@ -436,7 +401,6 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
           <TabsTrigger value="messages" className="flex items-center gap-2">
             <MessageSquare className="h-4 w-4" />
             Messages
-            {messages.length > 0 && <Badge variant="secondary" className="ml-1 h-5 px-1.5">{messages.length}</Badge>}
           </TabsTrigger>
         </TabsList>
 
@@ -751,70 +715,36 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
 
         {/* Messages Tab */}
         <TabsContent value="messages" className="space-y-4">
-          <Card className="border-0 bg-secondary/30">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Messages de la session</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <ScrollArea className="h-[400px] px-6">
-                {conversationError ? (
-                  <div className="text-center py-12">
-                    <AlertCircle className="h-12 w-12 mx-auto text-destructive mb-4" />
-                    <p className="text-destructive font-medium">Erreur de chargement</p>
-                    <p className="text-sm text-muted-foreground mt-1">Impossible de charger la conversation</p>
-                  </div>
-                ) : conversationLoading || messagesLoading ? (
-                  <div className="text-center py-12">
-                    <Loader2 className="h-12 w-12 mx-auto text-muted-foreground mb-4 animate-spin" />
-                    <p className="text-muted-foreground">Chargement des messages...</p>
-                  </div>
-                ) : messages.length > 0 ? (
-                  <div className="space-y-4 py-4">
-                    {messages.map((message) => (
-                      <div key={message.id} className="flex gap-3">
-                        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                          <Users className="h-4 w-4 text-primary" />
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <p className="font-medium text-sm">{message.sender_name || "Utilisateur"}</p>
-                            <span className="text-xs text-muted-foreground">
-                              {formatDistanceToNow(parseISO(message.created_at), { addSuffix: true, locale: fr })}
-                            </span>
-                          </div>
-                          <p className="text-sm mt-1">{message.content}</p>
-                        </div>
-                      </div>
-                    ))}
-                    <div ref={messagesEndRef} />
-                  </div>
-                ) : (
-                  <div className="text-center py-12">
-                    <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground">Aucun message</p>
-                    <p className="text-xs text-muted-foreground mt-1">Envoyez un message pour démarrer la conversation</p>
-                  </div>
-                )}
-              </ScrollArea>
-              <div className="border-t p-4">
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Écrire un message..."
-                    value={messageInput}
-                    onChange={(e) => setMessageInput(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSendMessage()}
-                    disabled={!conversation || conversationLoading}
-                  />
-                  <Button
-                    onClick={handleSendMessage}
-                    disabled={!messageInput.trim() || sendMessage.isPending || !conversation}
-                  >
-                    {sendMessage.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <Tabs defaultValue="general" className="space-y-4">
+            <TabsList className="bg-secondary/30">
+              <TabsTrigger value="general" className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Général
+              </TabsTrigger>
+              <TabsTrigger value="formateur" className="flex items-center gap-2">
+                <GraduationCap className="h-4 w-4" />
+                Formateur
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="general">
+              <SessionMessagesPanel
+                sessionId={id}
+                conversationType="general"
+                title="Messages Généraux"
+                placeholder="Message visible par tous..."
+              />
+            </TabsContent>
+
+            <TabsContent value="formateur">
+              <SessionMessagesPanel
+                sessionId={id}
+                conversationType="formateur"
+                title="Discussion avec le Formateur"
+                placeholder="Message privé au formateur..."
+              />
+            </TabsContent>
+          </Tabs>
         </TabsContent>
       </Tabs>
 
