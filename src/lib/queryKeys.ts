@@ -71,6 +71,7 @@ export const queryKeys = {
       list: () => [...queryKeys.admin.sessions.all, "list"] as const,
       detail: (id: string) => [...queryKeys.admin.sessions.all, id] as const,
       history: (sessionId: string) => ["session-history", sessionId] as const,
+      onsiteContact: (sessionId: string) => [...queryKeys.admin.sessions.all, "onsite-contact", sessionId] as const,
     },
 
     // Formateurs

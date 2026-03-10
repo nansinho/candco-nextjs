@@ -3642,6 +3642,8 @@ export type Database = {
       }
       session_contacts: {
         Row: {
+          contact_source: string | null
+          contact_type: string | null
           created_at: string | null
           email: string
           fonction: string
@@ -3650,9 +3652,12 @@ export type Database = {
           nom: string
           prenom: string
           session_id: string
+          source_ref_id: string | null
           telephone: string | null
         }
         Insert: {
+          contact_source?: string | null
+          contact_type?: string | null
           created_at?: string | null
           email: string
           fonction?: string
@@ -3661,9 +3666,12 @@ export type Database = {
           nom: string
           prenom: string
           session_id: string
+          source_ref_id?: string | null
           telephone?: string | null
         }
         Update: {
+          contact_source?: string | null
+          contact_type?: string | null
           created_at?: string | null
           email?: string
           fonction?: string
@@ -3672,6 +3680,7 @@ export type Database = {
           nom?: string
           prenom?: string
           session_id?: string
+          source_ref_id?: string | null
           telephone?: string | null
         }
         Relationships: [

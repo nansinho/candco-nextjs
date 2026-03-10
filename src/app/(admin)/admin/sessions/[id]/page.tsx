@@ -81,6 +81,7 @@ import { fr } from "date-fns/locale";
 import Link from "next/link";
 import { toast } from "sonner";
 import { SessionMessagesPanel } from "@/components/admin/sessions/SessionMessagesPanel";
+import { SessionOnsiteContact } from "@/components/admin/sessions/SessionOnsiteContact";
 
 const statusLabels: Record<string, string> = {
   planifiee: "Planifiée",
@@ -638,6 +639,9 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
               )}
             </CardContent>
           </Card>
+
+          {/* Contact sur place */}
+          <SessionOnsiteContact session={session} />
         </TabsContent>
 
         {/* Documents Tab */}
