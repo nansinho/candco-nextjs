@@ -81,6 +81,7 @@ import { fr } from "date-fns/locale";
 import Link from "next/link";
 import { toast } from "sonner";
 import { SessionMessagesPanel } from "@/components/admin/sessions/SessionMessagesPanel";
+import { SessionEmargementTab } from "@/components/admin/sessions/SessionEmargementTab";
 
 const statusLabels: Record<string, string> = {
   planifiee: "Planifiée",
@@ -385,6 +386,10 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
             Participants
             {inscriptions.length > 0 && <Badge variant="secondary" className="ml-1 h-5 px-1.5">{inscriptions.length}</Badge>}
           </TabsTrigger>
+          <TabsTrigger value="emargement" className="flex items-center gap-2">
+            <ClipboardCheck className="h-4 w-4" />
+            Émargement
+          </TabsTrigger>
           <TabsTrigger value="formateur" className="flex items-center gap-2">
             <GraduationCap className="h-4 w-4" />
             Formateur
@@ -578,6 +583,11 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Émargement Tab */}
+        <TabsContent value="emargement" className="space-y-4">
+          <SessionEmargementTab sessionId={id} session={session} />
         </TabsContent>
 
         {/* Formateur Tab */}
