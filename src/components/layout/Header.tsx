@@ -215,6 +215,15 @@ export default function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [hoveredSubmenu, setHoveredSubmenu] = useState<string | null>(null);
+  const submenuTimeout = useRef<NodeJS.Timeout | null>(null);
+
+  const openSubmenu = (name: string) => {
+    if (submenuTimeout.current) clearTimeout(submenuTimeout.current);
+    setHoveredSubmenu(name);
+  };
+  const closeSubmenu = () => {
+    submenuTimeout.current = setTimeout(() => setHoveredSubmenu(null), 150);
+  };
   const [mobileSubmenuOpen, setMobileSubmenuOpen] = useState<string | null>(null);
   const pathname = usePathname();
   const router = useRouter();
@@ -378,8 +387,8 @@ export default function Header() {
                   <div
                     key={item.name}
                     className="relative"
-                    onMouseEnter={() => setHoveredSubmenu(item.name)}
-                    onMouseLeave={() => setHoveredSubmenu(null)}
+                    onMouseEnter={() => openSubmenu(item.name)}
+                    onMouseLeave={() => closeSubmenu()}
                   >
                     <button
                       className={cn(
