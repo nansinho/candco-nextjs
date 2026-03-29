@@ -222,7 +222,7 @@ export default function Header() {
     setHoveredSubmenu(name);
   };
   const closeSubmenu = () => {
-    submenuTimeout.current = setTimeout(() => setHoveredSubmenu(null), 150);
+    submenuTimeout.current = setTimeout(() => setHoveredSubmenu(null), 400);
   };
   const [mobileSubmenuOpen, setMobileSubmenuOpen] = useState<string | null>(null);
   const pathname = usePathname();
