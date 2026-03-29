@@ -37,7 +37,7 @@ export const metadata: Metadata = {
 
 
 // Revalidate every 60 seconds
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 export default async function FormationsPage() {
   const supabase = createServiceClient();
