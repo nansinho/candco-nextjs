@@ -560,7 +560,7 @@ export default function FormationsClient({
                                     >
                                       <article
                                         className="rounded-2xl overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full flex flex-col border"
-                                        style={{ backgroundColor: `${accent}08`, borderColor: `${accent}20` }}
+                                        style={{ backgroundColor: `${accent}15`, borderColor: `${accent}35` }}
                                       >
                                         {/* Image */}
                                         <div className="relative aspect-[3/1] overflow-hidden">
@@ -589,16 +589,16 @@ export default function FormationsClient({
 
                                         {/* Content */}
                                         <div className="p-5 flex flex-col flex-1">
-                                          <h3 className="text-[15px] font-bold text-[#151F2D] leading-snug mb-2 line-clamp-2 min-h-[2.5rem] group-hover:text-[#1F628E] transition-colors">
+                                          <h3 className="text-[15px] font-bold text-white leading-snug mb-2 line-clamp-2 min-h-[2.5rem] group-hover:text-[#F8A991] transition-colors">
                                             {formation.title}
                                           </h3>
-                                          <p className="text-[13px] text-gray-500 line-clamp-2 mb-3 min-h-[2.5rem]">
+                                          <p className="text-[13px] text-white/40 line-clamp-2 mb-3 min-h-[2.5rem]">
                                             {formation.subtitle || "\u00A0"}
                                           </p>
 
                                           {/* Session info */}
                                           {hasActiveSessions && (
-                                            <div className="flex items-center gap-3 mb-3 text-[11px] text-gray-400">
+                                            <div className="flex items-center gap-3 mb-3 text-[11px] text-white/40">
                                               <span className="flex items-center gap-1">
                                                 <CalendarDays className="w-3 h-3" />
                                                 {sessionInfo.count} session{sessionInfo.count > 1 ? "s" : ""}
@@ -612,8 +612,8 @@ export default function FormationsClient({
                                             </div>
                                           )}
 
-                                          <div className="flex items-center justify-between mt-auto pt-3 border-t border-gray-100">
-                                            <p className="text-lg font-extrabold text-[#151F2D]">{formation.price}</p>
+                                          <div className="flex items-center justify-between mt-auto pt-3" style={{ borderTop: `1px solid ${accent}30` }}>
+                                            <p className="text-lg font-extrabold text-white">{formation.price}</p>
                                             <span className="text-xs font-bold flex items-center gap-1" style={{ color: accent }}>
                                               Détails <ArrowRight className="w-3 h-3" />
                                             </span>
