@@ -46,8 +46,8 @@ export default function FeatureHighlightV2() {
 
           {/* Text side */}
           <div className="order-1 lg:order-2">
-            <h2 className="text-3xl sm:text-[2.5rem] font-extrabold tracking-tight text-[#151F2D] leading-[1.15] mb-4">
-              Des formations concrètes et pratiques
+            <h2 className="text-3xl sm:text-[2.5rem] font-normal tracking-tight text-[#151F2D] leading-[1.15] mb-4">
+              Des formations <span style={{ color: "#1F628E" }}>concrètes et pratiques</span>
             </h2>
             <p className="text-base text-gray-500 mb-8 leading-relaxed">
               Chez C&Co, chaque formation est pensée pour être directement applicable. Nos méthodes pédagogiques combinent théorie et pratique.

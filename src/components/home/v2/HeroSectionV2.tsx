@@ -92,8 +92,8 @@ export default function HeroSectionV2({ slides }: { slides?: HeroSlide[] }) {
           </div>
 
           {/* H1 */}
-          <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] font-extrabold leading-[1.1] tracking-tight text-white max-w-5xl mx-auto mb-6">
-            Votre formation professionnelle, réinventée
+          <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] font-semibold leading-[1.1] tracking-tight text-white max-w-5xl mx-auto mb-6">
+            Votre formation professionnelle, <span style={{ color: "#F8A991" }}>réinventée</span>
           </h1>
 
           {/* Subtitle */}

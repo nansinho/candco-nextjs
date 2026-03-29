@@ -67,8 +67,8 @@ export default function WhyChooseUsV2() {
   return (
     <section className="py-20 sm:py-24 bg-[#F5F7FA]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 className="text-center text-3xl sm:text-[2.5rem] font-extrabold tracking-tight text-[#151F2D] mb-4">
-          Pourquoi choisir C&Co Formation
+        <h2 className="text-center text-3xl sm:text-[2.5rem] font-normal tracking-tight text-[#151F2D] mb-4">
+          Pourquoi choisir <span style={{ color: "#1F628E" }}>C&amp;Co Formation</span>
         </h2>
         <p className="text-center text-base text-gray-500 max-w-xl mx-auto mb-14">
           Un organisme certifié Qualiopi qui place la qualité et l&apos;accompagnement au cœur de chaque formation.

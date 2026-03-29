@@ -2,11 +2,11 @@ import { createClient } from "@/lib/supabase/server";
 import { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
-import { notFound } from "next/navigation";
-import { Calendar, Clock, User, Share2, ArrowLeft } from "lucide-react";
+import { Calendar, Clock, User, Share2, ArrowLeft, ArrowRight } from "lucide-react";
 import { MarkdownContent } from "@/components/blog/MarkdownContent";
 import { TableOfContents } from "@/components/blog/TableOfContents";
 import { ArticleIntro } from "@/components/blog/ArticleIntro";
+import CTASectionV2 from "@/components/home/v2/CTASectionV2";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -15,16 +15,13 @@ type Props = {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const supabase = await createClient();
-
   const { data: article } = await supabase
     .from("blog_articles")
     .select("title, excerpt, image_url, meta_title, meta_description")
     .eq("slug", slug)
     .single();
 
-  if (!article) {
-    return { title: "Article non trouvé" };
-  }
+  if (!article) return { title: "Article non trouvé" };
 
   return {
     title: article.meta_title || article.title,
@@ -37,11 +34,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
+function fmtDate(d: string | null) {
+  if (!d) return null;
+  return new Date(d).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+}
+
 export default async function BlogArticlePage({ params }: Props) {
   const { slug } = await params;
   const supabase = await createClient();
 
-  // Récupérer l'article
   const { data: article } = await supabase
     .from("blog_articles")
     .select("*")
@@ -50,27 +51,21 @@ export default async function BlogArticlePage({ params }: Props) {
     .single();
 
   if (!article) {
+    const { notFound } = await import("next/navigation");
     notFound();
   }
 
-  // Récupérer les articles similaires
   const { data: relatedArticles } = await supabase
     .from("blog_articles")
-    .select("id, title, slug, excerpt, image_url, category, read_time")
+    .select("id, title, slug, excerpt, image_url, category, read_time, published_at")
     .eq("published", true)
     .eq("category", article.category)
     .neq("id", article.id)
     .limit(3);
 
-  const publishedDate = article.published_at
-    ? new Date(article.published_at).toLocaleDateString("fr-FR", {
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      })
-    : null;
+  const publishedDate = fmtDate(article.published_at);
 
-  // JSON-LD Article schema for SEO & AEO
+  // JSON-LD
   const articleSchema = {
     "@context": "https://schema.org",
     "@type": "Article",
@@ -79,171 +74,103 @@ export default async function BlogArticlePage({ params }: Props) {
     image: article.image_url || "https://candco.fr/og-image.jpg",
     datePublished: article.published_at || article.created_at,
     dateModified: article.updated_at || article.published_at || article.created_at,
-    author: {
-      "@type": "Organization",
-      name: article.author || "C&Co Formation",
-      url: "https://candco.fr",
-    },
-    publisher: {
-      "@type": "Organization",
-      name: "C&Co Formation",
-      logo: {
-        "@type": "ImageObject",
-        url: "https://candco.fr/logo.svg",
-      },
-    },
-    mainEntityOfPage: {
-      "@type": "WebPage",
-      "@id": `https://candco.fr/blog/${slug}`,
-    },
+    author: { "@type": "Organization", name: article.author || "C&Co Formation", url: "https://candco.fr" },
+    publisher: { "@type": "Organization", name: "C&Co Formation", logo: { "@type": "ImageObject", url: "https://candco.fr/logo.svg" } },
+    mainEntityOfPage: { "@type": "WebPage", "@id": `https://candco.fr/blog/${slug}` },
   };
 
   const breadcrumbSchema = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListElement: [
-      {
-        "@type": "ListItem",
-        position: 1,
-        name: "Accueil",
-        item: "https://candco.fr",
-      },
-      {
-        "@type": "ListItem",
-        position: 2,
-        name: "Blog",
-        item: "https://candco.fr/blog",
-      },
-      {
-        "@type": "ListItem",
-        position: 3,
-        name: article.title,
-        item: `https://candco.fr/blog/${slug}`,
-      },
+      { "@type": "ListItem", position: 1, name: "Accueil", item: "https://candco.fr" },
+      { "@type": "ListItem", position: 2, name: "Blog", item: "https://candco.fr/blog" },
+      { "@type": "ListItem", position: 3, name: article.title, item: `https://candco.fr/blog/${slug}` },
     ],
   };
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
 
-      {/* Hero Section with Image Overlay */}
-      <section className="relative min-h-[400px] lg:min-h-[500px]">
-        {/* Background Image */}
+      {/* ═══ 1. HERO — image overlay ═══ */}
+      <section className="relative min-h-[450px] lg:min-h-[550px]">
         {article.image_url && (
           <div className="absolute inset-0">
-            <Image
-              src={article.image_url}
-              alt={article.title}
-              fill
-              sizes="100vw"
-              className="object-cover"
-              priority
-            />
-            {/* Dark Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-background/40" />
+            <Image src={article.image_url} alt={article.title} fill sizes="100vw" className="object-cover" priority />
+            <div className="absolute inset-0" style={{ background: "linear-gradient(to top, #151F2D 0%, rgba(21,31,45,0.8) 50%, rgba(21,31,45,0.3) 100%)" }} />
           </div>
         )}
+        {!article.image_url && <div className="absolute inset-0" style={{ backgroundColor: "#151F2D" }} />}
 
-        {/* Content */}
-        <div className="relative container-custom pt-8 pb-12 flex flex-col justify-end min-h-[400px] lg:min-h-[500px]">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-12 flex flex-col justify-end min-h-[450px] lg:min-h-[550px]">
           {/* Breadcrumb */}
-          <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
-            <Link href="/" className="hover:text-foreground transition-colors">
-              Accueil
-            </Link>
-            <span>/</span>
-            <Link
-              href="/blog"
-              className="hover:text-foreground transition-colors"
-            >
-              Blog
-            </Link>
-            <span>/</span>
-            <span className="text-foreground/70 line-clamp-1">
-              {article.title}
-            </span>
+          <nav className="flex items-center gap-2 text-[13px] mb-6" style={{ color: "rgba(255,255,255,0.5)" }}>
+            <Link href="/" className="hover:text-white transition-colors">Accueil</Link>
+            <span style={{ color: "rgba(255,255,255,0.3)" }}>/</span>
+            <Link href="/blog" className="hover:text-white transition-colors">Blog</Link>
+            <span style={{ color: "rgba(255,255,255,0.3)" }}>/</span>
+            <span className="line-clamp-1" style={{ color: "rgba(255,255,255,0.7)" }}>{article.title}</span>
           </nav>
 
-          {/* Category Badge */}
+          {/* Category */}
           {article.category && (
-            <span className="inline-flex w-fit px-3 py-1.5 bg-primary text-primary-foreground rounded-full text-sm font-medium mb-4">
+            <span
+              className="inline-flex w-fit px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider text-white mb-4"
+              style={{ backgroundColor: "#1F628E" }}
+            >
               {article.category}
             </span>
           )}
 
           {/* Title */}
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold leading-tight mb-6 max-w-4xl">
+          <h1 className="text-3xl md:text-4xl lg:text-[3rem] font-semibold text-white leading-[1.1] mb-6 max-w-4xl tracking-tight">
             {article.title}
           </h1>
 
-          {/* Meta Info Row */}
-          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+          {/* Meta */}
+          <div className="flex flex-wrap items-center gap-5 text-[13px]" style={{ color: "rgba(255,255,255,0.5)" }}>
             {article.author && (
-              <span className="flex items-center gap-1.5">
-                <User className="w-4 h-4" />
-                {article.author}
-              </span>
+              <span className="flex items-center gap-1.5"><User className="w-4 h-4" />{article.author}</span>
             )}
             {publishedDate && (
-              <span className="flex items-center gap-1.5">
-                <Calendar className="w-4 h-4" />
-                {publishedDate}
-              </span>
+              <span className="flex items-center gap-1.5"><Calendar className="w-4 h-4" />{publishedDate}</span>
             )}
             {article.read_time && (
-              <span className="flex items-center gap-1.5">
-                <Clock className="w-4 h-4" />
-                {article.read_time} min
-              </span>
+              <span className="flex items-center gap-1.5"><Clock className="w-4 h-4" />{article.read_time} min</span>
             )}
-            <button
-              className="flex items-center gap-1.5 hover:text-primary transition-colors ml-auto"
-              title="Partager"
-            >
-              <Share2 className="w-4 h-4" />
-              Partager
+            <button className="flex items-center gap-1.5 hover:text-[#F8A991] transition-colors ml-auto" title="Partager">
+              <Share2 className="w-4 h-4" /> Partager
             </button>
           </div>
         </div>
       </section>
 
-      {/* Main Content with Sidebar */}
-      <section className="section-padding-sm">
-        <div className="container-custom">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
-            {/* Main Content */}
+      {/* ═══ 2. CONTENT + SIDEBAR ═══ */}
+      <section className="py-16 sm:py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14">
+            {/* Main */}
             <article className="lg:col-span-8">
-              {/* Introduction Box */}
               {article.excerpt && <ArticleIntro excerpt={article.excerpt} />}
-
-              {/* Article Content */}
               <div className="prose-custom">
                 <MarkdownContent content={article.content || ""} />
               </div>
             </article>
 
-            {/* Sidebar - Table of Contents */}
+            {/* Sidebar */}
             <aside className="lg:col-span-4 hidden lg:block">
               <div className="sticky top-24">
-                <div className="p-5 rounded-xl bg-card border border-border">
+                <div className="p-6 rounded-2xl border border-gray-100" style={{ backgroundColor: "#F5F7FA" }}>
                   <TableOfContents content={article.content || ""} />
                 </div>
-
-                {/* Back to Blog Link */}
                 <Link
                   href="/blog"
-                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors mt-6"
+                  className="flex items-center gap-2 text-[13px] hover:text-[#1F628E] transition-colors mt-6"
+                  style={{ color: "#94a3b8" }}
                 >
-                  <ArrowLeft className="w-4 h-4" />
-                  Retour au blog
+                  <ArrowLeft className="w-4 h-4" /> Retour au blog
                 </Link>
               </div>
             </aside>
@@ -251,73 +178,67 @@ export default async function BlogArticlePage({ params }: Props) {
         </div>
       </section>
 
-      {/* Related Articles */}
+      {/* ═══ 3. RELATED ARTICLES — dark ═══ */}
       {relatedArticles && relatedArticles.length > 0 && (
-        <section className="section-padding-sm bg-card border-t border-border">
-          <div className="container-custom">
-            <div className="flex items-center gap-3 mb-8">
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <svg
-                  className="w-5 h-5 text-primary"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"
-                  />
-                </svg>
-              </div>
+        <section className="py-20 sm:py-24" style={{ backgroundColor: "#151F2D" }}>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6 mb-14">
               <div>
-                <h2 className="text-xl font-semibold">Vous aimerez également</h2>
-                <p className="text-sm text-muted-foreground">
-                  Découvrez nos autres articles
-                </p>
+                <span className="inline-block text-xs font-bold uppercase tracking-widest mb-4" style={{ color: "#F8A991" }}>
+                  À lire aussi
+                </span>
+                <h2 className="text-3xl sm:text-[2.5rem] font-normal tracking-tight text-white leading-[1.15]">
+                  Vous aimerez <span style={{ color: "#F8A991" }}>également</span>
+                </h2>
               </div>
+              <Link href="/blog" className="inline-flex items-center gap-2 text-sm font-bold transition-colors hover:text-[#f69b80]" style={{ color: "#F8A991" }}>
+                Tous les articles <ArrowRight className="w-4 h-4" />
+              </Link>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
               {relatedArticles.map((related) => (
-                <Link
-                  key={related.id}
-                  href={`/blog/${related.slug}`}
-                  className="group block overflow-hidden rounded-xl border border-border bg-background hover:border-primary/50 transition-all"
-                >
-                  {related.image_url && (
-                    <div className="aspect-video overflow-hidden relative">
-                      <Image
-                        src={related.image_url}
-                        alt={related.title}
-                        fill
-                        sizes="(max-width: 768px) 100vw, 33vw"
-                        className="object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
+                <Link key={related.id} href={`/blog/${related.slug}`} className="group">
+                  <article className="rounded-2xl overflow-hidden bg-white/5 border border-white/10 hover:border-white/20 hover:-translate-y-1 transition-all duration-300 h-full flex flex-col">
+                    <div className="relative aspect-video overflow-hidden">
+                      {related.image_url ? (
+                        <Image
+                          src={related.image_url}
+                          alt={related.title}
+                          fill
+                          sizes="(max-width: 768px) 100vw, 33vw"
+                          className="object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-white/5" />
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#151F2D]/50 to-transparent" />
                       {related.category && (
-                        <span className="absolute top-3 left-3 px-2 py-1 bg-primary text-primary-foreground rounded text-xs font-medium">
+                        <span className="absolute top-4 left-4 text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full text-white" style={{ backgroundColor: "#1F628E" }}>
                           {related.category}
                         </span>
                       )}
                     </div>
-                  )}
-                  <div className="p-4">
-                    <h3 className="font-semibold group-hover:text-primary transition-colors line-clamp-2 mb-2">
-                      {related.title}
-                    </h3>
-                    {related.excerpt && (
-                      <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-                        {related.excerpt}
-                      </p>
-                    )}
-                    {related.read_time && (
-                      <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Clock className="w-3 h-3" />
-                        {related.read_time} min
-                      </span>
-                    )}
-                  </div>
+                    <div className="p-6 flex flex-col flex-1">
+                      <h3 className="font-bold text-base text-white leading-snug mb-3 line-clamp-2 group-hover:text-[#F8A991] transition-colors">
+                        {related.title}
+                      </h3>
+                      {related.excerpt && (
+                        <p className="text-[13px] line-clamp-2 flex-1 mb-4" style={{ color: "rgba(255,255,255,0.4)" }}>
+                          {related.excerpt}
+                        </p>
+                      )}
+                      <div className="flex items-center justify-between pt-4 border-t border-white/10">
+                        <span className="flex items-center gap-1.5 text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>
+                          <Calendar className="w-3 h-3" />
+                          {fmtDate(related.published_at)}
+                        </span>
+                        <span className="text-xs font-bold group-hover:text-[#F8A991] transition-colors flex items-center gap-1" style={{ color: "rgba(255,255,255,0.5)" }}>
+                          Lire <ArrowRight className="w-3 h-3" />
+                        </span>
+                      </div>
+                    </div>
+                  </article>
                 </Link>
               ))}
             </div>
@@ -325,33 +246,20 @@ export default async function BlogArticlePage({ params }: Props) {
         </section>
       )}
 
-      {/* CTA */}
-      <section className="section-padding-sm">
-        <div className="container-custom text-center">
-          <h2 className="heading-section mb-4">
-            Vous souhaitez vous former ?
-          </h2>
-          <p className="text-body-lg mb-8 max-w-2xl mx-auto">
-            Découvrez notre catalogue de formations professionnelles.
-          </p>
+      {/* ═══ 4. CTA ═══ */}
+      <CTASectionV2 />
+
+      {/* ═══ 5. BACK — mobile ═══ */}
+      <div className="lg:hidden py-6" style={{ backgroundColor: "#151F2D" }}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <Link
-            href="/formations"
-            className="inline-flex items-center justify-center px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
+            href="/blog"
+            className="flex items-center justify-center gap-2 text-[13px] transition-colors py-4 hover:text-[#F8A991]"
+            style={{ color: "rgba(255,255,255,0.5)", borderTop: "1px solid rgba(255,255,255,0.1)" }}
           >
-            Voir nos formations
+            <ArrowLeft className="w-4 h-4" /> Retour au blog
           </Link>
         </div>
-      </section>
-
-      {/* Back to Blog - Mobile */}
-      <div className="lg:hidden container-custom pb-8">
-        <Link
-          href="/blog"
-          className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors py-4 border-t border-border"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Retour au blog
-        </Link>
       </div>
     </>
   );

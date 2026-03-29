@@ -1,322 +1,300 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useCallback } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
-  Search,
-  ChevronDown,
-  MessageCircle,
-  ArrowRight,
-  HelpCircle,
-  Building,
-  Wallet,
-  GraduationCap,
-  ClipboardList,
-  Award,
-  Briefcase,
-  Accessibility,
-  User,
+  Search, ArrowRight, HelpCircle, Building, Wallet,
+  GraduationCap, ClipboardList, Award, Briefcase, Accessibility, User,
+  Phone, ThumbsUp, ThumbsDown, X, Users, CheckCircle,
   LucideIcon,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { createClient } from "@/lib/supabase/client";
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
+  Accordion, AccordionContent, AccordionItem, AccordionTrigger,
 } from "@/components/ui/accordion";
-import { cn } from "@/lib/utils";
-import { PageHero } from "@/components/PageHero";
+import CTASectionV2 from "@/components/home/v2/CTASectionV2";
 
-// Icon mapping
 const iconMap: Record<string, LucideIcon> = {
-  "building-2": Building,
-  Building2: Building,
-  wallet: Wallet,
-  Wallet: Wallet,
-  "graduation-cap": GraduationCap,
-  GraduationCap: GraduationCap,
-  "clipboard-list": ClipboardList,
-  ClipboardList: ClipboardList,
-  award: Award,
-  Award: Award,
-  briefcase: Briefcase,
-  Briefcase: Briefcase,
-  accessibility: Accessibility,
-  Accessibility: Accessibility,
-  "help-circle": HelpCircle,
-  HelpCircle: HelpCircle,
-  user: User,
-  User: User,
+  "building-2": Building, Building2: Building, wallet: Wallet, Wallet: Wallet,
+  "graduation-cap": GraduationCap, GraduationCap: GraduationCap,
+  "clipboard-list": ClipboardList, ClipboardList: ClipboardList,
+  award: Award, Award: Award, briefcase: Briefcase, Briefcase: Briefcase,
+  accessibility: Accessibility, Accessibility: Accessibility,
+  "help-circle": HelpCircle, HelpCircle: HelpCircle, user: User, User: User,
   CreditCard: Wallet,
 };
 
-const getIconComponent = (iconName: string): LucideIcon => {
-  return iconMap[iconName] || HelpCircle;
-};
+const getIcon = (n: string): LucideIcon => iconMap[n] || HelpCircle;
 
-interface FAQCategory {
-  id: string;
-  name: string;
-  slug: string;
-  icon: string;
-  description: string;
-  display_order: number;
-}
+interface FAQCategory { id: string; name: string; slug: string; icon: string; description: string; display_order: number; }
+interface FAQItem { id: string; category_id: string; question: string; answer: string; keywords: string[]; view_count: number; helpful_count: number; not_helpful_count: number; display_order: number; }
 
-interface FAQItem {
-  id: string;
-  category_id: string;
-  question: string;
-  answer: string;
-  keywords: string[];
-  view_count: number;
-  helpful_count: number;
-  not_helpful_count: number;
-  display_order: number;
-}
-
-interface FAQClientProps {
-  categories: FAQCategory[];
-  items: FAQItem[];
-}
-
-export default function FAQClient({ categories, items }: FAQClientProps) {
+export default function FAQClient({ categories, items }: { categories: FAQCategory[]; items: FAQItem[] }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [searchFocused, setSearchFocused] = useState(false);
+  const searchRef = useRef<HTMLInputElement>(null);
 
-  // Filter items based on search and category
   const filteredItems = useMemo(() => {
-    let result = items;
-
-    if (selectedCategory) {
-      result = result.filter((item) => item.category_id === selectedCategory);
-    }
-
+    let r = items;
+    if (selectedCategory) r = r.filter((i) => i.category_id === selectedCategory);
     if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(
-        (item) =>
-          item.question.toLowerCase().includes(query) ||
-          item.answer.toLowerCase().includes(query) ||
-          item.keywords?.some((k) => k.toLowerCase().includes(query))
+      const q = searchQuery.toLowerCase();
+      r = r.filter((i) =>
+        i.question.toLowerCase().includes(q) || i.answer.toLowerCase().includes(q) ||
+        i.keywords?.some((k) => k.toLowerCase().includes(q))
       );
     }
-
-    return result;
+    return r;
   }, [items, searchQuery, selectedCategory]);
 
-  // Group items by category
-  const groupedItems = useMemo(() => {
-    const groups: Record<string, FAQItem[]> = {};
-    filteredItems.forEach((item) => {
-      if (!groups[item.category_id]) {
-        groups[item.category_id] = [];
-      }
-      groups[item.category_id].push(item);
-    });
-    return groups;
+  const grouped = useMemo(() => {
+    const g: Record<string, FAQItem[]> = {};
+    filteredItems.forEach((i) => { if (!g[i.category_id]) g[i.category_id] = []; g[i.category_id].push(i); });
+    return g;
   }, [filteredItems]);
 
-  // Popular questions (most viewed)
-  const popularQuestions = useMemo(() => {
-    return [...items]
-      .sort((a, b) => (b.view_count || 0) - (a.view_count || 0))
-      .slice(0, 5);
-  }, [items]);
+  const totalQuestions = items.length;
+
+  const viewedRef = useRef<Set<string>>(new Set());
+  const [feedbackGiven, setFeedbackGiven] = useState<Record<string, "up" | "down">>({});
+
+  const trackView = useCallback((itemId: string) => {
+    if (viewedRef.current.has(itemId)) return;
+    viewedRef.current.add(itemId);
+    const supabase = createClient();
+    supabase.rpc("increment_faq_view", { item_id: itemId }).then(() => {});
+  }, []);
+
+  const sendFeedback = useCallback((itemId: string, type: "up" | "down") => {
+    if (feedbackGiven[itemId]) return;
+    setFeedbackGiven((prev) => ({ ...prev, [itemId]: type }));
+    const supabase = createClient();
+    const col = type === "up" ? "helpful_count" : "not_helpful_count";
+    supabase.rpc("increment_faq_feedback", { item_id: itemId, col_name: col }).then(() => {});
+  }, [feedbackGiven]);
 
   return (
     <>
-      {/* Hero Section */}
-      <PageHero
-        badge="FAQ"
-        title="Trouvez les réponses à vos questions."
-        highlightedWord="réponses"
-        description="Notre FAQ couvre les sujets les plus fréquents sur nos formations et services."
+      {/* ═══ 1. HERO — identique à propos : gradient bleu + image band ═══ */}
+      <section
+        className="relative z-10"
+        style={{ background: "linear-gradient(180deg, #1a6faa 0%, #1F628E 40%, #17567d 60%, #151F2D 60%)" }}
       >
-        {/* Search Bar */}
-        <div className="relative max-w-md">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10" />
-          <input
-            type="text"
-            placeholder="Rechercher une question..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-11 pr-4 py-3 text-sm rounded-xl border border-border/50 bg-secondary/50 focus:outline-none focus:ring-2 focus:ring-primary/50"
-          />
-        </div>
-      </PageHero>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 sm:pt-40 text-center">
+          <nav className="flex items-center justify-center gap-2 text-[13px] mb-6" style={{ color: "rgba(255,255,255,0.4)" }}>
+            <Link href="/" className="hover:text-white transition-colors">Accueil</Link>
+            <span>/</span>
+            <span className="text-white">FAQ</span>
+          </nav>
 
-      {/* Categories Filter */}
-      <section className="py-6 border-b border-border/50 sticky top-16 bg-background/95 backdrop-blur-xl z-40">
-        <div className="container-custom">
-          <div className="flex flex-wrap gap-3 justify-center">
-            <button
-              onClick={() => setSelectedCategory(null)}
-              className={cn(
-                "inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all",
-                selectedCategory === null
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-              )}
-            >
-              Toutes
-            </button>
-            {categories.map((category) => {
-              const IconComponent = getIconComponent(category.icon);
-              return (
-                <button
-                  key={category.id}
-                  onClick={() => setSelectedCategory(category.id)}
-                  className={cn(
-                    "inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all",
-                    selectedCategory === category.id
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-                  )}
-                >
-                  <IconComponent className="w-4 h-4" />
-                  {category.name}
-                </button>
-              );
-            })}
+          <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] font-semibold leading-[1.1] tracking-tight text-white max-w-3xl mx-auto mb-6">
+            Toutes vos <span style={{ color: "#F8A991" }}>questions,</span> nos réponses.
+          </h1>
+          <p className="text-base sm:text-lg leading-relaxed max-w-2xl mx-auto mb-10" style={{ color: "rgba(255,255,255,0.6)" }}>
+            Formations, financements, inscriptions — trouvez la réponse en quelques clics.
+          </p>
+
+          {/* Trust badges */}
+          <div className="flex flex-wrap items-center justify-center gap-8 mb-10">
+            {[
+              { icon: HelpCircle, text: `${totalQuestions} questions` },
+              { icon: Users, text: "25 000+ formés" },
+              { icon: CheckCircle, text: "Réponse en 24h" },
+            ].map((b) => (
+              <div key={b.text} className="flex items-center gap-2 text-[13px] font-semibold text-white/70">
+                <b.icon className="w-4 h-4" />
+                {b.text}
+              </div>
+            ))}
           </div>
         </div>
+
+        {/* Hero image band — comme à propos */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="relative aspect-[16/9] sm:aspect-[21/9] rounded-2xl overflow-hidden shadow-2xl shadow-black/30 ring-[12px] ring-[#151F2D]">
+            <div className="absolute inset-0 animate-[kenBurnsLoop_15s_ease-in-out_infinite]">
+              <Image
+                src="/images/fonds_sections/fond_faq3.jpg"
+                alt="FAQ C&Co Formation"
+                fill
+                sizes="(max-width: 1024px) 100vw, 1100px"
+                className="object-cover object-[center_20%]"
+                priority
+              />
+            </div>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/30 to-transparent" />
+
+          </div>
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-12" />
       </section>
 
-      {/* Main Content */}
-      <section className="section-padding">
-        <div className="container-custom">
-          <div className="grid lg:grid-cols-4 gap-12">
-            {/* Sidebar - Popular Questions */}
-            <aside className="lg:col-span-1 order-2 lg:order-1">
-              <div className="sticky top-40">
-                <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4">
-                  Questions populaires
-                </h3>
-                <div className="space-y-3">
-                  {popularQuestions.map((item) => (
-                    <button
-                      key={item.id}
-                      onClick={() => {
-                        setSelectedCategory(null);
-                        setSearchQuery(item.question.split(" ").slice(0, 3).join(" "));
-                      }}
-                      className="w-full text-left text-sm text-muted-foreground hover:text-foreground transition-colors p-3 rounded-lg hover:bg-muted/50 border border-transparent hover:border-border/50"
-                    >
-                      {item.question}
-                    </button>
-                  ))}
-                </div>
+      {/* ═══ 2. FAQ CONTENT — dark ═══ */}
+      <section className="py-20 sm:py-24" style={{ backgroundColor: "#151F2D" }}>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
 
-                {/* Contact CTA */}
-                <div className="mt-8 p-6 rounded-2xl bg-muted/30 border border-border/50">
-                  <MessageCircle className="w-8 h-8 text-primary mb-3" />
-                  <h4 className="font-medium mb-2">Besoin d'aide ?</h4>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Notre équipe est là pour répondre à toutes vos questions.
-                  </p>
-                  <Link href="/contact">
-                    <Button variant="outline" size="sm" className="w-full">
-                      Nous contacter
-                      <ArrowRight className="w-4 h-4 ml-2" />
-                    </Button>
-                  </Link>
-                </div>
+          {/* Search bar — sticky inside section */}
+          <div
+            className="sticky top-16 z-40 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-6 mb-8"
+            style={{ backgroundColor: "#151F2D" }}
+            onClick={() => searchRef.current?.focus()}
+          >
+            <div
+              className="relative flex items-center rounded-2xl transition-all duration-300"
+              style={{
+                backgroundColor: "rgba(255,255,255,0.05)",
+                border: searchFocused ? "1px solid rgba(248,169,145,0.3)" : "1px solid rgba(255,255,255,0.08)",
+              }}
+            >
+              <div className="pl-6 flex items-center">
+                <Search className="w-5 h-5 transition-all duration-300" style={{ color: searchFocused ? "#F8A991" : "rgba(255,255,255,0.35)" }} />
               </div>
-            </aside>
-
-            {/* FAQ Items */}
-            <div className="lg:col-span-3 order-1 lg:order-2">
-              {filteredItems.length === 0 ? (
-                <div className="text-center py-16">
-                  <p className="text-lg text-muted-foreground mb-4">
-                    {searchQuery
-                      ? `Aucun résultat pour "${searchQuery}"`
-                      : "Aucune question dans cette catégorie"}
-                  </p>
-                  <Button
-                    variant="link"
-                    onClick={() => {
-                      setSearchQuery("");
-                      setSelectedCategory(null);
-                    }}
-                  >
-                    Réinitialiser les filtres
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-12 max-w-3xl">
-                  {categories
-                    .filter(
-                      (cat) => !selectedCategory || cat.id === selectedCategory
-                    )
-                    .filter((cat) => groupedItems[cat.id]?.length > 0)
-                    .map((category) => {
-                      const CategoryIcon = getIconComponent(category.icon);
-                      return (
-                        <div key={category.id}>
-                          <div className="flex items-center gap-3 mb-6">
-                            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                              <CategoryIcon className="w-5 h-5 text-primary" />
-                            </div>
-                            <h2 className="text-xl font-medium">
-                              {category.name}
-                            </h2>
-                            <span className="text-xs text-muted-foreground bg-secondary px-2 py-1 rounded-full">
-                              {groupedItems[category.id]?.length || 0}
-                            </span>
-                          </div>
-
-                          <Accordion
-                            type="single"
-                            collapsible
-                            className="space-y-3"
-                          >
-                            {groupedItems[category.id]?.map((item) => (
-                              <AccordionItem
-                                key={item.id}
-                                value={item.id}
-                                className="border border-border/50 rounded-xl overflow-hidden bg-card hover:border-primary/30 transition-all data-[state=open]:border-primary/30"
-                              >
-                                <AccordionTrigger className="px-5 py-4 hover:no-underline hover:bg-secondary/30 transition-colors">
-                                  <span className="font-medium text-left pr-4">
-                                    {item.question}
-                                  </span>
-                                </AccordionTrigger>
-                                <AccordionContent className="px-5 pb-5">
-                                  <p className="text-muted-foreground leading-relaxed whitespace-pre-line">
-                                    {item.answer}
-                                  </p>
-                                </AccordionContent>
-                              </AccordionItem>
-                            ))}
-                          </Accordion>
-                        </div>
-                      );
-                    })}
-                </div>
+              <input
+                ref={searchRef}
+                type="text"
+                placeholder="Rechercher une question..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => setSearchFocused(true)}
+                onBlur={() => setSearchFocused(false)}
+                className="flex-1 px-4 py-4 bg-transparent text-[15px] text-white placeholder:text-white/40 outline-none focus:outline-none focus:ring-0"
+              />
+              {searchQuery && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setSearchQuery(""); }}
+                  className="pr-6 pl-2 flex items-center text-white/40 hover:text-white transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               )}
+            </div>
+          </div>
+
+          {/* Search results banner */}
+          {(selectedCategory || searchQuery) && (
+            <div className="flex items-center justify-between mb-8 pb-5" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+              <p className="text-sm" style={{ color: "rgba(255,255,255,0.4)" }}>
+                {filteredItems.length} résultat{filteredItems.length > 1 ? "s" : ""}
+                {searchQuery && <> pour &quot;<span className="font-bold text-white">{searchQuery}</span>&quot;</>}
+              </p>
+              <button
+                onClick={() => { setSearchQuery(""); setSelectedCategory(null); }}
+                className="text-[13px] font-bold transition-colors"
+                style={{ color: "#F8A991" }}
+              >
+                Tout afficher
+              </button>
+            </div>
+          )}
+
+          {filteredItems.length === 0 ? (
+            <div className="text-center py-20 rounded-2xl" style={{ backgroundColor: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6" style={{ backgroundColor: "rgba(248,169,145,0.1)" }}>
+                <Search className="w-7 h-7" style={{ color: "#F8A991" }} />
+              </div>
+              <p className="text-lg font-semibold text-white mb-2">Aucun résultat</p>
+              <p className="text-[14px] mb-6" style={{ color: "rgba(255,255,255,0.4)" }}>Essayez un autre terme ou consultez toutes les catégories.</p>
+              <button
+                onClick={() => { setSearchQuery(""); setSelectedCategory(null); }}
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-[14px] transition-all hover:scale-[1.02]"
+                style={{ backgroundColor: "#F8A991", color: "#151F2D" }}
+              >
+                Voir toutes les questions
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-14">
+              {categories
+                .filter((c) => !selectedCategory || c.id === selectedCategory)
+                .filter((c) => grouped[c.id]?.length > 0)
+                .map((cat) => {
+                  const CatIcon = getIcon(cat.icon);
+                  return (
+                    <div key={cat.id}>
+                      {/* Category header — left aligned, compact */}
+                      <div className="flex items-center gap-3 mb-6">
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: "rgba(248,169,145,0.1)" }}>
+                          <CatIcon className="w-4 h-4" style={{ color: "#F8A991" }} />
+                        </div>
+                        <h2 className="text-lg font-normal text-white">{cat.name}</h2>
+                        <div className="flex-1 h-px" style={{ backgroundColor: "rgba(255,255,255,0.06)" }} />
+                        <span className="text-[11px] font-bold" style={{ color: "rgba(255,255,255,0.25)" }}>{grouped[cat.id]?.length}</span>
+                      </div>
+
+                      {/* Accordion */}
+                      <Accordion
+                        type="single"
+                        collapsible
+                        className="space-y-2"
+                        onValueChange={(val) => { if (val) trackView(val); }}
+                      >
+                        {grouped[cat.id]?.map((item) => (
+                          <AccordionItem
+                            key={item.id}
+                            value={item.id}
+                            className="rounded-xl overflow-hidden transition-all duration-300 data-[state=open]:shadow-lg data-[state=open]:shadow-black/20 data-[state=open]:ring-1 data-[state=open]:ring-[rgba(248,169,145,0.15)]"
+                            style={{ backgroundColor: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}
+                          >
+                            <AccordionTrigger className="px-6 py-4 hover:no-underline group text-left">
+                              <span className="font-medium text-[15px] pr-4 group-hover:text-[#F8A991] transition-colors text-white/90">
+                                {item.question}
+                              </span>
+                            </AccordionTrigger>
+                            <AccordionContent className="px-6 pb-5">
+                              <div className="h-px mb-4" style={{ background: "linear-gradient(to right, rgba(248,169,145,0.2), transparent)" }} />
+                              <p className="text-[14px] leading-[1.8] whitespace-pre-line" style={{ color: "rgba(255,255,255,0.5)" }}>
+                                {item.answer}
+                              </p>
+                              {/* Feedback */}
+                              <div className="flex items-center gap-3 mt-5 pt-4" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                                <span className="text-[12px]" style={{ color: "rgba(255,255,255,0.25)" }}>Utile ?</span>
+                                {feedbackGiven[item.id] ? (
+                                  <span className="text-[12px] font-bold" style={{ color: "#F8A991" }}>Merci !</span>
+                                ) : (
+                                  <>
+                                    <button onClick={() => sendFeedback(item.id, "up")} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold transition-all hover:scale-105" style={{ backgroundColor: "rgba(248,169,145,0.1)", color: "#F8A991" }}>
+                                      <ThumbsUp className="w-3 h-3" /> Oui
+                                    </button>
+                                    <button onClick={() => sendFeedback(item.id, "down")} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold transition-all hover:scale-105" style={{ backgroundColor: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.25)" }}>
+                                      <ThumbsDown className="w-3 h-3" /> Non
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                            </AccordionContent>
+                          </AccordionItem>
+                        ))}
+                      </Accordion>
+                    </div>
+                  );
+                })}
+            </div>
+          )}
+
+          {/* Contact banner */}
+          <div className="mt-20 flex flex-col sm:flex-row items-center justify-between gap-6 rounded-2xl p-8" style={{ background: "linear-gradient(135deg, rgba(31,98,142,0.2), rgba(248,169,145,0.1))", border: "1px solid rgba(255,255,255,0.06)" }}>
+            <div>
+              <p className="text-[15px] font-semibold text-white">Vous ne trouvez pas votre réponse ?</p>
+              <p className="text-[13px]" style={{ color: "rgba(255,255,255,0.4)" }}>Notre équipe vous répond sous 24h.</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <Link href="/contact" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-[14px] transition-all hover:scale-[1.02]" style={{ backgroundColor: "#F8A991", color: "#151F2D" }}>
+                Nous contacter <ArrowRight className="w-4 h-4" />
+              </Link>
+              <a href="tel:+33762596653" className="inline-flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-[14px] text-white/70 transition-all hover:text-white hover:bg-white/5" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
+                <Phone className="w-4 h-4" />
+              </a>
             </div>
           </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="section-padding-sm border-t border-border/50">
-        <div className="container-custom text-center">
-          <p className="text-muted-foreground mb-4">
-            Vous n'avez pas trouvé votre réponse ?
-          </p>
-          <Link
-            href="/contact"
-            className="inline-flex items-center gap-2 text-primary hover:opacity-80 transition-opacity"
-          >
-            Contactez-nous
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
-      </section>
+      {/* ═══ 3. CTA ═══ */}
+      <CTASectionV2 />
     </>
   );
 }

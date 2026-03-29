@@ -102,8 +102,8 @@ export default function FeaturedFormationsV2({ formations }: { formations: Forma
             <span className="inline-block text-xs font-bold uppercase tracking-widest text-[#F8A991] mb-4">
               Catalogue
             </span>
-            <h2 className="text-3xl sm:text-[2.5rem] font-extrabold tracking-tight text-white mb-2">
-              Formations populaires
+            <h2 className="text-3xl sm:text-[2.5rem] font-normal tracking-tight text-white mb-2">
+              Formations <span style={{ color: "#F8A991" }}>populaires</span>
             </h2>
             <p className="text-base text-white/60 max-w-xl">
               Découvrez nos formations les plus demandées par les professionnels.

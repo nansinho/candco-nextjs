@@ -37,8 +37,8 @@ export default async function BlogPreviewV2() {
             <span className="text-xs font-bold uppercase tracking-widest text-[#F8A991] mb-3 block">
               Blog
             </span>
-            <h2 className="text-3xl sm:text-[2.5rem] font-extrabold tracking-tight text-white">
-              Dernières actualités
+            <h2 className="text-3xl sm:text-[2.5rem] font-normal tracking-tight text-white">
+              Dernières <span style={{ color: "#F8A991" }}>actualités</span>
             </h2>
           </div>
           <Link href="/blog" className="inline-flex items-center gap-2 text-sm font-bold text-[#F8A991] hover:text-[#f69b80] transition-colors">

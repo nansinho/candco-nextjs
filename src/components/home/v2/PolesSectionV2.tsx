@@ -104,8 +104,8 @@ export default function PolesSectionV2({ polesConfig, counts }: { polesConfig: P
           <span className="inline-block text-xs font-bold uppercase tracking-widest text-[#1F628E] mb-4">
             Nos pôles
           </span>
-          <h2 className="text-3xl sm:text-[2.5rem] font-extrabold tracking-tight text-[#151F2D] mb-4">
-            Nos domaines d&apos;expertise
+          <h2 className="text-3xl sm:text-[2.5rem] font-normal tracking-tight text-[#151F2D] mb-4">
+            Nos domaines d&apos;<span style={{ color: "#1F628E" }}>expertise</span>
           </h2>
           <p className="text-base text-gray-500 max-w-xl mx-auto">
             {polesConfig.length} pôles de formation pour accompagner votre évolution professionnelle.

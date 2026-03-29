@@ -4,8 +4,8 @@ export default function CTASectionV2() {
   return (
     <section className="py-20 sm:py-24" style={{ background: "linear-gradient(135deg, #1F628E 0%, #2980b9 100%)" }}>
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <h2 className="text-3xl sm:text-4xl lg:text-[2.75rem] font-extrabold tracking-tight text-white leading-[1.15] mb-5">
-          Prêt à développer vos compétences ?
+        <h2 className="text-3xl sm:text-[2.5rem] font-normal tracking-tight text-white leading-[1.15] mb-5">
+          Prêt à développer vos <span style={{ color: "#F8A991" }}>compétences ?</span>
         </h2>
         <p className="text-base text-white/60 mb-10 max-w-xl mx-auto leading-relaxed">
           Rejoignez les 25 000+ professionnels formés par C&Co. Accompagnement personnalisé, 100% finançable via OPCO.

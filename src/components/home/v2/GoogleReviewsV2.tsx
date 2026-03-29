@@ -25,8 +25,8 @@ export default function GoogleReviewsV2() {
             <span className="text-[13px] font-semibold uppercase tracking-wide text-[#F8A991]">
               Avis vérifiés
             </span>
-            <h2 className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-[#151F2D]">
-              Avis Google
+            <h2 className="mt-2 text-3xl sm:text-[2.5rem] font-normal tracking-tight text-[#151F2D]">
+              Avis <span style={{ color: "#1F628E" }}>Google</span>
             </h2>
           </div>
           <div className="flex items-center gap-2 text-sm">

@@ -11,8 +11,8 @@ export default function TestimonialsV2() {
   return (
     <section className="py-20 sm:py-24 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 className="text-center text-3xl sm:text-[2.5rem] font-extrabold tracking-tight text-[#151F2D] mb-4">
-          La confiance de nos stagiaires
+        <h2 className="text-center text-3xl sm:text-[2.5rem] font-normal tracking-tight text-[#151F2D] mb-4">
+          La confiance de nos <span style={{ color: "#1F628E" }}>stagiaires</span>
         </h2>
         <p className="text-center text-base text-gray-500 max-w-xl mx-auto mb-14">
           Découvrez les retours de professionnels formés par C&Co.
