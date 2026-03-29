@@ -70,7 +70,7 @@ interface FormationsClientProps {
 
 const poles = [
   { id: "all", name: "Toutes", icon: null, color: null, hex: null },
-  { id: "securite-prevention", name: "Sécurité", icon: Shield, color: "pole-securite", bg: "#A82424" },
+  { id: "securite-prevention", name: "Sécurité", icon: Shield, color: "pole-securite", bg: "#F2DEDE", text: "#A82424" },
   { id: "petite-enfance", name: "Petite Enfance", icon: Baby, color: "pole-petite-enfance", bg: "#2D867E" },
   { id: "sante", name: "Santé", icon: HeartPulse, color: "pole-sante", bg: "#507395" },
 ];
@@ -544,6 +544,7 @@ export default function FormationsClient({
                               {catFormations.map((formation, index) => {
                                 const cssVar = pole.color || "primary";
                                 const cardBg = pole.bg || "#151F2D";
+                                const cardText = pole.text || null;
                                 const sessionInfo = sessionCounts[formation.id];
                                 const hasActiveSessions = sessionInfo && sessionInfo.count > 0;
 
@@ -590,16 +591,16 @@ export default function FormationsClient({
 
                                         {/* Content */}
                                         <div className="p-5 flex flex-col flex-1">
-                                          <h3 className="text-[15px] font-bold text-white leading-snug mb-2 line-clamp-2 min-h-[2.5rem] group-hover:text-[#F8A991] transition-colors">
+                                          <h3 className="text-[15px] font-bold leading-snug mb-2 line-clamp-2 min-h-[2.5rem] group-hover:opacity-80 transition-colors" style={{ color: cardText || "white" }}>
                                             {formation.title}
                                           </h3>
-                                          <p className="text-[13px] text-white/40 line-clamp-2 mb-3 min-h-[2.5rem]">
+                                          <p className="text-[13px] line-clamp-2 mb-3 min-h-[2.5rem]" style={{ color: cardText ? `${cardText}99` : "rgba(255,255,255,0.4)" }}>
                                             {formation.subtitle || "\u00A0"}
                                           </p>
 
                                           {/* Session info */}
                                           {hasActiveSessions && (
-                                            <div className="flex items-center gap-3 mb-3 text-[11px] text-white/40">
+                                            <div className="flex items-center gap-3 mb-3 text-[11px]" style={{ color: cardText ? `${cardText}88` : "rgba(255,255,255,0.4)" }}>
                                               <span className="flex items-center gap-1">
                                                 <CalendarDays className="w-3 h-3" />
                                                 {sessionInfo.count} session{sessionInfo.count > 1 ? "s" : ""}
@@ -614,7 +615,7 @@ export default function FormationsClient({
                                           )}
 
                                           <div className="flex items-center justify-between mt-auto pt-3" style={{ borderTop: `1px solid hsl(var(--${cssVar}) / 0.15)` }}>
-                                            <p className="text-lg font-extrabold text-white">{formation.price}</p>
+                                            <p className="text-lg font-extrabold" style={{ color: cardText || "white" }}>{formation.price}</p>
                                             <span className="text-xs font-bold flex items-center gap-1" style={{ color: `hsl(var(--${cssVar}))` }}>
                                               Détails <ArrowRight className="w-3 h-3" />
                                             </span>
