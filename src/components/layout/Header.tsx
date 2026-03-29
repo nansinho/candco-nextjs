@@ -222,7 +222,7 @@ export default function Header() {
     setHoveredSubmenu(name);
   };
   const closeSubmenu = () => {
-    submenuTimeout.current = setTimeout(() => setHoveredSubmenu(null), 400);
+    submenuTimeout.current = setTimeout(() => setHoveredSubmenu(null), 200);
   };
   const [mobileSubmenuOpen, setMobileSubmenuOpen] = useState<string | null>(null);
   const pathname = usePathname();
@@ -415,13 +415,13 @@ export default function Header() {
                       />
                     </button>
 
-                    {/* Submenu dropdown */}
+                    {/* Submenu dropdown — pt-4 acts as invisible bridge */}
                     <div
                       className={cn(
-                        "absolute top-full left-1/2 -translate-x-1/2 pt-3 transition-all duration-300",
+                        "absolute top-full left-1/2 -translate-x-1/2 pt-2 transition-all duration-200",
                         hoveredSubmenu === item.name
                           ? "opacity-100 visible translate-y-0"
-                          : "opacity-0 invisible -translate-y-2"
+                          : "opacity-0 invisible -translate-y-1 pointer-events-none"
                       )}
                     >
                       <div className="bg-background/95 backdrop-blur-xl border border-border/50 rounded-2xl shadow-xl p-3 min-w-[320px]">
