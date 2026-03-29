@@ -559,7 +559,8 @@ export default function FormationsClient({
                                       className="group block h-full"
                                     >
                                       <article
-                                        className="rounded-2xl overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full flex flex-col bg-white border border-gray-200"
+                                        className="rounded-2xl overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full flex flex-col border"
+                                        style={{ backgroundColor: `${accent}08`, borderColor: `${accent}20` }}
                                       >
                                         {/* Image */}
                                         <div className="relative aspect-[3/1] overflow-hidden">
