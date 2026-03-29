@@ -239,8 +239,8 @@ export default function FormationsClient({
       </Drawer>
 
       {/* Filters Section */}
-      <section className="py-3 md:py-6 border-b border-border/50 sticky top-16 bg-background/95 backdrop-blur-xl z-40 transition-all duration-300">
-        <div className="container-custom">
+      <section className="py-3 md:py-6 sticky top-16 z-40 transition-all duration-300" style={{ backgroundColor: "rgba(21,31,45,0.95)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Mobile: Compact bar */}
           <div className="flex md:hidden gap-2 items-center">
             <div className="flex-1 relative">
@@ -292,7 +292,8 @@ export default function FormationsClient({
                   placeholder="Rechercher une formation..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-11 pr-4 py-2.5 rounded-full border border-border/30 bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                  className="w-full pl-11 pr-4 py-2.5 rounded-full text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-0 transition-all"
+                  style={{ backgroundColor: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}
                 />
               </div>
 
@@ -449,28 +450,29 @@ export default function FormationsClient({
       </section>
 
       {/* Results */}
-      <section className="section-padding">
-        <div className="container-custom">
-          <p className="text-sm text-muted-foreground mb-8">
+      <section className="py-16 sm:py-20" style={{ backgroundColor: "#151F2D" }}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <p className="text-sm mb-8" style={{ color: "rgba(255,255,255,0.4)" }}>
             {filteredFormations.length} formation
             {filteredFormations.length > 1 ? "s" : ""} trouvée
             {filteredFormations.length > 1 ? "s" : ""}
           </p>
 
           {filteredFormations.length === 0 ? (
-            <div className="text-center py-16">
-              <p className="text-muted-foreground mb-4">
+            <div className="text-center py-20 rounded-2xl" style={{ backgroundColor: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+              <p className="mb-4" style={{ color: "rgba(255,255,255,0.4)" }}>
                 Aucune formation ne correspond à votre recherche.
               </p>
-              <Button
-                variant="link"
+              <button
                 onClick={() => {
                   setSearchQuery("");
                   setSelectedPole("all");
                 }}
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-[14px] transition-all hover:scale-[1.02]"
+                style={{ backgroundColor: "#F8A991", color: "#151F2D" }}
               >
                 Réinitialiser les filtres
-              </Button>
+              </button>
             </div>
           ) : (
             <div className="space-y-16">
@@ -514,7 +516,7 @@ export default function FormationsClient({
                           >
                             {pole.name}
                           </h2>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-sm" style={{ color: "rgba(255,255,255,0.4)" }}>
                             {poleFormations.length} formation
                             {poleFormations.length > 1 ? "s" : ""}
                           </p>
@@ -527,11 +529,11 @@ export default function FormationsClient({
                           <div key={category?.id || "uncategorized"}>
                             {/* Category Header */}
                             <div className="flex items-center gap-3 mb-4">
-                              <Tag className="w-4 h-4 text-muted-foreground" />
-                              <h3 className="text-base font-medium text-foreground">
+                              <Tag className="w-4 h-4" style={{ color: "rgba(255,255,255,0.3)" }} />
+                              <h3 className="text-base font-medium text-white">
                                 {category?.name || "Autres formations"}
                               </h3>
-                              <span className="text-xs text-muted-foreground">
+                              <span className="text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>
                                 ({catFormations.length})
                               </span>
                             </div>
@@ -554,7 +556,7 @@ export default function FormationsClient({
                                       href={`/formations/${formation.pole}/${formation.slug || formation.id}`}
                                       className="group block h-full"
                                     >
-                                      <article className="relative h-full bg-card rounded-2xl border border-border/50 overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 flex flex-col">
+                                      <article className="relative h-full rounded-2xl overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 flex flex-col" style={{ backgroundColor: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
                                         {/* Image */}
                                         <div className="aspect-[4/3] sm:aspect-[3/2] overflow-hidden relative bg-muted">
                                           <Image
@@ -635,11 +637,11 @@ export default function FormationsClient({
                                               }}
                                             />
                                           </div>
-                                          <p className="text-xs sm:text-sm text-muted-foreground mb-2 sm:mb-4 flex-grow line-clamp-2 hidden sm:block">
+                                          <p className="text-xs sm:text-sm mb-2 sm:mb-4 flex-grow line-clamp-2 hidden sm:block" style={{ color: "rgba(255,255,255,0.4)" }}>
                                             {formation.subtitle || ""}
                                           </p>
 
-                                          <div className="flex items-center justify-between text-[10px] sm:text-xs text-muted-foreground mt-auto">
+                                          <div className="flex items-center justify-between text-[10px] sm:text-xs mt-auto" style={{ color: "rgba(255,255,255,0.4)" }}>
                                             <div className="flex items-center gap-1">
                                               <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                                               <span className="hidden sm:inline">
@@ -651,7 +653,7 @@ export default function FormationsClient({
                                                   .replace(" heures", "h")}
                                               </span>
                                             </div>
-                                            <span className="font-medium text-foreground text-xs sm:text-sm">
+                                            <span className="font-medium text-white text-xs sm:text-sm">
                                               {formation.price}
                                             </span>
                                           </div>
@@ -674,14 +676,15 @@ export default function FormationsClient({
       </section>
 
       {/* CTA */}
-      <section className="section-padding-sm border-t border-border/50">
-        <div className="container-custom text-center">
-          <p className="text-muted-foreground mb-4">
-            Besoin d'aide pour choisir votre formation ?
+      <section className="py-12" style={{ backgroundColor: "#151F2D", borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <p className="mb-4" style={{ color: "rgba(255,255,255,0.4)" }}>
+            Besoin d&apos;aide pour choisir votre formation ?
           </p>
           <Link
             href="/contact"
-            className="inline-flex items-center gap-2 text-primary hover:opacity-80 transition-opacity"
+            className="inline-flex items-center gap-2 font-bold text-[14px] transition-all hover:scale-[1.02]"
+            style={{ color: "#F8A991" }}
           >
             Contactez nos conseillers
             <ArrowRight className="w-4 h-4" />

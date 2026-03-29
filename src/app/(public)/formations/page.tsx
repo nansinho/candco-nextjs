@@ -1,7 +1,8 @@
 import { createServiceClient, ORG_ID } from "@/lib/supabase/service";
 import { getPoleFromDomaine } from "@/lib/domaines";
 import { Metadata } from "next";
-import { PageHero } from "@/components/PageHero";
+import Link from "next/link";
+import { Shield, Baby, HeartPulse, CheckCircle, Award, Users, Star } from "lucide-react";
 import FormationsClient from "./FormationsClient";
 
 export const metadata: Metadata = {
@@ -142,12 +143,63 @@ export default async function FormationsPage() {
 
   return (
     <>
-      <PageHero
-        badge="Catalogue de formations"
-        title="Trouvez la formation qui vous correspond."
-        highlightedWord="formation"
-        description="Plus de 50 formations certifiantes dans les domaines de la Sécurité, de la Petite Enfance et de la Santé."
-      />
+      {/* ═══ HERO — dark V2 ═══ */}
+      <section
+        className="relative z-10"
+        style={{ background: "linear-gradient(180deg, #1a6faa 0%, #1F628E 40%, #17567d 60%, #151F2D 100%)" }}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 sm:pt-40 pb-16 sm:pb-20 text-center">
+          <nav className="flex items-center justify-center gap-2 text-[13px] mb-6" style={{ color: "rgba(255,255,255,0.4)" }}>
+            <Link href="/" className="hover:text-white transition-colors">Accueil</Link>
+            <span>/</span>
+            <span className="text-white">Formations</span>
+          </nav>
+
+          <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-5 py-2 mb-5 border border-white/10">
+            <div className="flex gap-0.5">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+              ))}
+            </div>
+            <span className="text-[13px] font-medium text-white/80">4.9 · Plus de 50 avis</span>
+          </div>
+
+          <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] font-semibold leading-[1.1] tracking-tight text-white max-w-4xl mx-auto mb-6">
+            Trouvez la <span style={{ color: "#F8A991" }}>formation</span> qui vous correspond.
+          </h1>
+          <p className="text-base sm:text-lg text-blue-100/70 max-w-2xl mx-auto mb-10 leading-relaxed">
+            Plus de 50 formations certifiantes dans les domaines de la Sécurité, de la Petite Enfance et de la Santé.
+          </p>
+
+          {/* Trust badges */}
+          <div className="flex flex-wrap items-center justify-center gap-8 mb-6">
+            {[
+              { icon: CheckCircle, text: "Certifié Qualiopi" },
+              { icon: Award, text: "Financement OPCO" },
+              { icon: Users, text: "25 000+ formés" },
+            ].map((b) => (
+              <div key={b.text} className="flex items-center gap-2 text-[13px] font-semibold text-white/70">
+                <b.icon className="w-4 h-4" />
+                {b.text}
+              </div>
+            ))}
+          </div>
+
+          {/* Pole pills */}
+          <div className="flex items-center justify-center gap-3">
+            {[
+              { icon: Shield, name: "Sécurité", color: "#e74c3c" },
+              { icon: Baby, name: "Petite Enfance", color: "#f39c12" },
+              { icon: HeartPulse, name: "Santé", color: "#27ae60" },
+            ].map((p) => (
+              <div key={p.name} className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-[13px] font-bold text-white/80" style={{ backgroundColor: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.1)" }}>
+                <p.icon className="w-4 h-4" style={{ color: p.color }} />
+                {p.name}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
       <FormationsClient
         formations={formations}
