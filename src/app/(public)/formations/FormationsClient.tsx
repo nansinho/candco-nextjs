@@ -70,9 +70,9 @@ interface FormationsClientProps {
 
 const poles = [
   { id: "all", name: "Toutes", icon: null, color: null, hex: null },
-  { id: "securite-prevention", name: "Sécurité", icon: Shield, color: "pole-securite", hex: "#e74c3c" },
-  { id: "petite-enfance", name: "Petite Enfance", icon: Baby, color: "pole-petite-enfance", hex: "#1abc9c" },
-  { id: "sante", name: "Santé", icon: HeartPulse, color: "pole-sante", hex: "#3498db" },
+  { id: "securite-prevention", name: "Sécurité", icon: Shield, color: "pole-securite", hex: "#8B1A1A" },
+  { id: "petite-enfance", name: "Petite Enfance", icon: Baby, color: "pole-petite-enfance", hex: "#2A9D8F" },
+  { id: "sante", name: "Santé", icon: HeartPulse, color: "pole-sante", hex: "#4A6FA5" },
 ];
 
 
