@@ -69,11 +69,12 @@ interface FormationsClientProps {
 }
 
 const poles = [
-  { id: "all", name: "Toutes", icon: null, color: null },
-  { id: "securite-prevention", name: "Sécurité", icon: Shield, color: "pole-securite" },
-  { id: "petite-enfance", name: "Petite Enfance", icon: Baby, color: "pole-petite-enfance" },
-  { id: "sante", name: "Santé", icon: HeartPulse, color: "pole-sante" },
+  { id: "all", name: "Toutes", icon: null, color: null, hex: null },
+  { id: "securite-prevention", name: "Sécurité", icon: Shield, color: "pole-securite", hex: "#e74c3c" },
+  { id: "petite-enfance", name: "Petite Enfance", icon: Baby, color: "pole-petite-enfance", hex: "#1abc9c" },
+  { id: "sante", name: "Santé", icon: HeartPulse, color: "pole-sante", hex: "#3498db" },
 ];
+
 
 export default function FormationsClient({
   formations,
@@ -539,8 +540,9 @@ export default function FormationsClient({
                             </div>
 
                             {/* Formations Grid */}
-                            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                               {catFormations.map((formation, index) => {
+                                const accent = pole.hex || "#1F628E";
                                 const sessionInfo = sessionCounts[formation.id];
                                 const hasActiveSessions = sessionInfo && sessionInfo.count > 0;
 
@@ -556,105 +558,64 @@ export default function FormationsClient({
                                       href={`/formations/${formation.pole}/${formation.slug || formation.id}`}
                                       className="group block h-full"
                                     >
-                                      <article className="relative h-full rounded-2xl overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 flex flex-col" style={{ backgroundColor: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                                      <article
+                                        className="rounded-2xl overflow-hidden hover:shadow-[0_0_30px_rgba(248,169,145,0.15)] hover:-translate-y-1 transition-all duration-300 h-full flex flex-col"
+                                        style={{ backgroundColor: `${accent}30`, border: `1.5px solid ${accent}55` }}
+                                      >
                                         {/* Image */}
-                                        <div className="aspect-[4/3] sm:aspect-[3/2] overflow-hidden relative bg-muted">
+                                        <div className="relative aspect-[3/1] overflow-hidden">
                                           <Image
                                             src={getFormationImage(formation)}
                                             alt={formation.title}
                                             fill
-                                            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                                            className="object-cover transition-transform duration-500 group-hover:scale-105"
+                                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                                            className="object-cover"
                                           />
-                                          <div
-                                            className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-500"
-                                            style={{
-                                              backgroundColor: `hsl(var(--${pole.color}))`,
-                                            }}
-                                          />
-                                          {/* Badges */}
-                                          <div className="absolute top-2 left-2 right-2 sm:top-3 sm:left-3 sm:right-3 flex justify-between items-start">
-                                            {hasActiveSessions && (
-                                              <Badge className="hidden sm:flex bg-background/90 backdrop-blur-sm text-foreground border-0 shadow-sm text-[10px] sm:text-xs">
-                                                <CalendarDays className="w-3 h-3 mr-1" />
-                                                {sessionInfo.count} session
-                                                {sessionInfo.count > 1 ? "s" : ""}
-                                              </Badge>
-                                            )}
-                                            {!hasActiveSessions && <div />}
-
-                                            {formation.popular && (
-                                              <span
-                                                className="text-[10px] sm:text-xs px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full"
-                                                style={{
-                                                  backgroundColor: `hsl(var(--${pole.color}))`,
-                                                  color: `hsl(var(--${pole.color}-foreground))`,
-                                                }}
-                                              >
-                                                <span className="hidden sm:inline">Populaire</span>
-                                                <span className="sm:hidden">★</span>
+                                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                                          <div className="absolute bottom-3 left-3 flex items-center gap-2">
+                                            <span className="text-[11px] font-bold px-2.5 py-1 rounded-full text-white shadow-lg" style={{ backgroundColor: accent }}>{formation.pole_name}</span>
+                                            {formation.duration && (
+                                              <span className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-sm text-white flex items-center gap-1">
+                                                <Clock className="w-3 h-3" /> {formation.duration}
                                               </span>
                                             )}
                                           </div>
-
-                                          {hasActiveSessions && sessionInfo.total_places > 0 && (
-                                            <div className="hidden sm:block absolute bottom-3 left-3">
-                                              <Badge
-                                                variant="secondary"
-                                                className="bg-background/90 backdrop-blur-sm text-foreground border-0 shadow-sm"
-                                              >
-                                                <Users className="w-3 h-3 mr-1" />
-                                                {sessionInfo.total_places} place
-                                                {sessionInfo.total_places > 1 ? "s" : ""} dispo.
-                                              </Badge>
-                                            </div>
+                                          {formation.popular && (
+                                            <span className="absolute top-3 right-3 text-[10px] font-bold px-2 py-1 rounded-full text-white" style={{ backgroundColor: accent }}>
+                                              Populaire
+                                            </span>
                                           )}
                                         </div>
 
-                                        {/* Progress bar */}
-                                        <div
-                                          className="h-1 w-0 group-hover:w-full transition-all duration-500"
-                                          style={{
-                                            backgroundColor: `hsl(var(--${pole.color}))`,
-                                          }}
-                                        />
-
                                         {/* Content */}
-                                        <div className="p-3 sm:p-5 flex flex-col flex-grow">
-                                          <div className="flex items-start justify-between gap-2 sm:gap-3 mb-1">
-                                            <h3
-                                              className="font-medium transition-colors text-sm sm:text-base line-clamp-2"
-                                              style={{
-                                                color: `hsl(var(--${pole.color}))`,
-                                              }}
-                                            >
-                                              {formation.title}
-                                            </h3>
-                                            <ArrowRight
-                                              className="hidden sm:block w-4 h-4 -translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300 flex-shrink-0 mt-0.5"
-                                              style={{
-                                                color: `hsl(var(--${pole.color}))`,
-                                              }}
-                                            />
-                                          </div>
-                                          <p className="text-xs sm:text-sm mb-2 sm:mb-4 flex-grow line-clamp-2 hidden sm:block" style={{ color: "rgba(255,255,255,0.4)" }}>
-                                            {formation.subtitle || ""}
+                                        <div className="p-5 flex flex-col flex-1">
+                                          <h3 className="text-[15px] font-bold text-white leading-snug mb-2 line-clamp-2 min-h-[2.5rem] group-hover:text-[#F8A991] transition-colors">
+                                            {formation.title}
+                                          </h3>
+                                          <p className="text-[13px] text-white/40 line-clamp-2 mb-3 min-h-[2.5rem]">
+                                            {formation.subtitle || "\u00A0"}
                                           </p>
 
-                                          <div className="flex items-center justify-between text-[10px] sm:text-xs mt-auto" style={{ color: "rgba(255,255,255,0.4)" }}>
-                                            <div className="flex items-center gap-1">
-                                              <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                                              <span className="hidden sm:inline">
-                                                {formation.duration}
+                                          {/* Session info */}
+                                          {hasActiveSessions && (
+                                            <div className="flex items-center gap-3 mb-3 text-[11px]" style={{ color: "rgba(255,255,255,0.5)" }}>
+                                              <span className="flex items-center gap-1">
+                                                <CalendarDays className="w-3 h-3" />
+                                                {sessionInfo.count} session{sessionInfo.count > 1 ? "s" : ""}
                                               </span>
-                                              <span className="sm:hidden">
-                                                {formation.duration
-                                                  .replace(" jours", "j")
-                                                  .replace(" heures", "h")}
-                                              </span>
+                                              {sessionInfo.total_places > 0 && (
+                                                <span className="flex items-center gap-1">
+                                                  <Users className="w-3 h-3" />
+                                                  {sessionInfo.total_places} place{sessionInfo.total_places > 1 ? "s" : ""}
+                                                </span>
+                                              )}
                                             </div>
-                                            <span className="font-medium text-white text-xs sm:text-sm">
-                                              {formation.price}
+                                          )}
+
+                                          <div className="flex items-center justify-between mt-auto pt-3" style={{ borderTop: `1px solid ${accent}33` }}>
+                                            <p className="text-lg font-extrabold text-white">{formation.price}</p>
+                                            <span className="text-xs font-bold flex items-center gap-1" style={{ color: accent }}>
+                                              Détails <ArrowRight className="w-3 h-3" />
                                             </span>
                                           </div>
                                         </div>
