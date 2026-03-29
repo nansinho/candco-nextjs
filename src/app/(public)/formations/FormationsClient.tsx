@@ -451,17 +451,17 @@ export default function FormationsClient({
       </section>
 
       {/* Results */}
-      <section className="py-16 sm:py-20" style={{ backgroundColor: "#151F2D" }}>
+      <section className="py-16 sm:py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <p className="text-sm mb-8" style={{ color: "rgba(255,255,255,0.4)" }}>
+          <p className="text-sm mb-8 text-gray-500">
             {filteredFormations.length} formation
             {filteredFormations.length > 1 ? "s" : ""} trouvée
             {filteredFormations.length > 1 ? "s" : ""}
           </p>
 
           {filteredFormations.length === 0 ? (
-            <div className="text-center py-20 rounded-2xl" style={{ backgroundColor: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
-              <p className="mb-4" style={{ color: "rgba(255,255,255,0.4)" }}>
+            <div className="text-center py-20 rounded-2xl bg-gray-50 border border-gray-200">
+              <p className="mb-4 text-gray-500">
                 Aucune formation ne correspond à votre recherche.
               </p>
               <button
@@ -517,7 +517,7 @@ export default function FormationsClient({
                           >
                             {pole.name}
                           </h2>
-                          <p className="text-sm" style={{ color: "rgba(255,255,255,0.4)" }}>
+                          <p className="text-sm text-gray-500">
                             {poleFormations.length} formation
                             {poleFormations.length > 1 ? "s" : ""}
                           </p>
@@ -530,11 +530,11 @@ export default function FormationsClient({
                           <div key={category?.id || "uncategorized"}>
                             {/* Category Header */}
                             <div className="flex items-center gap-3 mb-4">
-                              <Tag className="w-4 h-4" style={{ color: "rgba(255,255,255,0.3)" }} />
-                              <h3 className="text-base font-medium text-white">
+                              <Tag className="w-4 h-4 text-gray-400" />
+                              <h3 className="text-base font-medium text-[#151F2D]">
                                 {category?.name || "Autres formations"}
                               </h3>
-                              <span className="text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>
+                              <span className="text-xs text-gray-400">
                                 ({catFormations.length})
                               </span>
                             </div>
@@ -637,15 +637,14 @@ export default function FormationsClient({
       </section>
 
       {/* CTA */}
-      <section className="py-12" style={{ backgroundColor: "#151F2D", borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+      <section className="py-12 bg-white border-t border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <p className="mb-4" style={{ color: "rgba(255,255,255,0.4)" }}>
+          <p className="mb-4 text-gray-500">
             Besoin d&apos;aide pour choisir votre formation ?
           </p>
           <Link
             href="/contact"
-            className="inline-flex items-center gap-2 font-bold text-[14px] transition-all hover:scale-[1.02]"
-            style={{ color: "#F8A991" }}
+            className="inline-flex items-center gap-2 font-bold text-[14px] text-[#1F628E] transition-all hover:scale-[1.02]"
           >
             Contactez nos conseillers
             <ArrowRight className="w-4 h-4" />
