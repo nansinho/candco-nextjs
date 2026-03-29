@@ -180,8 +180,8 @@ export function ChatWidget() {
         ]);
         trackAnalytics("welcome");
       }
-    } catch (error) {
-      console.error("Error fetching chat nodes:", error);
+    } catch {
+      // Silently fail if chat_nodes table doesn't exist yet
     } finally {
       setIsLoading(false);
     }
