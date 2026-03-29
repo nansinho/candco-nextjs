@@ -1,4 +1,5 @@
 import { createServerClient } from "@supabase/ssr";
+import { createClient } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
@@ -29,70 +30,38 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // Refresh session si nécessaire
+  // Refresh session
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   const pathname = request.nextUrl.pathname;
 
-  // Routes admin protégées
+  // Admin routes - superadmin and admin only
   if (pathname.startsWith("/admin")) {
     if (!user) {
-      // Rediriger vers /auth avec redirect URL
       const redirectUrl = new URL("/auth", request.url);
       redirectUrl.searchParams.set("redirect", pathname);
       return NextResponse.redirect(redirectUrl);
     }
 
-    // Vérifier le rôle de l'utilisateur
-    const { data: roleData } = await supabase
-      .from("user_roles")
+    // Single OR query with service role key
+    const serviceClient = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    );
+
+    const { data: userData } = await serviceClient
+      .from("utilisateurs")
       .select("role")
-      .eq("user_id", user.id)
+      .or(`id.eq.${user.id}${user.email ? `,email.eq.${user.email}` : ""}`)
+      .limit(1)
       .maybeSingle();
 
-    const userRole = roleData?.role || "user";
-    const adminRoles = ["superadmin", "admin", "org_manager", "moderator"];
+    const userRole = userData?.role || "user";
 
-    if (!adminRoles.includes(userRole)) {
-      // Pas de rôle admin, rediriger vers accueil
-      return NextResponse.redirect(new URL("/", request.url));
-    }
-
-    // Vérifications spécifiques par route
-    const superadminOnlyRoutes = ["/admin/roles", "/admin/security", "/admin/redirects", "/admin/cookies"];
-    const adminOnlyRoutes = ["/admin/users", "/admin/settings", "/admin/formateurs"];
-
-    if (superadminOnlyRoutes.some((route) => pathname.startsWith(route))) {
-      if (userRole !== "superadmin") {
-        return NextResponse.redirect(new URL("/admin", request.url));
-      }
-    }
-
-    if (adminOnlyRoutes.some((route) => pathname.startsWith(route))) {
-      if (userRole !== "superadmin" && userRole !== "admin") {
-        return NextResponse.redirect(new URL("/admin", request.url));
-      }
-    }
-  }
-
-  // Routes formateur protégées
-  if (pathname.startsWith("/formateur")) {
-    if (!user) {
-      const redirectUrl = new URL("/auth", request.url);
-      redirectUrl.searchParams.set("redirect", pathname);
-      return NextResponse.redirect(redirectUrl);
-    }
-
-    // Vérifier si l'utilisateur est formateur
-    const { data: formateurData } = await supabase
-      .from("formateurs")
-      .select("id")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    if (!formateurData) {
+    if (userRole !== "superadmin" && userRole !== "admin") {
       return NextResponse.redirect(new URL("/", request.url));
     }
   }
@@ -102,9 +71,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Routes admin
     "/admin/:path*",
-    // Routes formateur
-    "/formateur/:path*",
   ],
 };

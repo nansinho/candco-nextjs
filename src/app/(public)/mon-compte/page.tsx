@@ -73,30 +73,20 @@ export default function MonComptePage() {
           return;
         }
 
-        // Get user profile
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("first_name, last_name, avatar_url, civilite")
-          .eq("id", session.user.id)
-          .single();
+        // Get user profile and role via API route
+        const res = await fetch("/api/auth/me", { credentials: "include" });
+        const authData = res.ok ? await res.json() : { role: "user", profile: null };
 
         setUser({
           id: session.user.id,
           email: session.user.email || "",
-          first_name: profile?.first_name || session.user.user_metadata?.first_name,
-          last_name: profile?.last_name || session.user.user_metadata?.last_name,
-          avatar_url: profile?.avatar_url,
-          civilite: profile?.civilite,
+          first_name: authData.profile?.first_name || session.user.user_metadata?.first_name,
+          last_name: authData.profile?.last_name || session.user.user_metadata?.last_name,
+          avatar_url: authData.profile?.avatar_url,
+          civilite: undefined,
         });
 
-        // Get user role
-        const { data: roleData } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", session.user.id)
-          .single();
-
-        setUserRole(roleData?.role || "user");
+        setUserRole(authData.role || "user");
       } catch (error) {
         console.error("Error fetching user:", error);
       } finally {

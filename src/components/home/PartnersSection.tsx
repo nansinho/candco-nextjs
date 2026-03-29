@@ -3,10 +3,10 @@ import Image from "next/image";
 const partners = [
   { name: "Qualiopi", logo: "/logo-qualiopi.png", alt: "Certification Qualiopi" },
   { name: "France Travail", logo: "/logo-france-travail.svg", alt: "France Travail" },
-  { name: "Pôle Emploi", logo: "/logo-pole-emploi.svg", alt: "Pôle Emploi" },
-  { name: "Région PACA", logo: "/logo-region-paca.svg", alt: "Région Provence-Alpes-Côte d'Azur" },
-  { name: "Région Occitanie", logo: "/logo-region-occitanie.svg", alt: "Région Occitanie" },
-  { name: "Île-de-France", logo: "/logo-region-idf.svg", alt: "Région Île-de-France" },
+  { name: "Pôle Emploi", logo: "/images/logos_regions/logo-pole-emploi.svg", alt: "Pôle Emploi" },
+  { name: "Région PACA", logo: "/images/logos_regions/logo-region-paca.svg", alt: "Région Provence-Alpes-Côte d'Azur" },
+  { name: "Région Occitanie", logo: "/images/logos_regions/logo-region-occitanie.svg", alt: "Région Occitanie" },
+  { name: "Île-de-France", logo: "/images/logos_regions/logo-region-idf.svg", alt: "Région Île-de-France" },
 ];
 
 export default function PartnersSection() {
@@ -37,14 +37,15 @@ export default function PartnersSection() {
                 key={`${partner.name}-${index}`}
                 className="flex items-center justify-center p-3 md:p-4 bg-white rounded-xl shadow-sm shrink-0 mx-3 md:mx-6"
               >
-                <Image
-                  src={partner.logo}
-                  alt={partner.alt}
-                  width={120}
-                  height={56}
-                  className="h-10 md:h-14 w-auto object-contain"
-                  loading="lazy"
-                />
+                <div className="relative h-10 md:h-14" style={{ aspectRatio: "120/56" }}>
+                  <Image
+                    src={partner.logo}
+                    alt={partner.alt}
+                    fill
+                    className="object-contain"
+                    loading="lazy"
+                  />
+                </div>
               </div>
             ))}
           </div>

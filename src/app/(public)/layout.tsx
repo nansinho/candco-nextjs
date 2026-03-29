@@ -5,6 +5,8 @@ import Footer from "@/components/layout/Footer";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { ClientWidgets } from "@/components/ClientWidgets";
 import { SearchProvider } from "@/components/search";
+import { GoogleAnalytics } from "@/components/GoogleAnalytics";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 // SEO Metadata globales
 export const metadata: Metadata = {
@@ -275,15 +277,17 @@ export default function PublicLayout({
         <link rel="dns-prefetch" href="https://sxadbvezilpcldmncjrk.supabase.co" />
       </head>
       <body className="antialiased">
-        <ThemeProvider>
-          <SearchProvider>
-            <Header />
-            <main className="pt-16 lg:pt-20">{children}</main>
-            <Footer />
-            {/* Widgets lazy-loaded côté client */}
-            <ClientWidgets />
-          </SearchProvider>
-        </ThemeProvider>
+        <AuthProvider>
+          <ThemeProvider>
+            <SearchProvider>
+              <Header />
+              <main className="pt-16 lg:pt-20">{children}</main>
+              <Footer />
+              <ClientWidgets />
+              <GoogleAnalytics />
+            </SearchProvider>
+          </ThemeProvider>
+        </AuthProvider>
       </body>
     </html>
   );

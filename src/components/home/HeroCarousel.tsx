@@ -8,9 +8,9 @@ import { ArrowRight } from "lucide-react";
 
 // Hero images for rotation - one per pole
 const heroImages = [
-  { src: "/pole-security.jpg", alt: "Formation Sécurité et Prévention" },
-  { src: "/pole-childhood.jpg", alt: "Formation Petite Enfance" },
-  { src: "/pole-health.jpg", alt: "Formation Santé" },
+  { src: "/images/poles/pole-security.jpg", alt: "Formation Sécurité et Prévention" },
+  { src: "/images/poles/pole-childhood.jpg", alt: "Formation Petite Enfance" },
+  { src: "/images/poles/pole-health.jpg", alt: "Formation Santé" },
 ];
 
 const stats = [

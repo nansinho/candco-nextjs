@@ -296,7 +296,7 @@ export function ChatWidget() {
       {/* Floating button - Fixed bottom right */}
       <MotionButton
         onClick={() => setIsOpen(true)}
-        className={`fixed bottom-6 right-6 z-40 flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-shadow ${isOpen ? "hidden" : ""}`}
+        className={`fixed bottom-6 right-6 z-40 flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-[#1F628E] text-white shadow-lg shadow-[#1F628E]/25 hover:shadow-xl hover:shadow-[#1F628E]/35 transition-all ${isOpen ? "hidden" : ""}`}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         initial={{ opacity: 0, y: 20 }}
@@ -305,7 +305,7 @@ export function ChatWidget() {
         aria-label="Ouvrir le chat"
       >
         <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6" />
-        <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse" />
+        <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 rounded-full ring-2 ring-[#1F628E]" />
       </MotionButton>
 
       {/* Chat window */}

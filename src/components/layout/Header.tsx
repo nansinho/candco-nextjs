@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
@@ -215,8 +216,6 @@ export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [hoveredSubmenu, setHoveredSubmenu] = useState<string | null>(null);
   const [mobileSubmenuOpen, setMobileSubmenuOpen] = useState<string | null>(null);
-  const [user, setUser] = useState<UserData | null>(null);
-  const [loading, setLoading] = useState(true);
   const pathname = usePathname();
   const router = useRouter();
   const { setOpen: setSearchOpen } = useSearch();
@@ -227,63 +226,20 @@ export default function Header() {
   const [swipeOffset, setSwipeOffset] = useState(0);
   const [isSwipingMenu, setIsSwipingMenu] = useState(false);
 
-  // Check auth state
-  useEffect(() => {
-    const supabase = createClient();
+  // Use AuthContext instead of separate fetch
+  const { user: authUser, loading, userRole, userProfile, signOut } = useAuth();
 
-    const checkUser = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-
-        if (session?.user) {
-          // Get profile and role
-          const [profileRes, roleRes] = await Promise.all([
-            supabase
-              .from("profiles")
-              .select("first_name, last_name, avatar_url")
-              .eq("id", session.user.id)
-              .single(),
-            supabase
-              .from("user_roles")
-              .select("role")
-              .eq("user_id", session.user.id)
-              .single(),
-          ]);
-
-          setUser({
-            id: session.user.id,
-            email: session.user.email || "",
-            first_name: profileRes.data?.first_name || session.user.user_metadata?.first_name,
-            last_name: profileRes.data?.last_name || session.user.user_metadata?.last_name,
-            avatar_url: profileRes.data?.avatar_url,
-            role: roleRes.data?.role || "user",
-          });
-        } else {
-          setUser(null);
-        }
-      } catch (error) {
-        console.error("Error checking user:", error);
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
+  const user = useMemo<UserData | null>(() => {
+    if (!authUser) return null;
+    return {
+      id: authUser.id,
+      email: authUser.email || "",
+      first_name: userProfile?.first_name || authUser.user_metadata?.first_name,
+      last_name: userProfile?.last_name || authUser.user_metadata?.last_name,
+      avatar_url: userProfile?.avatar_url || undefined,
+      role: userRole || "user",
     };
-
-    checkUser();
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event: string, session: { user?: { id: string } } | null) => {
-      if (event === "SIGNED_OUT") {
-        setUser(null);
-      } else if (event === "SIGNED_IN" && session?.user) {
-        checkUser();
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
+  }, [authUser, userRole, userProfile]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -352,10 +308,7 @@ export default function Header() {
   };
 
   const handleSignOut = async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    setUser(null);
-    router.push("/");
+    await signOut();
   };
 
   const getUserInitials = () => {
@@ -392,25 +345,26 @@ export default function Header() {
           : "h-20 bg-background/50 backdrop-blur-sm"
       )}
     >
-      <div className="w-full h-full px-6 lg:px-10">
-        <div className="flex items-center h-full max-w-[1800px] mx-auto">
+      <div className="w-full h-full">
+        <div className="flex items-center h-full w-[96%] mx-auto">
           {/* Logo */}
           <Link
             href="/"
             className="hover:opacity-80 transition-all duration-300 hover:scale-105 shrink-0"
             aria-label="Retour à l'accueil - C&Co Formation"
           >
-            <Image
-              src="/logo.svg"
-              alt="C&Co Formation"
-              width={140}
-              height={48}
-              className={cn(
-                "w-auto transition-all duration-300",
-                isScrolled ? "h-10 md:h-12" : "h-12 md:h-14"
-              )}
-              priority
-            />
+            <div className={cn(
+              "relative transition-all duration-300",
+              isScrolled ? "h-10 md:h-12" : "h-12 md:h-14"
+            )} style={{ aspectRatio: "140/48" }}>
+              <Image
+                src="/logo.svg"
+                alt="C&Co Formation"
+                fill
+                className="object-contain"
+                priority
+              />
+            </div>
           </Link>
 
           {/* Desktop Navigation */}
@@ -429,12 +383,18 @@ export default function Header() {
                   >
                     <button
                       className={cn(
-                        "relative px-3 py-2 text-[11px] font-normal uppercase tracking-wider transition-all duration-300 flex items-center gap-1 rounded-full",
-                        isActiveRoute(item.href, item.submenu)
-                          ? "text-primary bg-primary/10"
-                          : hoveredSubmenu === item.name
-                          ? "text-foreground bg-secondary/50"
-                          : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                        "relative px-3 py-2 text-[11px] font-medium uppercase tracking-wider transition-all duration-300 flex items-center gap-1 rounded-full",
+                        isScrolled
+                          ? isActiveRoute(item.href, item.submenu)
+                            ? "text-primary bg-primary/10"
+                            : hoveredSubmenu === item.name
+                            ? "text-foreground bg-secondary/50"
+                            : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                          : isActiveRoute(item.href, item.submenu)
+                            ? "text-[#ffffff] bg-[#1F628E]"
+                            : hoveredSubmenu === item.name
+                            ? "text-[#ffffff] bg-[#1F628E]"
+                            : "text-[#ffffff] hover:bg-[#1F628E]"
                       )}
                     >
                       {item.name}
@@ -516,10 +476,14 @@ export default function Header() {
                     key={item.name}
                     href={item.href}
                     className={cn(
-                      "relative px-3 py-2 text-[11px] font-normal uppercase tracking-wider transition-all duration-300 rounded-full",
-                      isActiveRoute(item.href)
-                        ? "text-primary bg-primary/10"
-                        : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                      "relative px-3 py-2 text-[11px] font-medium uppercase tracking-wider transition-all duration-300 rounded-full",
+                      isScrolled
+                        ? isActiveRoute(item.href)
+                          ? "text-primary bg-primary/10"
+                          : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                        : isActiveRoute(item.href)
+                          ? "text-[#ffffff] bg-[#1F628E]"
+                          : "text-[#ffffff] hover:bg-[#1F628E]"
                     )}
                   >
                     {item.name}
@@ -533,7 +497,12 @@ export default function Header() {
           <div className="hidden xl:flex items-center gap-1.5 ml-auto">
             <button
               onClick={() => setSearchOpen(true)}
-              className="p-2 rounded-full hover:bg-secondary/50 transition-colors text-muted-foreground hover:text-foreground"
+              className={cn(
+                "p-2 rounded-full transition-colors",
+                isScrolled
+                  ? "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                  : "text-white/80 hover:text-white hover:bg-white/10"
+              )}
               aria-label="Rechercher"
             >
               <Search className="w-5 h-5" />
@@ -541,7 +510,7 @@ export default function Header() {
 
             <ThemeToggle />
 
-            <div className="w-px h-6 bg-border/50 mx-2" />
+            <div className={cn("w-px h-6 mx-2", isScrolled ? "bg-border/50" : "bg-white/20")} />
 
             {/* User Auth Section */}
             {!loading && user ? (
@@ -574,12 +543,6 @@ export default function Header() {
                     <p className="text-sm font-medium">{getUserDisplayName()}</p>
                     <p className="text-xs text-muted-foreground">{user.email}</p>
                   </div>
-                  <DropdownMenuItem asChild>
-                    <Link href="/mon-compte" className="cursor-pointer">
-                      <User className="mr-2 h-4 w-4" />
-                      Mon compte
-                    </Link>
-                  </DropdownMenuItem>
                   {isAdmin && (
                     <DropdownMenuItem asChild>
                       <Link href="/admin" className="cursor-pointer">
@@ -598,7 +561,12 @@ export default function Header() {
             ) : (
               <Link
                 href="/auth"
-                className="flex items-center gap-2 text-xs font-normal uppercase tracking-wider px-4 py-2.5 text-muted-foreground hover:text-foreground transition-colors"
+                className={cn(
+                  "flex items-center gap-2 text-[11px] font-medium uppercase tracking-wider px-4 py-2.5 transition-colors",
+                  isScrolled
+                    ? "text-muted-foreground hover:text-foreground"
+                    : "text-white/80 hover:text-white"
+                )}
               >
                 <User className="w-4 h-4" />
                 Connexion
@@ -607,7 +575,12 @@ export default function Header() {
 
             <Link
               href="/contact"
-              className="inline-flex items-center justify-center px-4 py-2.5 border border-primary/50 text-primary rounded-lg text-sm font-medium hover:bg-primary hover:text-primary-foreground transition-colors"
+              className={cn(
+                "inline-flex items-center justify-center px-4 py-2.5 rounded-lg text-[11px] font-medium uppercase tracking-wider transition-colors",
+                isScrolled
+                  ? "border border-primary/50 text-primary hover:bg-primary hover:text-primary-foreground"
+                  : "bg-[#1F628E] text-white hover:bg-[#1a5579] border border-white/10"
+              )}
             >
               Nous contacter
             </Link>
@@ -669,13 +642,14 @@ export default function Header() {
             <div className="px-5 py-3 border-b border-border/30 shrink-0 bg-gradient-to-br from-primary/5 via-background to-background">
               <div className="flex items-center justify-between">
                 <Link href="/" onClick={() => setIsOpen(false)}>
-                  <Image
-                    src="/logo.svg"
-                    alt="C&Co Formation"
-                    width={100}
-                    height={32}
-                    className="h-8 w-auto"
-                  />
+                  <div className="relative h-8" style={{ aspectRatio: "100/32" }}>
+                    <Image
+                      src="/logo.svg"
+                      alt="C&Co Formation"
+                      fill
+                      className="object-contain"
+                    />
+                  </div>
                 </Link>
                 <button
                   onClick={() => setIsOpen(false)}

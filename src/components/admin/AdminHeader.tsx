@@ -15,8 +15,7 @@ import {
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { LogOut, User, Building2, Home, Sun, Moon, ChevronDown, ArrowLeft, GitCommit } from "lucide-react";
-import { NotificationDropdown } from "./NotificationDropdown";
+import { LogOut, User, Home, Sun, Moon, ChevronDown, ArrowLeft, GitCommit } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -136,17 +135,13 @@ const formatBuildDate = (dateStr: string): string => {
 };
 
 export function AdminHeader() {
-  const { user, signOut, userRole, userOrganizations, currentOrganizationId, effectiveRole, userProfile } = useAuth();
+  const { user, signOut, userRole, effectiveRole, userProfile } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
 
   const parentPath = getParentPath(pathname);
   const formattedBuildDate = formatBuildDate(buildDate);
-
-  const currentOrganization = userOrganizations.find(
-    (org) => org.organization_id === currentOrganizationId
-  );
 
   const handleSignOut = async () => {
     await signOut();
@@ -187,14 +182,6 @@ export function AdminHeader() {
             </Button>
           )}
 
-          {/* Afficher l'organisation courante pour les org_managers */}
-          {userRole === "org_manager" && currentOrganization && userOrganizations.length === 1 && (
-            <Badge variant="outline" className="hidden md:flex items-center gap-1.5 border-transparent bg-muted/50">
-              <Building2 className="h-3 w-3" />
-              {currentOrganization.organization_name}
-            </Badge>
-          )}
-
           {/* Version badge */}
           <TooltipProvider>
             <Tooltip>
@@ -216,9 +203,6 @@ export function AdminHeader() {
         </div>
 
         <div className="flex items-center gap-1.5">
-          {/* Notifications */}
-          <NotificationDropdown />
-
           {/* Toggle Dark/Light Mode */}
           <Button
             variant="ghost"

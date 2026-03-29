@@ -36,10 +36,18 @@ export async function GET(request: NextRequest) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
-      // Redirect to the specified path or default to mon-compte
-      const redirectPath = redirect
-        ? decodeURIComponent(redirect)
-        : "/mon-compte";
+      // Validate redirect to prevent open redirect attacks
+      let redirectPath = "/";
+      if (redirect) {
+        try {
+          const decoded = decodeURIComponent(redirect);
+          if (decoded.startsWith("/") && !decoded.startsWith("//") && !decoded.includes("://")) {
+            redirectPath = decoded;
+          }
+        } catch {
+          // Invalid redirect, use default
+        }
+      }
       return NextResponse.redirect(new URL(redirectPath, origin));
     }
   }

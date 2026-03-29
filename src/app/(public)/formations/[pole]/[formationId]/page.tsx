@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createServiceClient, ORG_ID } from "@/lib/supabase/service";
 import { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -25,6 +25,38 @@ type Props = {
   params: Promise<{ pole: string; formationId: string }>;
 };
 
+interface FormationData {
+  id: string;
+  slug: string;
+  title: string;
+  subtitle: string | null;
+  description: string | null;
+  pole: string;
+  pole_name: string;
+  price: string;
+  duration: string;
+  format_lieu: string | null;
+  nombre_participants: string | null;
+  image_url: string | null;
+  certification: string | null;
+  objectifs_generaux: string[];
+  prerequis: string[];
+  programme: { titre: string; contenu: string; duree: string }[];
+  public_vise: string[];
+  competences_visees: string[];
+  categories: { name: string } | null;
+  modalites: {
+    methodes?: string[];
+    moyens?: string[];
+    evaluation?: string[];
+  } | null;
+  encadrement_pedagogique: string | null;
+  financement: string[] | null;
+  modalites_paiement: string | null;
+  accessibilite: string | null;
+  meta_title: string | null;
+}
+
 // Pole colors
 const getPoleColor = (poleId: string): string => {
   const colors: Record<string, string> = {
@@ -38,14 +70,15 @@ const getPoleColor = (poleId: string): string => {
 // Generate dynamic metadata for SEO
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { pole, formationId } = await params;
-  const supabase = await createClient();
+  const supabase = createServiceClient();
 
   const { data: formation } = await supabase
-    .from("formations")
+    .from("produits_formation")
     .select(
-      "title, subtitle, description, meta_title, meta_description, image_url, pole_name, price, duration"
+      "intitule, sous_titre, description, meta_titre, meta_description, image_url, domaine"
     )
-    .or(`slug.eq.${formationId},id.eq.${formationId}`)
+    .eq("organisation_id", ORG_ID)
+    .eq("slug", formationId)
     .single();
 
   if (!formation) {
@@ -53,23 +86,23 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   const title =
-    formation.meta_title ||
-    `${formation.title} - Formation ${formation.pole_name}`;
+    formation.meta_titre ||
+    `${formation.intitule} - Formation ${formation.domaine}`;
   const description =
     formation.meta_description ||
     formation.description?.slice(0, 160) ||
-    formation.subtitle;
+    formation.sous_titre;
 
   return {
     title,
     description,
     keywords: [
-      formation.title,
-      `formation ${formation.pole_name?.toLowerCase()}`,
+      formation.intitule,
+      `formation ${formation.domaine?.toLowerCase()}`,
       "formation professionnelle",
       "Qualiopi",
       "OPCO",
-      formation.pole_name,
+      formation.domaine,
     ],
     openGraph: {
       title,
@@ -82,7 +115,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
               url: formation.image_url,
               width: 1200,
               height: 630,
-              alt: formation.title,
+              alt: formation.intitule,
             },
           ]
         : undefined,
@@ -104,7 +137,7 @@ function CourseJsonLd({
   formation,
   pole,
 }: {
-  formation: Record<string, unknown>;
+  formation: FormationData;
   pole: string;
 }) {
   const schema = {
@@ -165,7 +198,7 @@ function BreadcrumbJsonLd({
   formation,
   pole,
 }: {
-  formation: Record<string, unknown>;
+  formation: FormationData;
   pole: string;
 }) {
   const schema = {
@@ -227,37 +260,117 @@ function SectionTitle({
 
 export default async function FormationDetailPage({ params }: Props) {
   const { pole, formationId } = await params;
-  const supabase = await createClient();
+  const supabase = createServiceClient();
 
-  // Récupérer la formation avec la catégorie (cherche par slug OU id)
-  const { data: formation } = await supabase
-    .from("formations")
-    .select("*, categories(id, name, slug)")
-    .or(`slug.eq.${formationId},id.eq.${formationId}`)
+  // Fetch formation with sub-tables
+  const { data: rawFormation } = await supabase
+    .from("produits_formation")
+    .select(`
+      *,
+      produit_objectifs(objectif, ordre),
+      produit_prerequis(texte, ordre),
+      produit_programme(titre, contenu, duree, ordre),
+      produit_public_vise(texte, ordre),
+      produit_competences(texte, ordre),
+      produit_tarifs(nom, prix_ht, taux_tva, unite, is_default)
+    `)
+    .eq("organisation_id", ORG_ID)
+    .eq("slug", formationId)
     .single();
 
-  if (!formation) {
+  if (!rawFormation) {
     notFound();
   }
 
-  // Récupérer les prochaines sessions publiques
-  const { data: sessions } = await supabase
+  // Map to expected format
+  const tarifs = rawFormation.produit_tarifs as Array<{ nom: string; prix_ht: number; taux_tva: number; unite: string; is_default: boolean }> | null;
+  const defaultTarif = tarifs?.find((t) => t.is_default) || tarifs?.[0];
+  const objectifs = (rawFormation.produit_objectifs as Array<{ objectif: string; ordre: number }> || [])
+    .sort((a, b) => a.ordre - b.ordre).map((o) => o.objectif);
+  const prerequis = (rawFormation.produit_prerequis as Array<{ texte: string; ordre: number }> || [])
+    .sort((a, b) => a.ordre - b.ordre).map((p) => p.texte);
+  const programme = (rawFormation.produit_programme as Array<{ titre: string; contenu: string; duree: string; ordre: number }> || [])
+    .sort((a, b) => a.ordre - b.ordre);
+  const publicVise = (rawFormation.produit_public_vise as Array<{ texte: string; ordre: number }> || [])
+    .sort((a, b) => a.ordre - b.ordre).map((p) => p.texte);
+  const competences = (rawFormation.produit_competences as Array<{ texte: string; ordre: number }> || [])
+    .sort((a, b) => a.ordre - b.ordre).map((c) => c.texte);
+
+  // Build a compatible formation object for the existing template
+  const formation: FormationData = {
+    id: rawFormation.id,
+    slug: rawFormation.slug,
+    title: rawFormation.intitule,
+    subtitle: rawFormation.sous_titre,
+    description: rawFormation.description,
+    pole: pole,
+    pole_name: rawFormation.domaine,
+    price: defaultTarif ? `${defaultTarif.prix_ht}€ HT` : "",
+    duration: rawFormation.duree_jours ? `${rawFormation.duree_jours} jours` : rawFormation.duree_heures ? `${rawFormation.duree_heures} heures` : "",
+    format_lieu: rawFormation.lieu_format,
+    nombre_participants: rawFormation.nombre_participants_max ? `${rawFormation.nombre_participants_min || 1} à ${rawFormation.nombre_participants_max}` : null,
+    image_url: rawFormation.image_url,
+    certification: rawFormation.certification,
+    objectifs_generaux: objectifs,
+    prerequis: prerequis,
+    programme: programme.map((p) => ({ titre: p.titre, contenu: p.contenu, duree: p.duree })),
+    public_vise: publicVise,
+    competences_visees: competences,
+    categories: null,
+    modalites: rawFormation.modalites as FormationData["modalites"],
+    encadrement_pedagogique: rawFormation.encadrement_pedagogique as string | null,
+    financement: rawFormation.financement as string[] | null,
+    modalites_paiement: rawFormation.modalites_paiement as string | null,
+    accessibilite: rawFormation.accessibilite as string | null,
+    meta_title: rawFormation.meta_titre,
+  };
+
+  // Fetch upcoming sessions
+  const { data: rawSessions } = await supabase
     .from("sessions")
-    .select("*")
-    .eq("formation_id", formation.id)
-    .eq("is_public", true)
-    .gte("start_date", new Date().toISOString())
-    .order("start_date")
+    .select("id, produit_id, nom, statut, date_debut, date_fin, places_max, lieu_nom, lieu_ville, lieu_type, inscriptions(count)")
+    .eq("produit_id", rawFormation.id)
+    .eq("organisation_id", ORG_ID)
+    .in("statut", ["planifiee", "confirmee"])
+    .gte("date_debut", new Date().toISOString().split("T")[0])
+    .order("date_debut")
     .limit(5);
 
-  const poleColorVar = getPoleColor(formation.pole);
+  // Map sessions to expected format
+  interface RawSession {
+    id: string;
+    produit_id: string;
+    nom: string;
+    statut: string;
+    date_debut: string;
+    date_fin: string;
+    places_max: number | null;
+    lieu_nom: string | null;
+    lieu_ville: string | null;
+    lieu_type: string | null;
+    inscriptions: Array<{ count: number }> | null;
+  }
+  const sessions = (rawSessions || []).map((s: RawSession) => {
+    const inscriptionCount = s.inscriptions?.[0]?.count || 0;
+    const placesMax = s.places_max || 0;
+    const placesDisponibles = Math.max(0, placesMax - inscriptionCount);
+    return {
+      id: s.id,
+      formation_id: s.produit_id,
+      start_date: s.date_debut,
+      end_date: s.date_fin,
+      lieu: s.lieu_nom || s.lieu_ville || "À définir",
+      status: s.statut,
+      places_max: placesMax,
+      places_disponibles: placesDisponibles,
+      format_type: s.lieu_type,
+    };
+  });
+
+  const poleColorVar = getPoleColor(pole);
 
   // Parse modalites
-  const modalites = formation.modalites as {
-    methodes?: string[];
-    moyens?: string[];
-    evaluation?: string[];
-  } | null;
+  const modalites = formation.modalites;
   const modalitesMethodes = modalites?.methodes || [];
   const modalitesMoyens = modalites?.moyens || [];
   const modalitesEvaluation = modalites?.evaluation || [];
@@ -330,6 +443,7 @@ export default async function FormationDetailPage({ params }: Props) {
                       src={formationImage}
                       alt={formation.title}
                       fill
+                      sizes="100vw"
                       className="object-cover"
                       priority
                     />
@@ -346,7 +460,7 @@ export default async function FormationDetailPage({ params }: Props) {
                   </span>
                   {formation.categories && (
                     <span className="px-3 py-1.5 rounded-lg text-xs font-medium border border-border bg-secondary">
-                      {(formation.categories as { name: string }).name}
+                      {formation.categories.name}
                     </span>
                   )}
                   {formation.certification && (
@@ -393,7 +507,7 @@ export default async function FormationDetailPage({ params }: Props) {
                       Objectifs de la formation
                     </SectionTitle>
                     <ul className="space-y-3">
-                      {(formation.objectifs_generaux as string[]).map(
+                      {formation.objectifs_generaux.map(
                         (obj, i) => (
                           <li key={i} className="flex items-start gap-3">
                             <CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" />
@@ -412,7 +526,7 @@ export default async function FormationDetailPage({ params }: Props) {
                   <section className="p-6 rounded-2xl border border-border bg-card">
                     <SectionTitle icon={Award}>Compétences visées</SectionTitle>
                     <div className="grid sm:grid-cols-2 gap-3">
-                      {(formation.competences_visees as string[]).map(
+                      {formation.competences_visees.map(
                         (comp, i) => (
                           <div
                             key={i}
@@ -454,7 +568,7 @@ export default async function FormationDetailPage({ params }: Props) {
                             Pour qui ?
                           </h3>
                           <ul className="space-y-2">
-                            {(formation.public_vise as string[]).map(
+                            {formation.public_vise.map(
                               (item, i) => (
                                 <li
                                   key={i}
@@ -477,7 +591,7 @@ export default async function FormationDetailPage({ params }: Props) {
                             Prérequis
                           </h3>
                           <ul className="space-y-2">
-                            {(formation.prerequis as string[]).map(
+                            {formation.prerequis.map(
                               (item, i) => (
                                 <li
                                   key={i}
@@ -504,12 +618,7 @@ export default async function FormationDetailPage({ params }: Props) {
                       Programme détaillé
                     </SectionTitle>
                     <div className="space-y-4">
-                      {(
-                        formation.programme as {
-                          title: string;
-                          items?: string[];
-                        }[]
-                      ).map((module, i) => (
+                      {formation.programme.map((module, i) => (
                         <div
                           key={i}
                           className="p-4 rounded-xl border border-border bg-secondary/30"
@@ -518,20 +627,13 @@ export default async function FormationDetailPage({ params }: Props) {
                             <span className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-medium bg-primary/10 text-primary">
                               {i + 1}
                             </span>
-                            <h3 className="font-medium">{module.title}</h3>
+                            <h3 className="font-medium">{module.titre}</h3>
+                            {module.duree && (
+                              <span className="text-xs text-muted-foreground ml-auto">{module.duree}</span>
+                            )}
                           </div>
-                          {module.items && module.items.length > 0 && (
-                            <ul className="ml-11 space-y-2">
-                              {module.items.map((item, j) => (
-                                <li
-                                  key={j}
-                                  className="flex items-start gap-2 text-sm text-muted-foreground"
-                                >
-                                  <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                                  <span>{item}</span>
-                                </li>
-                              ))}
-                            </ul>
+                          {module.contenu && (
+                            <p className="ml-11 text-sm text-muted-foreground">{module.contenu}</p>
                           )}
                         </div>
                       ))}
@@ -628,7 +730,7 @@ export default async function FormationDetailPage({ params }: Props) {
                       Options de financement
                     </SectionTitle>
                     <div className="flex flex-wrap gap-3">
-                      {(formation.financement as string[]).map((fin, i) => (
+                      {formation.financement!.map((fin, i) => (
                         <span
                           key={i}
                           className="px-4 py-2 rounded-full border border-border bg-secondary text-sm"
@@ -672,6 +774,7 @@ export default async function FormationDetailPage({ params }: Props) {
                       src={formationImage}
                       alt={formation.title}
                       fill
+                      sizes="100vw"
                       className="object-cover"
                       priority
                     />

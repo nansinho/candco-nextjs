@@ -50,13 +50,14 @@ export default function Footer() {
           {/* Brand & Contact */}
           <div className="col-span-2 lg:col-span-2 space-y-4">
             <Link href="/" aria-label="Retour à l'accueil - C&Co Formation">
-              <Image
-                src="/logo.svg"
-                alt="C&Co Formation"
-                width={120}
-                height={36}
-                className="h-9 w-auto"
-              />
+              <div className="relative h-9" style={{ aspectRatio: "120/36" }}>
+                <Image
+                  src="/logo.svg"
+                  alt="C&Co Formation"
+                  fill
+                  className="object-contain"
+                />
+              </div>
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed max-w-sm">
               Centre de formation professionnelle certifié Qualiopi.
@@ -88,13 +89,14 @@ export default function Footer() {
 
             {/* Qualiopi logo */}
             <div className="pt-1">
-              <Image
-                src="/logo-qualiopi.png"
-                alt="Certification Qualiopi - Actions de Formation"
-                width={140}
-                height={56}
-                className="h-14 w-auto"
-              />
+              <div className="relative h-14" style={{ aspectRatio: "140/56" }}>
+                <Image
+                  src="/logo-qualiopi.png"
+                  alt="Certification Qualiopi - Actions de Formation"
+                  fill
+                  className="object-contain"
+                />
+              </div>
             </div>
           </div>
 

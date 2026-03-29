@@ -22,23 +22,18 @@ const nextConfig: NextConfig = {
   },
   output: "standalone",
 
-  // Skip TypeScript checking during build (VPS memory optimization)
-  // TypeScript errors are still caught during development
+  // TypeScript checking enabled during build
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
 
-  // Skip ESLint during build (VPS memory optimization)
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
 
   // Optimisation des images
   images: {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "sxadbvezilpcldmncjrk.supabase.co",
+        hostname: "supabase.candco.fr",
       },
     ],
     // Formats modernes pour de meilleures performances
@@ -65,22 +60,46 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
+        // Headers de sécurité globaux
+        source: "/:path*",
+        headers: [
+          {
+            key: "X-DNS-Prefetch-Control",
+            value: "on",
+          },
+          {
+            key: "X-Content-Type-Options",
+            value: "nosniff",
+          },
+          {
+            key: "X-Frame-Options",
+            value: "DENY",
+          },
+          {
+            key: "X-XSS-Protection",
+            value: "1; mode=block",
+          },
+          {
+            key: "Referrer-Policy",
+            value: "strict-origin-when-cross-origin",
+          },
+          {
+            key: "Strict-Transport-Security",
+            value: "max-age=31536000; includeSubDomains",
+          },
+          {
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(), geolocation=(self), interest-cohort=()",
+          },
+        ],
+      },
+      {
         // Cache statique pour les assets
         source: "/:all*(svg|jpg|jpeg|png|webp|avif|gif|ico|woff|woff2)",
         headers: [
           {
             key: "Cache-Control",
             value: "public, max-age=31536000, immutable",
-          },
-        ],
-      },
-      {
-        // Cache pour les pages statiques
-        source: "/:path*",
-        headers: [
-          {
-            key: "X-DNS-Prefetch-Control",
-            value: "on",
           },
         ],
       },

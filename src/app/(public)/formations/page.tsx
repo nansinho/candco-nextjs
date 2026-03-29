@@ -1,4 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
+import { createServiceClient, ORG_ID } from "@/lib/supabase/service";
+import { getPoleFromDomaine } from "@/lib/domaines";
 import { Metadata } from "next";
 import { PageHero } from "@/components/PageHero";
 import FormationsClient from "./FormationsClient";
@@ -34,60 +35,91 @@ export const metadata: Metadata = {
   },
 };
 
+
+// Revalidate every 60 seconds
+export const revalidate = 60;
+
 export default async function FormationsPage() {
-  const supabase = await createClient();
+  const supabase = createServiceClient();
 
-  // Fetch formations with all needed fields
-  const { data: formations } = await supabase
-    .from("formations")
+  // Fetch formations from produits_formation
+  const { data: rawFormations } = await supabase
+    .from("produits_formation")
     .select(
-      "id, title, subtitle, description, pole, pole_name, duration, price, image_url, popular, active, category_id, slug"
+      "id, intitule, sous_titre, description, domaine, categorie, duree_heures, duree_jours, image_url, populaire, slug, categorie_id, produit_tarifs(prix_ht, is_default)"
     )
-    .eq("active", true)
-    .order("title");
-
-  // Fetch categories
-  const { data: categories } = await supabase
-    .from("categories")
-    .select("id, name, slug, pole_id")
-    .order("name");
+    .eq("organisation_id", ORG_ID)
+    .eq("publie", true)
+    .order("intitule");
 
   // Fetch active sessions with inscription counts
   const { data: sessionsData } = await supabase
     .from("sessions")
     .select(
-      `
-      id,
-      formation_id,
-      start_date,
-      max_participants,
-      inscriptions:inscriptions(count)
-    `
+      "id, produit_id, date_debut, places_max, inscriptions(count)"
     )
-    .eq("is_public", true)
-    .in("status", ["planifiee", "confirmee"])
-    .gte("start_date", new Date().toISOString().split("T")[0]);
+    .eq("organisation_id", ORG_ID)
+    .in("statut", ["planifiee", "confirmee"])
+    .gte("date_debut", new Date().toISOString().split("T")[0]);
+
+  // Map formations to expected format
+  const formations = (rawFormations || []).map((f: Record<string, unknown>) => {
+    const tarifs = f.produit_tarifs as Array<{ prix_ht: number; is_default: boolean }> | null;
+    const defaultTarif = tarifs?.find((t) => t.is_default) || tarifs?.[0];
+    const poleInfo = getPoleFromDomaine(f.domaine as string);
+    const duree = f.duree_jours ? `${f.duree_jours}j` : f.duree_heures ? `${f.duree_heures}h` : "";
+
+    // Clean category name: remove codes like "PEE-01 – " or "SPR-04A – "
+    const rawCat = (f.categorie as string) || "";
+    const cleanCategory = rawCat.replace(/^[A-Z]{2,4}-\d+[A-Z]?\s*[–-]\s*/i, "").trim();
+
+    return {
+      id: f.id as string,
+      title: f.intitule as string,
+      subtitle: (f.sous_titre as string) || "",
+      description: (f.description as string) || "",
+      pole: poleInfo.pole,
+      pole_name: poleInfo.pole_name,
+      duration: duree,
+      price: defaultTarif ? `${defaultTarif.prix_ht}€ HT` : "",
+      image_url: f.image_url as string | null,
+      popular: f.populaire as boolean,
+      active: true,
+      category_id: cleanCategory || null,
+      slug: f.slug as string,
+    };
+  });
+
+  // Extract unique categories with their pole
+  const categoryMap = new Map<string, { name: string; pole: string }>();
+  formations.forEach((f) => {
+    if (f.category_id) {
+      if (!categoryMap.has(f.category_id)) {
+        categoryMap.set(f.category_id, { name: f.category_id, pole: f.pole });
+      }
+    }
+  });
+  const categories = Array.from(categoryMap.entries()).map(([name, info]) => ({
+    id: name,
+    name: name,
+    slug: name.toLowerCase().replace(/\s+/g, "-"),
+    pole_id: info.pole,
+  }));
 
   // Process session counts
-  const sessionCounts: Record<
-    string,
-    {
-      formation_id: string;
-      count: number;
-      next_session_date: string | null;
-      total_places: number;
-    }
-  > = {};
+  const sessionCounts: Record<string, {
+    formation_id: string;
+    count: number;
+    next_session_date: string | null;
+    total_places: number;
+  }> = {};
 
   if (sessionsData) {
-    sessionsData.forEach((session: any) => {
-      const formationId = session.formation_id;
-      const inscriptionCount =
-        session.inscriptions?.[0]?.count || session.inscriptions?.length || 0;
-      const availablePlaces = Math.max(
-        0,
-        (session.max_participants || 0) - inscriptionCount
-      );
+    sessionsData.forEach((session: Record<string, unknown>) => {
+      const formationId = session.produit_id as string;
+      const inscriptions = session.inscriptions as Array<{ count: number }> | null;
+      const inscriptionCount = inscriptions?.[0]?.count || 0;
+      const availablePlaces = Math.max(0, ((session.places_max as number) || 0) - inscriptionCount);
 
       if (!sessionCounts[formationId]) {
         sessionCounts[formationId] = {
@@ -101,19 +133,15 @@ export default async function FormationsPage() {
       sessionCounts[formationId].count += 1;
       sessionCounts[formationId].total_places += availablePlaces;
 
-      // Track the earliest session date
-      if (
-        !sessionCounts[formationId].next_session_date ||
-        session.start_date < sessionCounts[formationId].next_session_date
-      ) {
-        sessionCounts[formationId].next_session_date = session.start_date;
+      const dateDebut = session.date_debut as string;
+      if (!sessionCounts[formationId].next_session_date || dateDebut < sessionCounts[formationId].next_session_date!) {
+        sessionCounts[formationId].next_session_date = dateDebut;
       }
     });
   }
 
   return (
     <>
-      {/* Hero Section */}
       <PageHero
         badge="Catalogue de formations"
         title="Trouvez la formation qui vous correspond."
@@ -121,10 +149,9 @@ export default async function FormationsPage() {
         description="Plus de 50 formations certifiantes dans les domaines de la Sécurité, de la Petite Enfance et de la Santé."
       />
 
-      {/* Client Component with Filters */}
       <FormationsClient
-        formations={formations || []}
-        categories={categories || []}
+        formations={formations}
+        categories={categories}
         sessionCounts={sessionCounts}
       />
     </>

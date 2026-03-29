@@ -7,66 +7,22 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { createClient } from "@/lib/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { CiviliteSelect } from "@/components/ui/CiviliteSelect";
 import { toast } from "sonner";
+import { Loader2, CheckCircle2, Calendar, MapPin, Users } from "lucide-react";
 
-import { StepIndicator } from "./StepIndicator";
-import { StepTypeSelection, ProposedDateRange } from "./steps/StepTypeSelection";
-import { StepSessionSelection, AvailableSession } from "./steps/StepSessionSelection";
-import { StepNeedsAnalysis, NeedsQuestion } from "./steps/StepNeedsAnalysis";
-import { StepPersonalInfo, PersonalInfoData } from "./steps/StepPersonalInfo";
-import { format } from "date-fns";
-
-const STEPS = [
-  { label: "Profil" },
-  { label: "Session" },
-  { label: "Besoins" },
-  { label: "Inscription" },
-];
-
-// Default questions if no template found
-const DEFAULT_QUESTIONS: NeedsQuestion[] = [
-  {
-    id: "secteur",
-    type: "select",
-    label: "Quel est votre secteur d'activité ?",
-    required: true,
-    options: ["Industrie", "BTP", "Transport", "Logistique", "Commerce", "Services", "Autre"],
-    section: "Votre situation",
-  },
-  {
-    id: "poste",
-    type: "text",
-    label: "Quel est votre poste actuel ?",
-    required: true,
-    placeholder: "Ex: Chef d'équipe, Opérateur...",
-    section: "Votre situation",
-  },
-  {
-    id: "experience",
-    type: "select",
-    label: "Depuis combien de temps exercez-vous dans ce domaine ?",
-    required: true,
-    options: ["Moins d'1 an", "1 à 3 ans", "3 à 5 ans", "5 à 10 ans", "Plus de 10 ans"],
-    section: "Votre situation",
-  },
-  {
-    id: "objectifs",
-    type: "textarea",
-    label: "Quels sont vos objectifs pour cette formation ?",
-    required: false,
-    placeholder: "Décrivez ce que vous souhaitez apprendre ou améliorer...",
-    section: "Vos attentes",
-  },
-  {
-    id: "contraintes",
-    type: "textarea",
-    label: "Avez-vous des contraintes particulières ?",
-    required: false,
-    placeholder: "Handicap, restrictions médicales, contraintes horaires...",
-    section: "Vos attentes",
-  },
-];
+interface Session {
+  id: string;
+  date_debut: string;
+  date_fin: string | null;
+  lieu_nom: string;
+  lieu_ville: string;
+  places_disponibles: number;
+  format_type: string;
+}
 
 interface InscriptionWizardProps {
   open: boolean;
@@ -78,321 +34,255 @@ interface InscriptionWizardProps {
   };
 }
 
-export function InscriptionWizard({
-  open,
-  onOpenChange,
-  formation,
-}: InscriptionWizardProps) {
-  const [currentStep, setCurrentStep] = useState(0);
+export function InscriptionWizard({ open, onOpenChange, formation }: InscriptionWizardProps) {
+  const [step, setStep] = useState<"session" | "form" | "success">("session");
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [loadingSessions, setLoadingSessions] = useState(true);
+  const [selectedSession, setSelectedSession] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoadingSessions, setIsLoadingSessions] = useState(false);
 
-  // Form state
-  const [type, setType] = useState<"particulier" | "entreprise" | null>(null);
-  const [sessions, setSessions] = useState<AvailableSession[]>([]);
-  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
-  const [proposedDateRange, setProposedDateRange] = useState<ProposedDateRange | null>(null);
-  const [questions, setQuestions] = useState<NeedsQuestion[]>(DEFAULT_QUESTIONS);
-  const [needsAnalysisResponses, setNeedsAnalysisResponses] = useState<Record<string, string | number>>({});
-  const [personalInfo, setPersonalInfo] = useState<PersonalInfoData>({
+  const [formData, setFormData] = useState({
     civilite: "",
     prenom: "",
     nom: "",
     email: "",
     telephone: "",
-    nombre_participants: 1,
+    entreprise: "",
+    notes: "",
   });
 
   // Load sessions when dialog opens
   useEffect(() => {
-    if (open && formation.id) {
-      loadSessions();
-      loadNeedsAnalysisTemplate();
+    if (!open) {
+      setStep("session");
+      setSelectedSession(null);
+      setFormData({ civilite: "", prenom: "", nom: "", email: "", telephone: "", entreprise: "", notes: "" });
+      return;
     }
+
+    async function loadSessions() {
+      setLoadingSessions(true);
+      try {
+        const res = await fetch(`/api/formations/${formation.id}/sessions`);
+        if (res.ok) {
+          const data = await res.json();
+          setSessions(data);
+        }
+      } catch {
+        // Fallback: no sessions available
+        setSessions([]);
+      }
+      setLoadingSessions(false);
+    }
+    loadSessions();
   }, [open, formation.id]);
 
-  // Reset form when dialog closes
-  useEffect(() => {
-    if (!open) {
-      setTimeout(() => {
-        resetForm();
-      }, 300); // Wait for dialog close animation
-    }
-  }, [open]);
-
-  const loadSessions = async () => {
-    setIsLoadingSessions(true);
-    const supabase = createClient();
-
-    try {
-      const { data, error } = await supabase
-        .from("sessions")
-        .select("id, start_date, end_date, lieu, format_type, places_disponibles, places_max")
-        .eq("formation_id", formation.id)
-        .eq("is_public", true)
-        .in("status", ["planifiee", "confirmee"])
-        .gte("start_date", new Date().toISOString())
-        .order("start_date");
-
-      if (error) throw error;
-
-      // Filter sessions with available places
-      const availableSessions = (data || []).filter(
-        (s: AvailableSession) => s.places_disponibles > 0
-      );
-      setSessions(availableSessions);
-    } catch (error) {
-      console.error("Error loading sessions:", error);
-      toast.error("Erreur lors du chargement des sessions");
-    } finally {
-      setIsLoadingSessions(false);
-    }
-  };
-
-  const loadNeedsAnalysisTemplate = async () => {
-    const supabase = createClient();
-
-    try {
-      // Try to get formation-specific template first, then default
-      const { data } = await supabase
-        .from("needs_analysis_templates")
-        .select("questions")
-        .or(`formation_id.eq.${formation.id},is_default.eq.true`)
-        .eq("active", true)
-        .order("formation_id", { nullsFirst: false }) // Prefer formation-specific
-        .limit(1)
-        .maybeSingle();
-
-      if (data?.questions && Array.isArray(data.questions)) {
-        setQuestions(data.questions as NeedsQuestion[]);
-      }
-    } catch (error) {
-      console.error("Error loading needs analysis template:", error);
-      // Keep default questions
-    }
-  };
-
-  const handleSubmit = async () => {
-    if (!type) {
-      toast.error("Veuillez sélectionner un type d'inscription");
-      return;
-    }
-
-    // Need either a session or proposed dates
-    if (!selectedSessionId && !proposedDateRange) {
-      toast.error("Veuillez sélectionner une session ou proposer des dates");
-      return;
-    }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedSession) return;
 
     setIsSubmitting(true);
-    const supabase = createClient();
-
     try {
-      // Format proposed dates for storage
-      const datesSouhaitees = proposedDateRange
-        ? `${format(proposedDateRange.from, "yyyy-MM-dd")} - ${format(proposedDateRange.to, "yyyy-MM-dd")}`
-        : null;
+      const res = await fetch("/api/inscription", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          session_id: selectedSession,
+          ...formData,
+        }),
+      });
 
-      // 1. Create formation_request
-      const { data: request, error: requestError } = await supabase
-        .from("formation_requests")
-        .insert({
-          formation_id: formation.id,
-          formation_title: formation.title,
-          type_demandeur: type,
-          session_id: selectedSessionId,
-          prenom: personalInfo.prenom,
-          nom: personalInfo.nom,
-          email: personalInfo.email,
-          telephone: personalInfo.telephone,
-          entreprise: personalInfo.entreprise || null,
-          siret: personalInfo.siret || null,
-          ville: personalInfo.ville || null,
-          code_postal: personalInfo.code_postal || null,
-          adresse: personalInfo.adresse || null,
-          nombre_participants: personalInfo.nombre_participants || 1,
-          urgence: "normale",
-          status: selectedSessionId ? "nouvelle" : "en_attente_dates",
-          demandeur_est_participant: type === "particulier",
-          dates_souhaitees: datesSouhaitees,
-          date_souhaitee_debut: proposedDateRange?.from.toISOString() || null,
-          date_souhaitee_fin: proposedDateRange?.to.toISOString() || null,
-        })
-        .select()
-        .single();
+      const data = await res.json();
 
-      if (requestError) throw requestError;
-
-      // 2. Create needs_analysis_response if we have responses
-      let needsAnalysisId = null;
-      if (Object.keys(needsAnalysisResponses).length > 0) {
-        const { data: analysis, error: analysisError } = await supabase
-          .from("needs_analysis_responses")
-          .insert({
-            formation_request_id: request.id,
-            session_id: selectedSessionId,
-            respondent_name: `${personalInfo.prenom} ${personalInfo.nom}`,
-            respondent_email: personalInfo.email,
-            responses: needsAnalysisResponses,
-            submitted_at: new Date().toISOString(),
-          })
-          .select()
-          .single();
-
-        if (!analysisError && analysis) {
-          needsAnalysisId = analysis.id;
-        }
+      if (!res.ok) {
+        toast.error(data.error || "Erreur lors de l'inscription");
+        return;
       }
 
-      // 3. Create inscription only if we have a session
-      if (selectedSessionId) {
-        const { error: inscriptionError } = await supabase
-          .from("inscriptions")
-          .insert({
-            session_id: selectedSessionId,
-            formation_request_id: request.id,
-            needs_analysis_response_id: needsAnalysisId,
-            prenom: personalInfo.prenom,
-            nom: personalInfo.nom,
-            email: personalInfo.email,
-            telephone: personalInfo.telephone,
-            civilite: personalInfo.civilite,
-            type_inscription: type,
-            status: "en_attente",
-          });
-
-        if (inscriptionError) throw inscriptionError;
-
-        // 4. Decrement available places (using RPC if available, otherwise direct update)
-        const selectedSession = sessions.find((s) => s.id === selectedSessionId);
-        if (selectedSession) {
-          await supabase
-            .from("sessions")
-            .update({
-              places_disponibles: Math.max(0, selectedSession.places_disponibles - 1),
-            })
-            .eq("id", selectedSessionId);
-        }
-      }
-
-      const successMessage = selectedSessionId
-        ? "Inscription enregistrée ! Vous recevrez une confirmation par email."
-        : "Demande enregistrée ! Nous vous contacterons pour confirmer les dates.";
-
-      toast.success(successMessage, { duration: 5000 });
-      onOpenChange(false);
-    } catch (error) {
-      console.error("Inscription error:", error);
-      toast.error("Une erreur est survenue. Veuillez réessayer.");
+      setStep("success");
+      toast.success("Demande d'inscription envoyée !");
+    } catch {
+      toast.error("Erreur de connexion, veuillez réessayer");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const resetForm = () => {
-    setCurrentStep(0);
-    setType(null);
-    setSelectedSessionId(null);
-    setProposedDateRange(null);
-    setNeedsAnalysisResponses({});
-    setPersonalInfo({
-      civilite: "",
-      prenom: "",
-      nom: "",
-      email: "",
-      telephone: "",
-      nombre_participants: 1,
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString("fr-FR", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
     });
-  };
-
-  const selectedSession = sessions.find((s) => s.id === selectedSessionId) || null;
-  const hasQuestions = questions.length > 0;
-
-  // Handle step navigation with dynamic skipping
-  const goToNextStep = () => {
-    if (currentStep === 1 && !hasQuestions) {
-      // Skip needs analysis if no questions
-      setCurrentStep(3);
-    } else {
-      setCurrentStep((prev) => prev + 1);
-    }
-  };
-
-  const goToPrevStep = () => {
-    if (currentStep === 3 && !hasQuestions) {
-      // Skip needs analysis when going back
-      setCurrentStep(1);
-    } else {
-      setCurrentStep((prev) => prev - 1);
-    }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader className="pb-2">
-          <DialogTitle className="flex items-center gap-2">
-            <span>Inscription à la formation</span>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>
+            {step === "success" ? "Inscription confirmée" : `S'inscrire - ${formation.title}`}
           </DialogTitle>
-          <p className="text-sm text-muted-foreground truncate">
-            {formation.title}
-          </p>
         </DialogHeader>
 
-        <StepIndicator currentStep={currentStep} steps={STEPS} />
+        {/* Step 1: Session Selection */}
+        {step === "session" && (
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Choisissez une session :
+            </p>
 
-        <div className="flex-1 overflow-hidden">
-          {currentStep === 0 && (
-            <StepTypeSelection
-              value={type}
-              onChange={setType}
-              onNext={() => setCurrentStep(1)}
-              proposedDates={proposedDateRange}
-              onDatesChange={setProposedDateRange}
-            />
-          )}
+            {loadingSessions ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : sessions.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground mb-4">
+                  Aucune session programmée pour le moment.
+                </p>
+                <Button variant="outline" onClick={() => onOpenChange(false)} asChild>
+                  <a href={`/contact?sujet=inscription&formation=${encodeURIComponent(formation.title)}`}>
+                    Contactez-nous pour les prochaines dates
+                  </a>
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                {sessions.map((session) => (
+                  <button
+                    key={session.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedSession(session.id);
+                      setStep("form");
+                    }}
+                    className={`w-full text-left p-4 rounded-lg border transition-all hover:border-primary/50 hover:bg-primary/5 ${
+                      selectedSession === session.id ? "border-primary bg-primary/5" : "border-border"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 text-sm font-medium mb-1">
+                      <Calendar className="h-4 w-4 text-primary" />
+                      {formatDate(session.date_debut)}
+                      {session.date_fin && ` - ${formatDate(session.date_fin)}`}
+                    </div>
+                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <MapPin className="h-3 w-3" />
+                        {session.lieu_nom || session.lieu_ville || "À définir"}
+                      </span>
+                      <span className={`flex items-center gap-1 ${
+                        session.places_disponibles <= 2 ? "text-red-500" : session.places_disponibles <= 5 ? "text-orange-500" : "text-green-600"
+                      }`}>
+                        <Users className="h-3 w-3" />
+                        {session.places_disponibles} place{session.places_disponibles > 1 ? "s" : ""} restante{session.places_disponibles > 1 ? "s" : ""}
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
-          {currentStep === 1 && (
-            <StepSessionSelection
-              sessions={sessions}
-              selectedSessionId={selectedSessionId}
-              onSelect={setSelectedSessionId}
-              onNext={goToNextStep}
-              onBack={() => setCurrentStep(0)}
-              isLoading={isLoadingSessions}
-              proposedDates={proposedDateRange}
-            />
-          )}
+        {/* Step 2: Personal Info Form */}
+        {step === "form" && (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <Button type="button" variant="ghost" size="sm" onClick={() => setStep("session")} className="mb-2">
+              ← Changer de session
+            </Button>
 
-          {currentStep === 2 && hasQuestions && (
-            <StepNeedsAnalysis
-              questions={questions}
-              responses={needsAnalysisResponses}
-              onChange={(id, value) =>
-                setNeedsAnalysisResponses((prev) => ({ ...prev, [id]: value }))
-              }
-              onNext={() => setCurrentStep(3)}
-              onBack={() => setCurrentStep(1)}
-              onSkip={() => setCurrentStep(3)}
+            <CiviliteSelect
+              value={formData.civilite}
+              onChange={(val) => setFormData({ ...formData, civilite: val })}
             />
-          )}
 
-          {currentStep === 3 && (
-            <StepPersonalInfo
-              type={type!}
-              data={personalInfo}
-              onChange={(field, value) =>
-                setPersonalInfo((prev) => ({ ...prev, [field]: value }))
-              }
-              onSubmit={handleSubmit}
-              onBack={goToPrevStep}
-              isSubmitting={isSubmitting}
-              formation={formation}
-              session={selectedSession}
-              proposedDates={proposedDateRange}
-            />
-          )}
-        </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="prenom">Prénom *</Label>
+                <Input
+                  id="prenom"
+                  required
+                  value={formData.prenom}
+                  onChange={(e) => setFormData({ ...formData, prenom: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="nom">Nom *</Label>
+                <Input
+                  id="nom"
+                  required
+                  value={formData.nom}
+                  onChange={(e) => setFormData({ ...formData, nom: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="email">Email *</Label>
+              <Input
+                id="email"
+                type="email"
+                required
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="telephone">Téléphone</Label>
+              <Input
+                id="telephone"
+                type="tel"
+                value={formData.telephone}
+                onChange={(e) => setFormData({ ...formData, telephone: e.target.value })}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="entreprise">Entreprise</Label>
+              <Input
+                id="entreprise"
+                value={formData.entreprise}
+                onChange={(e) => setFormData({ ...formData, entreprise: e.target.value })}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="notes">Message (optionnel)</Label>
+              <textarea
+                id="notes"
+                rows={3}
+                className="w-full px-3 py-2 bg-secondary border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                value={formData.notes}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              />
+            </div>
+
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : null}
+              {isSubmitting ? "Envoi en cours..." : "Envoyer ma demande d'inscription"}
+            </Button>
+          </form>
+        )}
+
+        {/* Step 3: Success */}
+        {step === "success" && (
+          <div className="text-center py-6">
+            <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle2 className="w-8 h-8 text-green-500" />
+            </div>
+            <h3 className="text-lg font-medium mb-2">Demande envoyée !</h3>
+            <p className="text-sm text-muted-foreground mb-6">
+              Votre demande d'inscription a été enregistrée. Notre équipe vous contactera dans les plus brefs délais pour confirmer votre inscription.
+            </p>
+            <Button onClick={() => onOpenChange(false)}>
+              Fermer
+            </Button>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

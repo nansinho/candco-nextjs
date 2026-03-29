@@ -188,13 +188,14 @@ export default async function AboutPage() {
                 />
               </div>
               <div className="absolute -bottom-4 -right-4 bg-background border border-border/50 rounded-xl p-4 shadow-lg">
-                <Image
-                  src="/logo-qualiopi.png"
-                  alt="Certification Qualiopi"
-                  width={96}
-                  height={48}
-                  className="h-12 w-auto"
-                />
+                <div className="relative h-12" style={{ aspectRatio: "96/48" }}>
+                  <Image
+                    src="/logo-qualiopi.png"
+                    alt="Certification Qualiopi"
+                    fill
+                    className="object-contain"
+                  />
+                </div>
               </div>
             </div>
 

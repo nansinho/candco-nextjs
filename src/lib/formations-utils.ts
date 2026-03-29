@@ -30,12 +30,12 @@ export function getFormationImage(formation: {
 
   // Image par défaut du pôle
   const poleDefaultImages: Record<string, string> = {
-    "petite-enfance": "/pole-childhood.jpg",
-    "sante": "/pole-health.jpg",
-    "securite-prevention": "/pole-security.jpg",
+    "petite-enfance": "/images/poles/pole-childhood.jpg",
+    "sante": "/images/poles/pole-health.jpg",
+    "securite-prevention": "/images/poles/pole-security.jpg",
   };
 
-  return poleDefaultImages[formation.pole] || "/pole-security.jpg";
+  return poleDefaultImages[formation.pole] || "/images/poles/pole-security.jpg";
 }
 
 /**

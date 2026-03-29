@@ -1,4 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
+import { createServiceClient, ORG_ID } from "@/lib/supabase/service";
+import { getPoleFromDomaine } from "@/lib/domaines";
 import { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
@@ -41,7 +42,7 @@ const polesConfig: Record<
       "Formations certifiantes en sécurité au travail : SST, prévention incendie, habilitations électriques et gestes d'urgence.",
     longDescription:
       "Notre pôle Sécurité & Prévention vous accompagne dans la maîtrise des risques professionnels. Des formations certifiantes et reconnues pour devenir acteur de la sécurité dans votre entreprise.",
-    image: "/pole-security.jpg",
+    image: "/images/poles/pole-security.jpg",
     icon: Shield,
     cssVar: "pole-securite",
     features: [
@@ -71,7 +72,7 @@ const polesConfig: Record<
       "Formations en petite enfance : éveil, pédagogies alternatives, accompagnement du développement de l'enfant.",
     longDescription:
       "Notre pôle Petite Enfance forme les professionnels à l'accompagnement bienveillant des tout-petits. Découvrez nos formations sur les pédagogies alternatives, l'éveil sensoriel et le développement de l'enfant.",
-    image: "/pole-childhood.jpg",
+    image: "/images/poles/pole-childhood.jpg",
     icon: Baby,
     cssVar: "pole-petite-enfance",
     features: [
@@ -101,7 +102,7 @@ const polesConfig: Record<
       "Formations santé : gestes d'urgence, accompagnement des patients, soins et prévention pour les professionnels de santé.",
     longDescription:
       "Notre pôle Santé propose des formations adaptées aux professionnels du secteur médical et paramédical. Maîtrisez les gestes essentiels et développez vos compétences en accompagnement des patients.",
-    image: "/pole-health.jpg",
+    image: "/images/poles/pole-health.jpg",
     icon: HeartPulse,
     cssVar: "pole-sante",
     features: [
@@ -169,15 +170,43 @@ export default async function PolePage({ params }: Props) {
     notFound();
   }
 
-  const supabase = await createClient();
+  const supabase = createServiceClient();
 
-  // Récupérer les formations de ce pôle
-  const { data: formations } = await supabase
-    .from("formations")
-    .select("id, title, slug, subtitle, duration, price, image_url")
-    .eq("pole", slug)
-    .eq("active", true)
-    .order("title");
+  // Domaine keyword for ilike filter
+  const slugToKeyword: Record<string, string> = {
+    "securite-prevention": "%écurité%",
+    "petite-enfance": "%nfance%",
+    "sante": "%anté%",
+  };
+  const keyword = slugToKeyword[slug];
+
+  // Récupérer les formations de ce pôle (ilike to match all domaine variants)
+  const query = supabase
+    .from("produits_formation")
+    .select("id, intitule, slug, sous_titre, duree_heures, duree_jours, image_url, domaine, produit_tarifs(prix_ht, is_default)")
+    .eq("organisation_id", ORG_ID)
+    .eq("publie", true)
+    .order("intitule");
+
+  if (keyword) {
+    query.ilike("domaine", keyword);
+  }
+
+  const { data: rawFormations } = await query;
+
+  const formations = (rawFormations || []).map((f: Record<string, unknown>) => {
+    const tarifs = f.produit_tarifs as Array<{ prix_ht: number; is_default: boolean }> | null;
+    const defaultTarif = tarifs?.find((t) => t.is_default) || tarifs?.[0];
+    return {
+      id: f.id as string,
+      title: f.intitule as string,
+      slug: f.slug as string,
+      subtitle: (f.sous_titre as string) || "",
+      duration: f.duree_jours ? `${f.duree_jours}j` : f.duree_heures ? `${f.duree_heures}h` : "",
+      price: defaultTarif ? `${defaultTarif.prix_ht}€ HT` : "",
+      image_url: f.image_url as string | null,
+    };
+  });
 
   const Icon = pole.icon;
 
@@ -191,6 +220,7 @@ export default async function PolePage({ params }: Props) {
             src={pole.image}
             alt={pole.title}
             fill
+            sizes="100vw"
             className="object-cover"
             priority
           />

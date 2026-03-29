@@ -153,6 +153,20 @@ export function AuthClient() {
   const watchedPassword = signUpForm.watch("password") || "";
   const watchedResetPassword = resetForm.watch("password") || "";
 
+  // Validate redirect URL to prevent open redirect attacks
+  const getSafeRedirect = useCallback((url: string | null): string => {
+    if (!url) return "/";
+    try {
+      const decoded = decodeURIComponent(url);
+      if (!decoded.startsWith("/") || decoded.startsWith("//") || decoded.includes("://")) {
+        return "/";
+      }
+      return decoded;
+    } catch {
+      return "/mon-compte";
+    }
+  }, []);
+
   // Check auth state on mount
   useEffect(() => {
     const checkAuth = async () => {
@@ -160,14 +174,11 @@ export function AuthClient() {
         data: { session },
       } = await supabase.auth.getSession();
       if (session && authMode !== "reset") {
-        const redirectTo = urlRedirect
-          ? decodeURIComponent(urlRedirect)
-          : "/mon-compte";
-        router.push(redirectTo);
+        router.push(getSafeRedirect(urlRedirect));
       }
     };
     checkAuth();
-  }, [supabase, router, authMode, urlRedirect]);
+  }, [supabase, router, authMode, urlRedirect, getSafeRedirect]);
 
   // Handle URL mode parameter
   useEffect(() => {
@@ -185,10 +196,7 @@ export function AuthClient() {
         password: data.password,
       });
       if (error) throw error;
-      const redirectTo = urlRedirect
-        ? decodeURIComponent(urlRedirect)
-        : "/mon-compte";
-      router.push(redirectTo);
+      router.push(getSafeRedirect(urlRedirect));
     } catch (error) {
       setMessage({
         type: "error",
@@ -335,6 +343,7 @@ export function AuthClient() {
           src="/hero-training.jpg"
           alt="Formation professionnelle"
           fill
+          sizes="50vw"
           className="object-cover"
           priority
         />
@@ -360,14 +369,15 @@ export function AuthClient() {
               transition={{ delay: 0.2, duration: 0.5 }}
             >
               <div className="mb-8">
-                <Image
-                  src="/logo.svg"
-                  alt="C&Co Formation"
-                  width={180}
-                  height={60}
-                  className="mx-auto invert"
-                  priority
-                />
+                <div className="relative h-[60px] mx-auto" style={{ aspectRatio: "180/60" }}>
+                  <Image
+                    src="/logo.svg"
+                    alt="C&Co Formation"
+                    fill
+                    className="object-contain invert"
+                    priority
+                  />
+                </div>
               </div>
               <h1 className="text-3xl font-bold text-white mb-4">
                 Bienvenue sur C&Co Formation

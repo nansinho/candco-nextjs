@@ -37,13 +37,14 @@ export default function AboutClient() {
             <div className="bg-background rounded-2xl border border-border/50 p-8 md:p-10 shadow-sm">
               <div className="flex flex-col md:flex-row gap-8 items-center mb-8">
                 <div className="shrink-0">
-                  <Image
-                    src="/logo-qualiopi.png"
-                    alt="Certification Qualiopi"
-                    width={160}
-                    height={80}
-                    className="h-20 w-auto"
-                  />
+                  <div className="relative h-20" style={{ aspectRatio: "160/80" }}>
+                    <Image
+                      src="/logo-qualiopi.png"
+                      alt="Certification Qualiopi"
+                      fill
+                      className="object-contain"
+                    />
+                  </div>
                 </div>
                 <div className="flex-1 text-center md:text-left">
                   <h3 className="text-lg font-medium mb-2">
@@ -129,13 +130,14 @@ export default function AboutClient() {
         <DialogContent className="max-w-4xl max-h-[90vh] p-0 overflow-hidden flex flex-col">
           <DialogHeader className="p-4 pb-2 shrink-0 border-b border-border/30">
             <DialogTitle className="flex items-center gap-3">
-              <Image
-                src="/logo-qualiopi.png"
-                alt="Qualiopi"
-                width={64}
-                height={32}
-                className="h-8 w-auto"
-              />
+              <div className="relative h-8" style={{ aspectRatio: "64/32" }}>
+                <Image
+                  src="/logo-qualiopi.png"
+                  alt="Qualiopi"
+                  fill
+                  className="object-contain"
+                />
+              </div>
               Certificat Qualiopi N° 3279 OF
             </DialogTitle>
           </DialogHeader>

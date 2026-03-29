@@ -154,7 +154,7 @@ export function AccessibilityWidget() {
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.3, delay: 0.5 }}
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 left-6 z-40 w-12 h-12 sm:w-14 sm:h-14 bg-primary text-primary-foreground rounded-full shadow-lg shadow-primary/30 flex items-center justify-center hover:scale-110 hover:shadow-xl hover:shadow-primary/40 transition-all duration-300 group"
+        className="fixed bottom-6 left-6 z-40 w-12 h-12 sm:w-14 sm:h-14 bg-[#1F628E] text-white rounded-2xl shadow-lg shadow-[#1F628E]/25 flex items-center justify-center hover:scale-105 hover:shadow-xl hover:shadow-[#1F628E]/35 transition-all duration-300 group"
         aria-label="Ouvrir les options d'accessibilité"
         aria-expanded={isOpen}
         aria-controls="accessibility-panel"

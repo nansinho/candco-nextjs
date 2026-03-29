@@ -81,7 +81,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const ROLE_CACHE_KEY = "auth_role_cache";
 const ROLE_CACHE_EXPIRY_KEY = "auth_role_cache_expiry";
 const ROLE_CACHE_USER_KEY = "auth_role_cache_user";
-const CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minutes
+const CACHE_DURATION_MS = 15 * 60 * 1000; // 15 minutes
 
 const getCachedRole = (
   userId: string
@@ -176,135 +176,58 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!user) return;
 
     try {
-      const { data: profileData } = await supabase
-        .from("profiles")
-        .select(
-          "first_name, last_name, avatar_url, telephone, entreprise, image_rights_consent, image_rights_consent_date"
-        )
-        .eq("id", user.id)
-        .single();
-
-      if (profileData) {
-        setUserProfile(profileData);
+      const res = await fetch("/api/auth/me", { credentials: "include" });
+      if (res.ok) {
+        const { profile } = await res.json();
+        if (profile) {
+          setUserProfile({
+            first_name: profile.first_name,
+            last_name: profile.last_name,
+            avatar_url: profile.avatar_url,
+            telephone: null,
+            entreprise: null,
+            image_rights_consent: null,
+            image_rights_consent_date: null,
+          });
+        }
       }
     } catch (error) {
       console.error("Error refreshing user profile:", error);
     }
-  }, [user, supabase]);
+  }, [user]);
 
   const checkUserRoleAndOrganizations = async (
-    userId: string,
-    retryCount = 0
+    userId: string
   ): Promise<void> => {
     if (isCheckingRoleRef.current) return;
-
     isCheckingRoleRef.current = true;
 
     try {
-      const [roleResult, orgsResult, profileResult, formateurResult] =
-        await Promise.all([
-          supabase
-            .from("user_roles")
-            .select("role")
-            .eq("user_id", userId)
-            .maybeSingle(),
-          supabase
-            .from("user_organizations")
-            .select(
-              `
-              id,
-              organization_id,
-              role,
-              is_primary,
-              organizations!inner(name)
-            `
-            )
-            .eq("user_id", userId),
-          supabase
-            .from("profiles")
-            .select(
-              "first_name, last_name, avatar_url, telephone, entreprise, image_rights_consent, image_rights_consent_date"
-            )
-            .eq("id", userId)
-            .single(),
-          supabase
-            .from("formateurs")
-            .select("id")
-            .eq("user_id", userId)
-            .eq("active", true)
-            .maybeSingle(),
-        ]);
+      const res = await fetch("/api/auth/me", { credentials: "include" });
+      const { role: fetchedRole, profile } = res.ok
+        ? await res.json()
+        : { role: "user", profile: null };
 
-      const { data: roleData, error: roleError } = roleResult;
-      const { data: orgsData, error: orgsError } = orgsResult;
-      const { data: profileData } = profileResult;
-      const { data: formateurData } = formateurResult;
-
-      if (profileData) {
-        setUserProfile(profileData);
+      if (profile) {
+        setUserProfile({
+          first_name: profile.first_name,
+          last_name: profile.last_name,
+          avatar_url: profile.avatar_url,
+          telephone: null,
+          entreprise: null,
+          image_rights_consent: null,
+          image_rights_consent_date: null,
+        });
       }
 
-      setIsFormateur(!!formateurData);
-
-      if (roleError) {
-        console.error("Error checking user role:", roleError);
-
-        if (retryCount < 1) {
-          isCheckingRoleRef.current = false;
-          await new Promise((resolve) => setTimeout(resolve, 200));
-          return checkUserRoleAndOrganizations(userId, retryCount + 1);
-        }
-
-        if (!userRole) {
-          setUserRole("user");
-          setIsAdmin(false);
-        }
-        roleLoadedForUserRef.current = userId;
-        isCheckingRoleRef.current = false;
-        return;
-      }
-
-      const role = (roleData?.role as UserRole) || "user";
+      const role = (fetchedRole as UserRole) || "user";
       setUserRole(role);
       setIsAdmin(role === "admin" || role === "superadmin");
       roleLoadedForUserRef.current = userId;
-
       setCachedRole(userId, role);
-
-      if (role === "org_manager" && !orgsError && orgsData) {
-        const organizations: UserOrganization[] = orgsData.map((org: any) => ({
-          id: org.id,
-          organization_id: org.organization_id,
-          organization_name: org.organizations?.name || "Organisme inconnu",
-          role: org.role as "manager" | "viewer",
-          is_primary: org.is_primary,
-        }));
-
-        setUserOrganizations(organizations);
-
-        const primaryOrg = organizations.find((org) => org.is_primary);
-        setCurrentOrganizationId(
-          primaryOrg?.organization_id ||
-            organizations[0]?.organization_id ||
-            null
-        );
-      } else {
-        setUserOrganizations([]);
-        setCurrentOrganizationId(null);
-      }
-    } catch (error) {
-      console.error("Error checking user role:", error);
-
-      if (retryCount < 1) {
-        isCheckingRoleRef.current = false;
-        await new Promise((resolve) => setTimeout(resolve, 200));
-        return checkUserRoleAndOrganizations(userId, retryCount + 1);
-      }
-
-      if (!userRole) {
-        setUserRole("user");
-        setIsAdmin(false);
-      }
+    } catch {
+      setUserRole("user");
+      setIsAdmin(false);
       roleLoadedForUserRef.current = userId;
     } finally {
       isCheckingRoleRef.current = false;
@@ -322,21 +245,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const userId = session.user.id;
 
         const cachedData = getCachedRole(userId);
-        if (cachedData && roleLoadedForUserRef.current !== userId) {
+        if (cachedData) {
           setUserRole(cachedData.role);
           setIsAdmin(cachedData.isAdmin);
-        }
-
-        if (
-          roleLoadedForUserRef.current !== userId &&
-          !isCheckingRoleRef.current
-        ) {
+          roleLoadedForUserRef.current = userId;
+        } else if (!isCheckingRoleRef.current) {
           setRoleLoading(true);
-          setTimeout(() => {
-            checkUserRoleAndOrganizations(userId).finally(() => {
-              setRoleLoading(false);
-            });
-          }, 0);
+          checkUserRoleAndOrganizations(userId).finally(() => {
+            setRoleLoading(false);
+          });
         }
       } else {
         if (event === "SIGNED_OUT") {
@@ -359,12 +276,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (cachedData) {
           setUserRole(cachedData.role);
           setIsAdmin(cachedData.isAdmin);
-        }
-
-        if (
-          roleLoadedForUserRef.current !== userId &&
-          !isCheckingRoleRef.current
-        ) {
+          roleLoadedForUserRef.current = userId;
+        } else if (!isCheckingRoleRef.current) {
           setRoleLoading(true);
           await checkUserRoleAndOrganizations(userId);
           setRoleLoading(false);

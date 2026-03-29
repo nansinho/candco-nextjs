@@ -1,35 +1,35 @@
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { redirect } from "next/navigation";
 
-// Types de rôles utilisateur
-export type UserRole =
-  | "superadmin"
-  | "admin"
-  | "org_manager"
-  | "moderator"
-  | "formateur"
-  | "client_manager"
-  | "user"
-  | null;
+export type UserRole = "superadmin" | "admin" | "user" | null;
 
-// Hiérarchie des rôles admin
-export const ADMIN_ROLES: UserRole[] = ["superadmin", "admin", "org_manager", "moderator"];
-export const SUPERADMIN_ROLES: UserRole[] = ["superadmin"];
-export const ADMIN_ONLY_ROLES: UserRole[] = ["superadmin", "admin"];
+export const ADMIN_ROLES: UserRole[] = ["superadmin", "admin"];
 
 /**
- * Récupère le rôle d'un utilisateur depuis la base de données
+ * Get user role from utilisateurs table (uses service role to bypass RLS)
  */
 export async function getUserRole(userId: string): Promise<UserRole> {
-  const supabase = await createClient();
+  const supabase = createServiceClient();
 
-  const { data, error } = await supabase
-    .from("user_roles")
+  const { data } = await supabase
+    .from("utilisateurs")
     .select("role")
-    .eq("user_id", userId)
+    .eq("id", userId)
     .maybeSingle();
 
-  if (error || !data) {
+  if (!data) {
+    // Fallback: try by auth user email
+    const authSupabase = await createClient();
+    const { data: { user } } = await authSupabase.auth.getUser();
+    if (user?.email) {
+      const { data: byEmail } = await supabase
+        .from("utilisateurs")
+        .select("role")
+        .eq("email", user.email)
+        .maybeSingle();
+      return (byEmail?.role as UserRole) || "user";
+    }
     return "user";
   }
 
@@ -37,124 +37,37 @@ export async function getUserRole(userId: string): Promise<UserRole> {
 }
 
 /**
- * Vérifie si un utilisateur a l'un des rôles requis
- */
-export async function checkPermission(
-  userId: string,
-  requiredRoles: UserRole[]
-): Promise<boolean> {
-  const userRole = await getUserRole(userId);
-  return requiredRoles.includes(userRole);
-}
-
-/**
- * Récupère l'utilisateur connecté (Server Component)
+ * Get the authenticated user (Server Component)
  */
 export async function getServerUser() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
   return user;
 }
 
 /**
- * Récupère l'utilisateur et son rôle (Server Component)
+ * Get user + role (Server Component)
  */
 export async function getServerUserWithRole() {
   const user = await getServerUser();
-
-  if (!user) {
-    return { user: null, role: null as UserRole };
-  }
-
+  if (!user) return { user: null, role: null as UserRole };
   const role = await getUserRole(user.id);
   return { user, role };
 }
 
 /**
- * Vérifie l'accès admin et redirige si non autorisé
- * À utiliser dans les Server Components
+ * Require admin access, redirect if not authorized
  */
-export async function requireAdminAccess(requiredRoles: UserRole[] = ADMIN_ROLES) {
+export async function requireAdminAccess() {
   const { user, role } = await getServerUserWithRole();
 
   if (!user) {
     redirect("/auth?redirect=/admin");
   }
 
-  if (!requiredRoles.includes(role)) {
+  if (role !== "superadmin" && role !== "admin") {
     redirect("/");
   }
 
   return { user, role };
-}
-
-/**
- * Vérifie l'accès superadmin
- */
-export async function requireSuperadminAccess() {
-  return requireAdminAccess(SUPERADMIN_ROLES);
-}
-
-/**
- * Vérifie si l'utilisateur est un formateur
- */
-export async function isUserFormateur(userId: string): Promise<boolean> {
-  const supabase = await createClient();
-
-  const { data } = await supabase
-    .from("formateurs")
-    .select("id")
-    .eq("user_id", userId)
-    .maybeSingle();
-
-  return !!data;
-}
-
-/**
- * Récupère les organisations d'un utilisateur (pour org_manager)
- */
-export async function getUserOrganizations(userId: string) {
-  const supabase = await createClient();
-
-  const { data } = await supabase
-    .from("user_organizations")
-    .select(
-      `
-      id,
-      organization_id,
-      role,
-      is_primary,
-      organizations!inner(id, name)
-    `
-    )
-    .eq("user_id", userId);
-
-  if (!data) return [];
-
-  return data.map((org: any) => ({
-    id: org.id,
-    organization_id: org.organization_id,
-    organization_name: org.organizations?.name || "",
-    role: org.role as "manager" | "viewer",
-    is_primary: org.is_primary,
-  }));
-}
-
-/**
- * Récupère le profil utilisateur complet
- */
-export async function getUserProfile(userId: string) {
-  const supabase = await createClient();
-
-  const { data } = await supabase
-    .from("profiles")
-    .select(
-      "first_name, last_name, avatar_url, telephone, entreprise, image_rights_consent, image_rights_consent_date"
-    )
-    .eq("id", userId)
-    .single();
-
-  return data;
 }

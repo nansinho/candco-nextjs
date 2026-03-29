@@ -70,8 +70,70 @@ export default async function BlogArticlePage({ params }: Props) {
       })
     : null;
 
+  // JSON-LD Article schema for SEO & AEO
+  const articleSchema = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: article.title,
+    description: article.excerpt || article.meta_description || "",
+    image: article.image_url || "https://candco.fr/og-image.jpg",
+    datePublished: article.published_at || article.created_at,
+    dateModified: article.updated_at || article.published_at || article.created_at,
+    author: {
+      "@type": "Organization",
+      name: article.author || "C&Co Formation",
+      url: "https://candco.fr",
+    },
+    publisher: {
+      "@type": "Organization",
+      name: "C&Co Formation",
+      logo: {
+        "@type": "ImageObject",
+        url: "https://candco.fr/logo.svg",
+      },
+    },
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": `https://candco.fr/blog/${slug}`,
+    },
+  };
+
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Accueil",
+        item: "https://candco.fr",
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Blog",
+        item: "https://candco.fr/blog",
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: article.title,
+        item: `https://candco.fr/blog/${slug}`,
+      },
+    ],
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
+
       {/* Hero Section with Image Overlay */}
       <section className="relative min-h-[400px] lg:min-h-[500px]">
         {/* Background Image */}

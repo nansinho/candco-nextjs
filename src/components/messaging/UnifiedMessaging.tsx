@@ -173,7 +173,7 @@ export function UnifiedMessaging({
           table: "session_messages",
           filter: `conversation_id=eq.${conversationId}`,
         },
-        (payload) => {
+        (payload: { new: unknown }) => {
           const msg = payload.new as Message;
           setMessages((prev) =>
             prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]
@@ -193,7 +193,7 @@ export function UnifiedMessaging({
           table: "session_messages",
           filter: `conversation_id=eq.${conversationId}`,
         },
-        (payload) => {
+        (payload: { new: unknown }) => {
           const msg = payload.new as Message;
           setMessages((prev) =>
             prev.map((m) => (m.id === msg.id ? { ...m, ...msg } : m))
@@ -231,7 +231,7 @@ export function UnifiedMessaging({
       }
 
       // Enrichir avec noms et badges
-      const enrichedConversations = (data || []).map((conv) => {
+      const enrichedConversations = (data || []).map((conv: Record<string, unknown> & { type: string; participant_id?: string }) => {
         let participant_name = "";
         const role_badges: Array<{ label: string; type: "formateur" | "apprenant" | "groupe" }> = [];
 
@@ -259,7 +259,7 @@ export function UnifiedMessaging({
 
       // Sélection initiale - éviter re-set si même conversation pour éviter boucle infinie
       if (initialConversationId) {
-        const targetConv = enrichedConversations.find((c) => c.id === initialConversationId);
+        const targetConv = enrichedConversations.find((c: Conversation) => c.id === initialConversationId);
         if (targetConv) {
           setSelectedConversation(prev => prev?.id === targetConv.id ? prev : targetConv);
         } else if (enrichedConversations.length > 0) {
@@ -394,7 +394,7 @@ export function UnifiedMessaging({
               content: newMessage.trim(),
             },
           })
-          .catch((err) => console.error("Error notifying formateur:", err));
+          .catch((err: Error) => console.error("Error notifying formateur:", err));
       }
 
       setNewMessage("");

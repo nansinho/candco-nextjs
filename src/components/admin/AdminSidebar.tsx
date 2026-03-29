@@ -11,41 +11,14 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import {
   LayoutDashboard,
-  GraduationCap,
   FileText,
-  MessageSquare,
-  Users,
   Image,
   Settings,
-  Calendar,
-  FolderOpen,
-  Megaphone,
-  Shield,
   ChevronDown,
-  MessageCircle,
-  BarChart3,
   HelpCircle,
-  Building2,
-  Tags,
-  Star,
-  UserCog,
   ArrowRightLeft,
-  Mail,
-  Palette,
   Cookie,
-  ShieldAlert,
   Lock,
-  Code,
-  Kanban,
-  Archive,
-  CheckCircle2,
-  Trash2,
-  Receipt,
-  ClipboardList,
-  Bell,
-  Zap,
-  Briefcase,
-  Layers,
 } from "lucide-react";
 import {
   Sidebar,
@@ -83,38 +56,11 @@ interface MenuCategory {
   adminOnly?: boolean;
 }
 
-// Menu complet pour les admins
-const allMenuCategories: MenuCategory[] = [
-  {
-    title: "Développement",
-    icon: Code,
-    adminOnly: true,
-    items: [
-      { title: "Demandes", url: "/admin/developpement", icon: Kanban },
-      { title: "Résolues", url: "/admin/developpement/resolues", icon: CheckCircle2 },
-      { title: "Archives", url: "/admin/developpement/archives", icon: Archive },
-      { title: "Corbeille", url: "/admin/developpement/corbeille", icon: Trash2 },
-    ],
-  },
-  {
-    title: "Formations",
-    icon: GraduationCap,
-    items: [
-      { title: "Catalogue", url: "/admin/formations", icon: FolderOpen },
-      { title: "Pôles", url: "/admin/poles", icon: Layers },
-      { title: "Sessions", url: "/admin/sessions", icon: Calendar },
-      { title: "Formateurs", url: "/admin/formateurs", icon: UserCog },
-      { title: "Clients", url: "/admin/clients", icon: Building2 },
-      { title: "Facturation", url: "/admin/facturation", icon: Receipt },
-      { title: "Analyse besoins", url: "/admin/analyse-besoins", icon: ClipboardList },
-      { title: "Satisfaction", url: "/admin/satisfaction", icon: Star },
-      { title: "Organismes", url: "/admin/organisations", icon: Building2 },
-    ],
-  },
+// Menu admin du site vitrine (léger)
+const adminMenuCategories: MenuCategory[] = [
   {
     title: "Contenu",
     icon: FileText,
-    adminOnly: true,
     items: [
       { title: "Articles", url: "/admin/articles", icon: FileText },
       { title: "FAQ", url: "/admin/faq", icon: HelpCircle },
@@ -122,77 +68,12 @@ const allMenuCategories: MenuCategory[] = [
     ],
   },
   {
-    title: "Communication",
-    icon: Megaphone,
-    adminOnly: true,
+    title: "Configuration",
+    icon: Settings,
     items: [
-      { title: "Messages", url: "/admin/contacts", icon: MessageSquare },
-      { title: "Notifications", url: "/admin/notifications", icon: Bell },
-      { title: "Emails", url: "/admin/email-stats", icon: Mail },
-      { title: "Templates", url: "/admin/email-templates", icon: Palette },
-      { title: "Chatbot", url: "/admin/chat-flows", icon: MessageCircle },
-      { title: "Stats Chat", url: "/admin/chat-analytics", icon: BarChart3 },
-    ],
-  },
-  {
-    title: "Administration",
-    icon: Shield,
-    adminOnly: true,
-    items: [
-      { title: "Utilisateurs", url: "/admin/users", icon: Users },
-      { title: "BPF", url: "/admin/bpf", icon: Briefcase },
-      { title: "Automation", url: "/admin/automation", icon: Zap },
-      { title: "Catégories", url: "/admin/categories", icon: Tags },
-      { title: "Cat. Documents", url: "/admin/categories-documents", icon: FolderOpen },
-      { title: "Paramètres", url: "/admin/settings", icon: Settings },
-    ],
-  },
-  {
-    title: "Système",
-    icon: Lock,
-    superadminOnly: true,
-    items: [
-      { title: "Rôles & Permissions", url: "/admin/roles", icon: ShieldAlert },
-      { title: "Sécurité", url: "/admin/security", icon: Shield },
-      { title: "Cookies RGPD", url: "/admin/cookies", icon: Cookie },
       { title: "Redirections", url: "/admin/redirects", icon: ArrowRightLeft },
-    ],
-  },
-];
-
-// Menu limité pour les org_managers
-const orgManagerMenuCategories: MenuCategory[] = [
-  {
-    title: "Formations",
-    icon: GraduationCap,
-    items: [
-      { title: "Mes formations", url: "/admin/formations", icon: FolderOpen },
-      { title: "Sessions", url: "/admin/sessions", icon: Calendar },
-      { title: "Formateurs", url: "/admin/formateurs", icon: UserCog },
-      { title: "Clients", url: "/admin/clients", icon: Building2 },
-      { title: "Facturation", url: "/admin/facturation", icon: Receipt },
-      { title: "Analyse besoins", url: "/admin/analyse-besoins", icon: ClipboardList },
-    ],
-  },
-];
-
-// Menu limité pour les moderators
-const moderatorMenuCategories: MenuCategory[] = [
-  {
-    title: "Contenu",
-    icon: FileText,
-    items: [
-      { title: "Articles", url: "/admin/articles", icon: FileText },
-      { title: "FAQ", url: "/admin/faq", icon: HelpCircle },
-      { title: "Médias", url: "/admin/media", icon: Image },
-    ],
-  },
-  {
-    title: "Communication",
-    icon: Megaphone,
-    items: [
-      { title: "Messages", url: "/admin/contacts", icon: MessageSquare },
-      { title: "Notifications", url: "/admin/notifications", icon: Bell },
+      { title: "Cookies RGPD", url: "/admin/cookies", icon: Cookie },
+      { title: "Paramètres", url: "/admin/settings", icon: Settings },
     ],
   },
 ];
@@ -203,38 +84,15 @@ export function AdminSidebar() {
   const collapsed = state === "collapsed";
   const { effectiveRole } = useAuth();
 
-  // Permissions basées sur le rôle effectif
-  const effectiveIsSuperadmin = effectiveRole === "superadmin";
-  const effectiveIsAdmin = effectiveRole === "admin" || effectiveRole === "superadmin";
-  const effectiveIsOrgManager = effectiveRole === "org_manager";
-  const effectiveIsModerator = effectiveRole === "moderator";
+  // Map des badges pour chaque route
+  const badgeCounts: Record<string, number> = {};
 
-  // Map des badges pour chaque route (à connecter aux vraies données plus tard)
-  const badgeCounts: Record<string, number> = {
-    "/admin/contacts": 0,
-    "/admin/sessions": 0,
-  };
-
-  // Sélectionner les menus selon le rôle effectif
-  const menuCategories = useMemo(() => {
-    let categories: MenuCategory[] = [];
-
-    if (effectiveIsSuperadmin) {
-      categories = allMenuCategories;
-    } else if (effectiveIsAdmin) {
-      categories = allMenuCategories.filter(cat => !cat.superadminOnly);
-    } else if (effectiveIsOrgManager) {
-      categories = orgManagerMenuCategories;
-    } else if (effectiveIsModerator) {
-      categories = moderatorMenuCategories;
-    }
-
-    return categories;
-  }, [effectiveIsSuperadmin, effectiveIsAdmin, effectiveIsOrgManager, effectiveIsModerator]);
+  // Menu unique pour admin/superadmin
+  const menuCategories = adminMenuCategories;
 
   // Track which categories are open - toutes ouvertes par défaut
   const [openCategories, setOpenCategories] = useState<string[]>([
-    "Formations", "Contenu", "Communication", "Administration", "Système", "Développement"
+    "Contenu", "Configuration"
   ]);
 
   const isActive = (path: string) => {

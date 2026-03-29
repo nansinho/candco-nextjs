@@ -1,4 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
+import { createServiceClient, ORG_ID } from "@/lib/supabase/service";
+import { getPoleFromDomaine } from "@/lib/domaines";
 import { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
@@ -41,7 +42,7 @@ const polesConfig = [
     id: "securite-prevention",
     title: "Sécurité Prévention",
     description: "Développez vos compétences en prévention des risques et premiers secours. Formations certifiantes éligibles au financement OPCO.",
-    image: "/pole-security.jpg",
+    image: "/images/poles/pole-security.jpg",
     icon: Shield,
     color: "pole-securite",
   },
@@ -49,7 +50,7 @@ const polesConfig = [
     id: "petite-enfance",
     title: "Petite Enfance",
     description: "Accompagnez le développement des tout-petits avec bienveillance et pédagogies innovantes.",
-    image: "/pole-childhood.jpg",
+    image: "/images/poles/pole-childhood.jpg",
     icon: Baby,
     color: "pole-petite-enfance",
   },
@@ -57,7 +58,7 @@ const polesConfig = [
     id: "sante",
     title: "Santé",
     description: "Maîtrisez les gestes essentiels du soin et de l'urgence. Formations pratiques certifiées et reconnues.",
-    image: "/pole-health.jpg",
+    image: "/images/poles/pole-health.jpg",
     icon: HeartPulse,
     color: "pole-sante",
   },
@@ -96,41 +97,76 @@ const features = [
   },
 ];
 
-export default async function HomePage() {
-  const supabase = await createClient();
+// Revalidate every 60 seconds - changes from solution appear within 1 minute
+export const revalidate = 60;
 
-  // Paralléliser les requêtes Supabase pour de meilleures performances
+export default async function HomePage() {
+  const supabase = createServiceClient();
+
+  // Fetch formations from produits_formation (real schema)
   const [popularResult, poleCountsResult] = await Promise.all([
     supabase
-      .from("formations")
-      .select("id, title, subtitle, slug, duration, price, pole, pole_name, image_url")
-      .eq("active", true)
-      .eq("popular", true)
+      .from("produits_formation")
+      .select("id, intitule, sous_titre, slug, duree_heures, duree_jours, domaine, image_url, produit_tarifs(prix_ht, is_default)")
+      .eq("organisation_id", ORG_ID)
+      .eq("publie", true)
+      .eq("populaire", true)
       .limit(4),
     supabase
-      .from("formations")
-      .select("pole")
-      .eq("active", true),
+      .from("produits_formation")
+      .select("domaine")
+      .eq("organisation_id", ORG_ID)
+      .eq("publie", true),
   ]);
 
-  let formations = popularResult.data;
+  let rawFormations = popularResult.data;
 
-  // Si pas assez de formations populaires, récupérer les plus récentes
-  if (!formations || formations.length < 4) {
+  if (!rawFormations || rawFormations.length < 4) {
     const { data: recentFormations } = await supabase
-      .from("formations")
-      .select("id, title, subtitle, slug, duration, price, pole, pole_name, image_url")
-      .eq("active", true)
+      .from("produits_formation")
+      .select("id, intitule, sous_titre, slug, duree_heures, duree_jours, domaine, image_url, produit_tarifs(prix_ht, is_default)")
+      .eq("organisation_id", ORG_ID)
+      .eq("publie", true)
       .order("created_at", { ascending: false })
       .limit(4);
-    formations = recentFormations;
+    rawFormations = recentFormations;
   }
 
-  const poleCounts = poleCountsResult.data;
+  interface RawFormation {
+    id: string;
+    intitule: string;
+    sous_titre: string | null;
+    slug: string;
+    duree_heures: number | null;
+    duree_jours: number | null;
+    domaine: string;
+    image_url: string | null;
+    produit_tarifs: Array<{ prix_ht: number; is_default: boolean }> | null;
+  }
 
+  const formations = rawFormations?.map((f: RawFormation) => {
+    const defaultTarif = f.produit_tarifs?.find((t) => t.is_default) || f.produit_tarifs?.[0];
+    const poleInfo = getPoleFromDomaine(f.domaine);
+    const duree = f.duree_jours ? `${f.duree_jours}j` : f.duree_heures ? `${f.duree_heures}h` : "";
+
+    return {
+      id: f.id,
+      title: f.intitule,
+      subtitle: f.sous_titre || "",
+      slug: f.slug,
+      duration: duree,
+      price: defaultTarif ? `${defaultTarif.prix_ht}€ HT` : "",
+      pole: poleInfo.pole,
+      pole_name: poleInfo.pole_name,
+      image_url: f.image_url,
+    };
+  });
+
+  const poleCounts = poleCountsResult.data;
   const counts: Record<string, number> = {};
-  poleCounts?.forEach((f) => {
-    counts[f.pole] = (counts[f.pole] || 0) + 1;
+  poleCounts?.forEach((f: { domaine: string }) => {
+    const poleInfo = getPoleFromDomaine(f.domaine);
+    counts[poleInfo.pole] = (counts[poleInfo.pole] || 0) + 1;
   });
 
   return (
@@ -170,6 +206,7 @@ export default async function HomePage() {
                         src={pole.image}
                         alt={`Formation ${pole.title}`}
                         fill
+                        sizes="(max-width: 768px) 100vw, 33vw"
                         className="object-cover transition-all duration-700 group-hover:scale-110"
                       />
                       <div

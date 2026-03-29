@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls /var/www/candco-nextjs/public/*.svg /var/www/candco-nextjs/public/*.png)",
+      "Bash(apt list:*)",
+      "Bash(apt-get install:*)"
+    ]
+  }
+}
