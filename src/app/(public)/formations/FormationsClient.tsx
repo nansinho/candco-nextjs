@@ -70,9 +70,9 @@ interface FormationsClientProps {
 
 const poles = [
   { id: "all", name: "Toutes", icon: null, color: null, hex: null },
-  { id: "securite-prevention", name: "Sécurité", icon: Shield, color: "pole-securite" },
-  { id: "petite-enfance", name: "Petite Enfance", icon: Baby, color: "pole-petite-enfance" },
-  { id: "sante", name: "Santé", icon: HeartPulse, color: "pole-sante" },
+  { id: "securite-prevention", name: "Sécurité", icon: Shield, color: "pole-securite", bg: "#A82424" },
+  { id: "petite-enfance", name: "Petite Enfance", icon: Baby, color: "pole-petite-enfance", bg: "#2D867E" },
+  { id: "sante", name: "Santé", icon: HeartPulse, color: "pole-sante", bg: "#507395" },
 ];
 
 
@@ -543,6 +543,7 @@ export default function FormationsClient({
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                               {catFormations.map((formation, index) => {
                                 const cssVar = pole.color || "primary";
+                                const cardBg = pole.bg || "#151F2D";
                                 const sessionInfo = sessionCounts[formation.id];
                                 const hasActiveSessions = sessionInfo && sessionInfo.count > 0;
 
@@ -560,7 +561,7 @@ export default function FormationsClient({
                                     >
                                       <article
                                         className="rounded-2xl overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full flex flex-col border"
-                                        style={{ backgroundColor: `hsl(var(--${cssVar}) / 0.08)`, borderColor: `hsl(var(--${cssVar}) / 0.2)` }}
+                                        style={{ backgroundColor: cardBg, borderColor: `hsl(var(--${cssVar}) / 0.3)` }}
                                       >
                                         {/* Image */}
                                         <div className="relative aspect-[3/1] overflow-hidden">
