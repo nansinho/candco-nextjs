@@ -100,18 +100,12 @@ export function ContactClient() {
       <section className="relative overflow-hidden min-h-[60vh] flex items-center">
         {/* Background image + overlay */}
         <div className="absolute inset-0">
-          {["/images/fonds_sections/fond_contact.jpg", "/images/fonds_sections/fond_contact_2.jpg"].map((src, i) => (
-            <div
-              key={src}
-              className="absolute inset-0"
-              style={{
-                animation: "heroSlideKB 10s ease-in-out infinite",
-                animationDelay: `${i * 5}s`,
-              }}
-            >
-              <Image src={src} alt="" fill sizes="100vw" className="object-cover object-center" priority={i === 0} />
-            </div>
-          ))}
+          <div className="absolute inset-0" style={{ animation: "heroSlide1 12s ease-in-out infinite" }}>
+            <Image src="/images/fonds_sections/fond_contact.jpg" alt="" fill sizes="100vw" className="object-cover object-center" priority />
+          </div>
+          <div className="absolute inset-0" style={{ animation: "heroSlide2 12s ease-in-out infinite" }}>
+            <Image src="/images/fonds_sections/fond_contact_2.jpg" alt="" fill sizes="100vw" className="object-cover object-center" />
+          </div>
           <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(26,111,170,0.88) 0%, rgba(31,98,142,0.9) 50%, rgba(23,86,125,0.93) 100%)" }} />
         </div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 sm:pt-40 pb-20 sm:pb-28 text-center">

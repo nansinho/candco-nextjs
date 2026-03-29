@@ -333,8 +333,9 @@ export default function PublicLayout({
           body, body * { font-family: var(--font-jakarta), 'Plus Jakarta Sans', system-ui, sans-serif !important; }
           @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
           @keyframes heroKenBurns { 0% { transform: scale(1) translate(0,0); } 100% { transform: scale(1.12) translate(-1.5%,-1%); } }
-          @keyframes kenBurnsLoop { 0% { transform: scale(1) translate(0,0); } 50% { transform: scale(1.15) translate(-2%,-1.5%); } 100% { transform: scale(1) translate(0,0); } }
-          @keyframes heroSlideKB { 0%{opacity:0;transform:scale(1)} 8%{opacity:1} 42%{opacity:1;transform:scale(1.12) translate(-1.5%,-1%)} 50%{opacity:0;transform:scale(1.12)} 100%{opacity:0;transform:scale(1)} }
+          @keyframes kenBurnsLoop { 0% { transform: scale(1.08) translate(-1%,-0.5%); } 50% { transform: scale(1.15) translate(-2%,-1.5%); } 100% { transform: scale(1.08) translate(-1%,-0.5%); } }
+          @keyframes heroSlide1 { 0%{opacity:1;transform:scale(1.05)} 45%{opacity:1;transform:scale(1.15) translate(-1.5%,-1%)} 50%{opacity:0;transform:scale(1.15)} 95%{opacity:0;transform:scale(1.05)} 100%{opacity:1;transform:scale(1.05)} }
+          @keyframes heroSlide2 { 0%{opacity:0;transform:scale(1.05)} 45%{opacity:0;transform:scale(1.05)} 50%{opacity:1;transform:scale(1.06)} 95%{opacity:1;transform:scale(1.15) translate(-1.5%,-1%)} 100%{opacity:0;transform:scale(1.15)} }
           @keyframes slideProgress { 0% { width: 0%; } 100% { width: 100%; } }
           @keyframes fadeSlideUp { 0% { opacity: 0; transform: translateY(20px); } 100% { opacity: 1; transform: translateY(0); } }
           @media (prefers-reduced-motion: reduce) { body * { animation: none !important; } }
