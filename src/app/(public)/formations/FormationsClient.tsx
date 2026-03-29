@@ -70,9 +70,9 @@ interface FormationsClientProps {
 
 const poles = [
   { id: "all", name: "Toutes", icon: null, color: null, hex: null },
-  { id: "securite-prevention", name: "Sécurité", icon: Shield, color: "pole-securite", hex: "#8B1A1A" },
-  { id: "petite-enfance", name: "Petite Enfance", icon: Baby, color: "pole-petite-enfance", hex: "#2A9D8F" },
-  { id: "sante", name: "Santé", icon: HeartPulse, color: "pole-sante", hex: "#4A6FA5" },
+  { id: "securite-prevention", name: "Sécurité", icon: Shield, color: "pole-securite" },
+  { id: "petite-enfance", name: "Petite Enfance", icon: Baby, color: "pole-petite-enfance" },
+  { id: "sante", name: "Santé", icon: HeartPulse, color: "pole-sante" },
 ];
 
 
@@ -542,7 +542,7 @@ export default function FormationsClient({
                             {/* Formations Grid */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                               {catFormations.map((formation, index) => {
-                                const accent = pole.hex || "#1F628E";
+                                const cssVar = pole.color || "primary";
                                 const sessionInfo = sessionCounts[formation.id];
                                 const hasActiveSessions = sessionInfo && sessionInfo.count > 0;
 
@@ -560,7 +560,7 @@ export default function FormationsClient({
                                     >
                                       <article
                                         className="rounded-2xl overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full flex flex-col border"
-                                        style={{ backgroundColor: `${accent}15`, borderColor: `${accent}35` }}
+                                        style={{ backgroundColor: `hsl(var(--${cssVar}) / 0.08)`, borderColor: `hsl(var(--${cssVar}) / 0.2)` }}
                                       >
                                         {/* Image */}
                                         <div className="relative aspect-[3/1] overflow-hidden">
@@ -573,7 +573,7 @@ export default function FormationsClient({
                                           />
                                           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                                           <div className="absolute bottom-3 left-3 flex items-center gap-2">
-                                            <span className="text-[11px] font-bold px-2.5 py-1 rounded-full text-white shadow-lg" style={{ backgroundColor: accent }}>{formation.pole_name}</span>
+                                            <span className="text-[11px] font-bold px-2.5 py-1 rounded-full text-white shadow-lg" style={{ backgroundColor: `hsl(var(--${cssVar}))` }}>{formation.pole_name}</span>
                                             {formation.duration && (
                                               <span className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-sm text-white flex items-center gap-1">
                                                 <Clock className="w-3 h-3" /> {formation.duration}
@@ -581,7 +581,7 @@ export default function FormationsClient({
                                             )}
                                           </div>
                                           {formation.popular && (
-                                            <span className="absolute top-3 right-3 text-[10px] font-bold px-2 py-1 rounded-full text-white" style={{ backgroundColor: accent }}>
+                                            <span className="absolute top-3 right-3 text-[10px] font-bold px-2 py-1 rounded-full text-white" style={{ backgroundColor: `hsl(var(--${cssVar}))` }}>
                                               Populaire
                                             </span>
                                           )}
@@ -612,9 +612,9 @@ export default function FormationsClient({
                                             </div>
                                           )}
 
-                                          <div className="flex items-center justify-between mt-auto pt-3" style={{ borderTop: `1px solid ${accent}30` }}>
+                                          <div className="flex items-center justify-between mt-auto pt-3" style={{ borderTop: `1px solid hsl(var(--${cssVar}) / 0.15)` }}>
                                             <p className="text-lg font-extrabold text-white">{formation.price}</p>
-                                            <span className="text-xs font-bold flex items-center gap-1" style={{ color: accent }}>
+                                            <span className="text-xs font-bold flex items-center gap-1" style={{ color: `hsl(var(--${cssVar}))` }}>
                                               Détails <ArrowRight className="w-3 h-3" />
                                             </span>
                                           </div>
