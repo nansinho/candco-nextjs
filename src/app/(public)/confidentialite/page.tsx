@@ -31,14 +31,15 @@ const sections = [
     content: (
       <>
         Le responsable du traitement des données est :<br />
-        <strong className="text-foreground">C&Co Formation</strong>
+        <strong style={{ color: "#fff" }}>C&Co Formation</strong>
         <br />
         340 chemin du plan marseillais, 13320 Bouc-bel-air
         <br />
         Email :{" "}
         <a
           href="mailto:contact@candco.fr"
-          className="text-primary hover:underline"
+          style={{ color: "#F8A991" }}
+          className="hover:underline"
         >
           contact@candco.fr
         </a>
@@ -112,7 +113,8 @@ const sections = [
           Pour exercer ces droits, contactez-nous à :{" "}
           <a
             href="mailto:contact@candco.fr"
-            className="text-primary hover:underline"
+            style={{ color: "#F8A991" }}
+            className="hover:underline"
           >
             contact@candco.fr
           </a>
@@ -128,7 +130,11 @@ const sections = [
         Notre site utilise des cookies pour améliorer votre expérience. Vous
         pouvez gérer vos préférences via notre bandeau de consentement aux
         cookies. Pour plus d'informations, consultez notre{" "}
-        <Link href="/cookies" className="text-primary hover:underline">
+        <Link
+          href="/cookies"
+          style={{ color: "#F8A991" }}
+          className="hover:underline"
+        >
           Politique de cookies
         </Link>
         .
@@ -145,7 +151,8 @@ const sections = [
         Email :{" "}
         <a
           href="mailto:contact@candco.fr"
-          className="text-primary hover:underline"
+          style={{ color: "#F8A991" }}
+          className="hover:underline"
         >
           contact@candco.fr
         </a>
@@ -159,44 +166,63 @@ const sections = [
 
 export default function ConfidentialitePage() {
   return (
-    <>
+    <div style={{ backgroundColor: "#0f1923" }}>
       {/* Hero Section */}
-      <section className="section-padding border-b border-border/50">
+      <section
+        className="py-16 md:py-24"
+        style={{
+          background:
+            "linear-gradient(180deg, #1a6faa 0%, #1F628E 40%, #17567d 60%, #151F2D 100%)",
+        }}
+      >
         <div className="container-custom">
           {/* Breadcrumb */}
-          <nav className="mb-8 text-sm text-muted-foreground">
+          <nav className="mb-8 text-sm">
             <ol className="flex items-center gap-2">
               <li>
-                <Link href="/" className="hover:text-primary transition-colors">
+                <Link
+                  href="/"
+                  style={{ color: "rgba(255,255,255,0.5)" }}
+                  className="hover:underline transition-colors"
+                >
                   Accueil
                 </Link>
               </li>
-              <li>/</li>
-              <li className="text-foreground">Confidentialité</li>
+              <li style={{ color: "rgba(255,255,255,0.3)" }}>/</li>
+              <li style={{ color: "#fff" }}>Confidentialité</li>
             </ol>
           </nav>
 
           <div className="max-w-3xl">
-            <p className="text-sm text-muted-foreground mb-4 tracking-widest uppercase">
+            <p
+              className="text-sm mb-4 tracking-widest uppercase"
+              style={{ color: "rgba(255,255,255,0.5)" }}
+            >
               Protection des données
             </p>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-light leading-tight mb-6">
+            <h1
+              className="text-3xl sm:text-4xl md:text-5xl font-light leading-tight mb-6"
+              style={{ color: "#fff" }}
+            >
               Politique de{" "}
-              <span className="text-primary">confidentialité</span>
+              <span style={{ color: "#F8A991" }}>confidentialité</span>
             </h1>
-            <p className="text-lg text-muted-foreground">
+            <p className="text-lg" style={{ color: "rgba(255,255,255,0.6)" }}>
               Découvrez comment nous protégeons vos données personnelles
               conformément au RGPD.
             </p>
-            <p className="text-sm text-muted-foreground mt-4">
-              Dernière mise à jour : Janvier 2026
+            <p
+              className="text-sm mt-4"
+              style={{ color: "rgba(255,255,255,0.4)" }}
+            >
+              Dernière mise à jour : Mars 2026
             </p>
           </div>
         </div>
       </section>
 
       {/* Content */}
-      <section className="section-padding">
+      <section className="py-16 md:py-24">
         <div className="container-custom max-w-4xl">
           <div className="space-y-6">
             {sections.map((section) => {
@@ -204,17 +230,35 @@ export default function ConfidentialitePage() {
               return (
                 <div
                   key={section.title}
-                  className="bg-card border border-border/50 rounded-2xl p-6 md:p-8 hover:border-primary/30 transition-colors"
+                  className="rounded-2xl p-6 md:p-8 transition-colors"
+                  style={{
+                    backgroundColor: "#151F2D",
+                    border: "1px solid rgba(255,255,255,0.06)",
+                  }}
                 >
                   <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <Icon className="w-6 h-6 text-primary" />
+                    <div
+                      className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                      style={{
+                        backgroundColor: "rgba(31,98,142,0.15)",
+                      }}
+                    >
+                      <Icon
+                        className="w-6 h-6"
+                        style={{ color: "#1F628E" }}
+                      />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h2 className="text-xl font-bold mb-4 text-foreground">
+                      <h2
+                        className="text-xl font-bold mb-4"
+                        style={{ color: "#fff" }}
+                      >
                         {section.title}
                       </h2>
-                      <div className="text-muted-foreground leading-relaxed">
+                      <div
+                        className="leading-relaxed"
+                        style={{ color: "rgba(255,255,255,0.6)" }}
+                      >
                         {section.content}
                       </div>
                     </div>
@@ -225,6 +269,6 @@ export default function ConfidentialitePage() {
           </div>
         </div>
       </section>
-    </>
+    </div>
   );
 }

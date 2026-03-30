@@ -11,6 +11,7 @@ import {
   Shield,
   Baby,
   HeartPulse,
+  Briefcase,
   Search,
   Map,
   ExternalLink,
@@ -56,22 +57,25 @@ const poleConfig = [
     id: "securite-prevention",
     name: "Sécurité Prévention",
     icon: Shield,
-    color: "text-orange-500",
-    bgColor: "bg-orange-500/10",
+    color: "#A82424",
   },
   {
     id: "petite-enfance",
     name: "Petite Enfance",
     icon: Baby,
-    color: "text-pink-500",
-    bgColor: "bg-pink-500/10",
+    color: "#2D867E",
   },
   {
     id: "sante",
     name: "Santé",
     icon: HeartPulse,
-    color: "text-emerald-500",
-    bgColor: "bg-emerald-500/10",
+    color: "#507395",
+  },
+  {
+    id: "entrepreneuriat",
+    name: "Entrepreneuriat",
+    icon: Briefcase,
+    color: "#1F628E",
   },
 ];
 
@@ -105,59 +109,82 @@ export default async function SitemapPage() {
   const totalArticles = articles?.length || 0;
 
   return (
-    <>
+    <div style={{ backgroundColor: "#0f1923" }}>
       {/* Hero Section */}
-      <section className="relative py-16 lg:py-20 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent" />
+      <section
+        className="relative py-16 lg:py-20 overflow-hidden"
+        style={{
+          background:
+            "linear-gradient(180deg, #1a6faa 0%, #1F628E 40%, #17567d 60%, #151F2D 100%)",
+        }}
+      >
         <div className="container-custom relative">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
             <div className="max-w-2xl">
-              <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-                <Link href="/" className="hover:text-foreground transition-colors">
+              <nav className="flex items-center gap-2 text-sm mb-4">
+                <Link href="/" className="hover:underline transition-colors" style={{ color: "rgba(255,255,255,0.5)" }}>
                   Accueil
                 </Link>
-                <span>/</span>
-                <span className="text-foreground">Plan du site</span>
+                <span style={{ color: "rgba(255,255,255,0.5)" }}>/</span>
+                <span style={{ color: "#fff" }}>Plan du site</span>
               </nav>
-              <p className="text-sm font-medium text-primary uppercase tracking-wider mb-2">
+              <p className="text-sm font-medium uppercase tracking-wider mb-2" style={{ color: "#F8A991" }}>
                 Navigation
               </p>
-              <h1 className="text-4xl lg:text-5xl font-bold mb-4">Plan du site.</h1>
-              <p className="text-lg text-muted-foreground">
+              <h1 className="text-4xl lg:text-5xl font-bold mb-4" style={{ color: "#fff" }}>
+                Plan du <span style={{ color: "#F8A991" }}>site.</span>
+              </h1>
+              <p className="text-lg" style={{ color: "rgba(255,255,255,0.6)" }}>
                 Retrouvez facilement toutes vos pages de notre site. Navigation
                 rapide vers nos formations, articles et informations pratiques.
               </p>
-              <div className="flex flex-wrap gap-4 mt-6 text-sm">
+              <div className="flex flex-wrap gap-4 mt-6 text-sm" style={{ color: "rgba(255,255,255,0.6)" }}>
                 <span className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-primary" />
-                  <strong>{totalFormations}</strong> formations
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: "#1a6faa" }} />
+                  <strong style={{ color: "#fff" }}>{totalFormations}</strong> formations
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-blue-500" />
-                  <strong>{totalArticles}</strong> articles
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: "#507395" }} />
+                  <strong style={{ color: "#fff" }}>{totalArticles}</strong> articles
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                  <strong>6</strong> sections
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: "#2D867E" }} />
+                  <strong style={{ color: "#fff" }}>6</strong> sections
                 </span>
               </div>
             </div>
-            <div className="hidden lg:flex w-32 h-32 rounded-2xl bg-primary/10 items-center justify-center">
-              <Map className="w-16 h-16 text-primary" />
+            <div
+              className="hidden lg:flex w-32 h-32 rounded-2xl items-center justify-center"
+              style={{ backgroundColor: "rgba(31,98,142,0.15)" }}
+            >
+              <Map className="w-16 h-16" style={{ color: "#1F628E" }} />
             </div>
           </div>
         </div>
       </section>
 
       {/* Search Hint */}
-      <section className="pb-8">
+      <section className="pb-8 pt-8">
         <div className="container-custom">
-          <div className="flex items-center gap-3 p-4 rounded-xl bg-card border border-border">
-            <Search className="w-5 h-5 text-muted-foreground" />
-            <span className="text-muted-foreground">
+          <div
+            className="flex items-center gap-3 p-4 rounded-xl"
+            style={{
+              backgroundColor: "#151F2D",
+              border: "1px solid rgba(255,255,255,0.06)",
+            }}
+          >
+            <Search className="w-5 h-5" style={{ color: "rgba(255,255,255,0.5)" }} />
+            <span style={{ color: "rgba(255,255,255,0.5)" }}>
               Rechercher une page, une formation, un article...
             </span>
-            <kbd className="ml-auto hidden sm:inline-flex h-6 items-center gap-1 rounded border border-border bg-secondary px-2 font-mono text-xs text-muted-foreground">
+            <kbd
+              className="ml-auto hidden sm:inline-flex h-6 items-center gap-1 rounded px-2 font-mono text-xs"
+              style={{
+                backgroundColor: "rgba(255,255,255,0.06)",
+                border: "1px solid rgba(255,255,255,0.06)",
+                color: "rgba(255,255,255,0.5)",
+              }}
+            >
               <span className="text-xs">⌘</span>K
             </kbd>
           </div>
@@ -165,16 +192,23 @@ export default async function SitemapPage() {
       </section>
 
       {/* All Pages Section */}
-      <section className="section-padding bg-card border-y border-border">
+      <section
+        className="section-padding"
+        style={{
+          backgroundColor: "#151F2D",
+          borderTop: "1px solid rgba(255,255,255,0.06)",
+          borderBottom: "1px solid rgba(255,255,255,0.06)",
+        }}
+      >
         <div className="container-custom">
           <div className="mb-12">
-            <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-2">
+            <p className="text-sm font-medium uppercase tracking-wider mb-2" style={{ color: "rgba(255,255,255,0.5)" }}>
               Toutes nos pages
             </p>
-            <h2 className="text-2xl lg:text-3xl font-semibold">
+            <h2 className="text-2xl lg:text-3xl font-semibold" style={{ color: "#fff" }}>
               Explorez l'ensemble du site.
             </h2>
-            <p className="text-muted-foreground mt-2">
+            <p className="mt-2" style={{ color: "rgba(255,255,255,0.6)" }}>
               Naviguez facilement à travers nos différentes sections : formations
               professionnelles, articles de blog, informations pratiques et bien plus
               encore.
@@ -185,17 +219,21 @@ export default async function SitemapPage() {
             {/* Accueil */}
             <div>
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <Home className="w-5 h-5 text-primary" />
+                <div
+                  className="w-10 h-10 rounded-lg flex items-center justify-center"
+                  style={{ backgroundColor: "rgba(31,98,142,0.15)" }}
+                >
+                  <Home className="w-5 h-5" style={{ color: "#1F628E" }} />
                 </div>
-                <h3 className="font-semibold">Accueil</h3>
+                <h3 className="font-semibold" style={{ color: "#fff" }}>Accueil</h3>
               </div>
               <ul className="space-y-2">
                 {staticPages.accueil.map((page) => (
                   <li key={page.href}>
                     <Link
                       href={page.href}
-                      className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                      className="text-sm hover:underline transition-colors"
+                      style={{ color: "#F8A991" }}
                     >
                       {page.name}
                     </Link>
@@ -207,17 +245,21 @@ export default async function SitemapPage() {
             {/* Formations */}
             <div>
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                  <BookOpen className="w-5 h-5 text-blue-500" />
+                <div
+                  className="w-10 h-10 rounded-lg flex items-center justify-center"
+                  style={{ backgroundColor: "rgba(31,98,142,0.15)" }}
+                >
+                  <BookOpen className="w-5 h-5" style={{ color: "#1F628E" }} />
                 </div>
-                <h3 className="font-semibold">Formations</h3>
+                <h3 className="font-semibold" style={{ color: "#fff" }}>Formations</h3>
               </div>
               <ul className="space-y-2">
                 {staticPages.formations.map((page) => (
                   <li key={page.href}>
                     <Link
                       href={page.href}
-                      className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                      className="text-sm hover:underline transition-colors"
+                      style={{ color: "#F8A991" }}
                     >
                       {page.name}
                     </Link>
@@ -229,17 +271,21 @@ export default async function SitemapPage() {
             {/* Entreprise */}
             <div>
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                  <Building2 className="w-5 h-5 text-amber-500" />
+                <div
+                  className="w-10 h-10 rounded-lg flex items-center justify-center"
+                  style={{ backgroundColor: "rgba(31,98,142,0.15)" }}
+                >
+                  <Building2 className="w-5 h-5" style={{ color: "#1F628E" }} />
                 </div>
-                <h3 className="font-semibold">Entreprise</h3>
+                <h3 className="font-semibold" style={{ color: "#fff" }}>Entreprise</h3>
               </div>
               <ul className="space-y-2">
                 {staticPages.entreprise.map((page) => (
                   <li key={page.href}>
                     <Link
                       href={page.href}
-                      className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                      className="text-sm hover:underline transition-colors"
+                      style={{ color: "#F8A991" }}
                     >
                       {page.name}
                     </Link>
@@ -251,17 +297,21 @@ export default async function SitemapPage() {
             {/* Blog */}
             <div>
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
-                  <FileText className="w-5 h-5 text-purple-500" />
+                <div
+                  className="w-10 h-10 rounded-lg flex items-center justify-center"
+                  style={{ backgroundColor: "rgba(31,98,142,0.15)" }}
+                >
+                  <FileText className="w-5 h-5" style={{ color: "#1F628E" }} />
                 </div>
-                <h3 className="font-semibold">Blog</h3>
+                <h3 className="font-semibold" style={{ color: "#fff" }}>Blog</h3>
               </div>
               <ul className="space-y-2 max-h-64 overflow-y-auto pr-2">
                 {staticPages.blog.map((page) => (
                   <li key={page.href}>
                     <Link
                       href={page.href}
-                      className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                      className="text-sm hover:underline transition-colors"
+                      style={{ color: "#F8A991" }}
                     >
                       {page.name}
                     </Link>
@@ -271,7 +321,8 @@ export default async function SitemapPage() {
                   <li key={article.id}>
                     <Link
                       href={`/blog/${article.slug}`}
-                      className="text-sm text-muted-foreground hover:text-primary transition-colors line-clamp-1"
+                      className="text-sm hover:underline transition-colors line-clamp-1"
+                      style={{ color: "rgba(255,255,255,0.6)" }}
                     >
                       {article.title}
                     </Link>
@@ -283,17 +334,21 @@ export default async function SitemapPage() {
             {/* Espace Personnel */}
             <div>
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-lg bg-cyan-500/10 flex items-center justify-center">
-                  <User className="w-5 h-5 text-cyan-500" />
+                <div
+                  className="w-10 h-10 rounded-lg flex items-center justify-center"
+                  style={{ backgroundColor: "rgba(31,98,142,0.15)" }}
+                >
+                  <User className="w-5 h-5" style={{ color: "#1F628E" }} />
                 </div>
-                <h3 className="font-semibold">Espace Personnel</h3>
+                <h3 className="font-semibold" style={{ color: "#fff" }}>Espace Personnel</h3>
               </div>
               <ul className="space-y-2">
                 {staticPages.espace.map((page) => (
                   <li key={page.href}>
                     <Link
                       href={page.href}
-                      className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                      className="text-sm hover:underline transition-colors"
+                      style={{ color: "#F8A991" }}
                     >
                       {page.name}
                     </Link>
@@ -305,17 +360,21 @@ export default async function SitemapPage() {
             {/* Legal */}
             <div>
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-lg bg-slate-500/10 flex items-center justify-center">
-                  <Scale className="w-5 h-5 text-slate-500" />
+                <div
+                  className="w-10 h-10 rounded-lg flex items-center justify-center"
+                  style={{ backgroundColor: "rgba(31,98,142,0.15)" }}
+                >
+                  <Scale className="w-5 h-5" style={{ color: "#1F628E" }} />
                 </div>
-                <h3 className="font-semibold">Informations Légales</h3>
+                <h3 className="font-semibold" style={{ color: "#fff" }}>Informations Légales</h3>
               </div>
               <ul className="space-y-2">
                 {staticPages.legal.map((page) => (
                   <li key={page.href}>
                     <Link
                       href={page.href}
-                      className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                      className="text-sm hover:underline transition-colors"
+                      style={{ color: "#F8A991" }}
                     >
                       {page.name}
                     </Link>
@@ -331,30 +390,33 @@ export default async function SitemapPage() {
       <section className="section-padding">
         <div className="container-custom">
           <div className="mb-12">
-            <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-2">
+            <p className="text-sm font-medium uppercase tracking-wider mb-2" style={{ color: "rgba(255,255,255,0.5)" }}>
               Nos pôles de formation
             </p>
-            <h2 className="text-2xl lg:text-3xl font-semibold">
+            <h2 className="text-2xl lg:text-3xl font-semibold" style={{ color: "#fff" }}>
               Formations par domaine.
             </h2>
-            <p className="text-muted-foreground mt-2">
+            <p className="mt-2" style={{ color: "rgba(255,255,255,0.6)" }}>
               Découvrez l'ensemble de nos formations organisées par pôle d'expertise.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {poleConfig.map((pole) => {
               const Icon = pole.icon;
               const poleFormations = formationsByPole[pole.id] || [];
               return (
                 <div key={pole.id}>
                   <div className="flex items-center gap-3 mb-4">
-                    <div className={`w-10 h-10 rounded-lg ${pole.bgColor} flex items-center justify-center`}>
-                      <Icon className={`w-5 h-5 ${pole.color}`} />
+                    <div
+                      className="w-10 h-10 rounded-lg flex items-center justify-center"
+                      style={{ backgroundColor: `${pole.color}20` }}
+                    >
+                      <Icon className="w-5 h-5" style={{ color: pole.color }} />
                     </div>
                     <div>
-                      <h3 className="font-semibold">{pole.name}</h3>
-                      <p className="text-xs text-muted-foreground">
+                      <h3 className="font-semibold" style={{ color: "#fff" }}>{pole.name}</h3>
+                      <p className="text-xs" style={{ color: "rgba(255,255,255,0.5)" }}>
                         {poleFormations.length} formations
                       </p>
                     </div>
@@ -364,14 +426,15 @@ export default async function SitemapPage() {
                       <li key={formation.id}>
                         <Link
                           href={`/formations/${formation.pole}/${formation.slug || formation.id}`}
-                          className="text-sm text-muted-foreground hover:text-primary transition-colors line-clamp-1"
+                          className="text-sm hover:underline transition-colors line-clamp-1"
+                          style={{ color: "rgba(255,255,255,0.6)" }}
                         >
                           {formation.title}
                         </Link>
                       </li>
                     ))}
                     {poleFormations.length === 0 && (
-                      <li className="text-sm text-muted-foreground italic">
+                      <li className="text-sm italic" style={{ color: "rgba(255,255,255,0.4)" }}>
                         Aucune formation disponible
                       </li>
                     )}
@@ -384,16 +447,23 @@ export default async function SitemapPage() {
       </section>
 
       {/* XML Sitemap Link */}
-      <section className="py-12 bg-card border-t border-border">
+      <section
+        className="py-12"
+        style={{
+          backgroundColor: "#151F2D",
+          borderTop: "1px solid rgba(255,255,255,0.06)",
+        }}
+      >
         <div className="container-custom">
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-center">
-            <div className="flex items-center gap-2 text-muted-foreground">
+            <div className="flex items-center gap-2" style={{ color: "rgba(255,255,255,0.5)" }}>
               <Bot className="w-5 h-5" />
               <span>Vous êtes un robot ou un moteur de recherche ?</span>
             </div>
             <Link
               href="/plan-du-site/xml"
-              className="inline-flex items-center gap-2 text-primary hover:underline font-medium"
+              className="inline-flex items-center gap-2 hover:underline font-medium"
+              style={{ color: "#F8A991" }}
             >
               Consultez notre sitemap XML
               <ExternalLink className="w-4 h-4" />
@@ -401,6 +471,6 @@ export default async function SitemapPage() {
           </div>
         </div>
       </section>
-    </>
+    </div>
   );
 }
