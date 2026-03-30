@@ -19,7 +19,7 @@ const defaultSlides: HeroSlide[] = [
   {
     title: "Formation Sécurité Incendie",
     category: "Sécurité",
-    category_color: "#e74c3c",
+    category_color: "#A82424",
     date: "Avril 2026",
     image_url: "/images/poles/pole-security.jpg",
     href: "/formations",
@@ -27,7 +27,7 @@ const defaultSlides: HeroSlide[] = [
   {
     title: "CAP Accompagnant Éducatif",
     category: "Petite Enfance",
-    category_color: "#1abc9c",
+    category_color: "#2D867E",
     date: "Mai 2026",
     image_url: "/images/poles/pole-childhood.jpg",
     href: "/formations",
@@ -35,7 +35,7 @@ const defaultSlides: HeroSlide[] = [
   {
     title: "Formation Gestes d'Urgence",
     category: "Santé",
-    category_color: "#3498db",
+    category_color: "#507395",
     date: "Avril 2026",
     image_url: "/images/poles/pole-health.jpg",
     href: "/formations",

@@ -10,9 +10,9 @@ import Autoplay from "embla-carousel-autoplay";
 interface Formation { id: string; title: string; subtitle: string; slug: string; duration: string; price: string; pole: string; pole_name: string; image_url: string | null; }
 
 const colors: Record<string, string> = {
-  "securite-prevention": "#e74c3c",
-  "petite-enfance": "#1abc9c",
-  sante: "#3498db",
+  "securite-prevention": "#A82424",
+  "petite-enfance": "#2D867E",
+  sante: "#507395",
 };
 
 const defaultImages: Record<string, string> = {

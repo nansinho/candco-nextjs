@@ -17,9 +17,9 @@ const iconMap: Record<string, LucideIcon> = {
 };
 
 const accents: Record<string, string> = {
-  "pole-securite": "#e74c3c",
-  "pole-petite-enfance": "#1abc9c",
-  "pole-sante": "#3498db",
+  "pole-securite": "#A82424",
+  "pole-petite-enfance": "#2D867E",
+  "pole-sante": "#507395",
   "primary": "#1F628E",
 };
 

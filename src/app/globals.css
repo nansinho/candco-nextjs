@@ -42,11 +42,11 @@
     --coral-muted: 16 80% 50%;
 
     /* Pole colors - Dark mode */
-    --pole-securite: 0 65% 35%;
+    --pole-securite: 0 65% 40%;
     --pole-securite-foreground: 0 0% 100%;
-    --pole-petite-enfance: 175 45% 30%;
+    --pole-petite-enfance: 175 49% 35%;
     --pole-petite-enfance-foreground: 0 0% 100%;
-    --pole-sante: 210 25% 40%;
+    --pole-sante: 210 30% 45%;
     --pole-sante-foreground: 0 0% 100%;
 
     /* Sidebar */

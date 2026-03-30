@@ -9,11 +9,13 @@ import {
   Shield,
   Baby,
   HeartPulse,
+  Briefcase,
   Clock,
   Users,
   Award,
   BookOpen,
   CheckCircle,
+  Star,
 } from "lucide-react";
 
 type Props = {
@@ -31,6 +33,7 @@ const polesConfig: Record<
     image: string;
     icon: typeof Shield;
     cssVar: string;
+    hex: string;
     features: { title: string; description: string }[];
     certifications: string[];
   }
@@ -39,12 +42,13 @@ const polesConfig: Record<
     title: "Sécurité & Prévention",
     subtitle: "Protéger, prévenir, intervenir",
     description:
-      "Formations certifiantes en sécurité au travail : SST, prévention incendie, habilitations électriques et gestes d'urgence.",
+      "Formations certifiantes en sécurité au travail : SST, prévention incendie, habilitations électriques et gestes d’urgence.",
     longDescription:
       "Notre pôle Sécurité & Prévention vous accompagne dans la maîtrise des risques professionnels. Des formations certifiantes et reconnues pour devenir acteur de la sécurité dans votre entreprise.",
     image: "/images/poles/pole-security.jpg",
     icon: Shield,
     cssVar: "pole-securite",
+    hex: "#A82424",
     features: [
       {
         title: "Formateurs experts",
@@ -67,14 +71,15 @@ const polesConfig: Record<
   },
   "petite-enfance": {
     title: "Petite Enfance",
-    subtitle: "Accompagner l'éveil et le développement",
+    subtitle: "Accompagner l’éveil et le développement",
     description:
-      "Formations en petite enfance : éveil, pédagogies alternatives, accompagnement du développement de l'enfant.",
+      "Formations en petite enfance : éveil, pédagogies alternatives, accompagnement du développement de l’enfant.",
     longDescription:
-      "Notre pôle Petite Enfance forme les professionnels à l'accompagnement bienveillant des tout-petits. Découvrez nos formations sur les pédagogies alternatives, l'éveil sensoriel et le développement de l'enfant.",
+      "Notre pôle Petite Enfance forme les professionnels à l’accompagnement bienveillant des tout-petits. Découvrez nos formations sur les pédagogies alternatives, l’éveil sensoriel et le développement de l’enfant.",
     image: "/images/poles/pole-childhood.jpg",
     icon: Baby,
     cssVar: "pole-petite-enfance",
+    hex: "#2D867E",
     features: [
       {
         title: "Pédagogies alternatives",
@@ -99,20 +104,21 @@ const polesConfig: Record<
     title: "Santé",
     subtitle: "Soigner, accompagner, prévenir",
     description:
-      "Formations santé : gestes d'urgence, accompagnement des patients, soins et prévention pour les professionnels de santé.",
+      "Formations santé : gestes d’urgence, accompagnement des patients, soins et prévention pour les professionnels de santé.",
     longDescription:
       "Notre pôle Santé propose des formations adaptées aux professionnels du secteur médical et paramédical. Maîtrisez les gestes essentiels et développez vos compétences en accompagnement des patients.",
     image: "/images/poles/pole-health.jpg",
     icon: HeartPulse,
     cssVar: "pole-sante",
+    hex: "#507395",
     features: [
       {
-        title: "Gestes d'urgence",
+        title: "Gestes d’urgence",
         description: "AFGSU, premiers secours",
       },
       {
         title: "Accompagnement patient",
-        description: "Relation d'aide et communication",
+        description: "Relation d’aide et communication",
       },
       {
         title: "Prévention",
@@ -123,7 +129,24 @@ const polesConfig: Record<
         description: "Formations validées par les autorités de santé",
       },
     ],
-    certifications: ["AFGSU", "Gestes et soins d'urgence", "Accompagnement fin de vie", "Hygiène hospitalière"],
+    certifications: ["AFGSU", "Gestes et soins d’urgence", "Accompagnement fin de vie", "Hygiène hospitalière"],
+  },
+  entrepreneuriat: {
+    title: "Entrepreneuriat",
+    subtitle: "Créer, développer, réussir",
+    description: "Formations pour entrepreneurs et porteurs de projets : création d’entreprise, gestion, développement commercial.",
+    longDescription: "Notre pôle Entrepreneuriat accompagne les créateurs et dirigeants d’entreprise. Des formations pratiques pour développer votre activité et acquérir les compétences clés de la gestion d’entreprise.",
+    image: "/images/poles/pole-company.jpg",
+    icon: Briefcase,
+    cssVar: "primary",
+    hex: "#1F628E",
+    features: [
+      { title: "Création d’entreprise", description: "Accompagnement de A à Z dans votre projet" },
+      { title: "Gestion financière", description: "Maîtriser les bases de la comptabilité et du budget" },
+      { title: "Développement commercial", description: "Stratégies pour développer votre clientèle" },
+      { title: "Accompagnement personnalisé", description: "Suivi individuel de votre progression" },
+    ],
+    certifications: ["Création d’entreprise", "Gestion et comptabilité", "Marketing digital", "Management"],
   },
 };
 
@@ -159,6 +182,7 @@ export async function generateStaticParams() {
     { slug: "securite-prevention" },
     { slug: "petite-enfance" },
     { slug: "sante" },
+    { slug: "entrepreneuriat" },
   ];
 }
 
@@ -177,6 +201,7 @@ export default async function PolePage({ params }: Props) {
     "securite-prevention": "%écurité%",
     "petite-enfance": "%nfance%",
     "sante": "%anté%",
+    "entrepreneuriat": "%ntrepreneuriat%",
   };
   const keyword = slugToKeyword[slug];
 
@@ -209,101 +234,132 @@ export default async function PolePage({ params }: Props) {
   });
 
   const Icon = pole.icon;
+  const hex = pole.hex;
+
+  // Compute rgba from hex for icon backgrounds
+  const hexToRgb = (h: string) => {
+    const r = parseInt(h.slice(1, 3), 16);
+    const g = parseInt(h.slice(3, 5), 16);
+    const b = parseInt(h.slice(5, 7), 16);
+    return `${r},${g},${b}`;
+  };
+  const rgb = hexToRgb(hex);
 
   return (
     <>
-      {/* Hero Section */}
-      <section className="relative min-h-[70vh] flex items-center justify-center overflow-hidden">
-        {/* Background Image */}
-        <div className="absolute inset-0">
-          <Image
-            src={pole.image}
-            alt={pole.title}
-            fill
-            sizes="100vw"
-            className="object-cover"
-            priority
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-background/90 via-background/80 to-background" />
-        </div>
+      {/* Hero */}
+      <section
+        className="relative z-10"
+        style={{ background: "linear-gradient(180deg, #1a6faa 0%, #1F628E 40%, #17567d 60%, #151F2D 60%)" }}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 sm:pt-40 text-center">
+          {/* Breadcrumb */}
+          <nav className="flex items-center justify-center gap-2 text-[13px] mb-6" style={{ color: "rgba(255,255,255,0.4)" }}>
+            <Link href="/" className="hover:text-white transition-colors">Accueil</Link>
+            <span>/</span>
+            <span className="hover:text-white transition-colors">Pôle</span>
+            <span>/</span>
+            <span style={{ color: "#ffffff" }}>{pole.title}</span>
+          </nav>
 
-        <div className="container-custom relative z-10 text-center py-20">
-          {/* Icon Badge */}
-          <div
-            className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-6"
-            style={{ backgroundColor: `hsl(var(--${pole.cssVar}) / 0.15)` }}
-          >
-            <Icon
-              className="w-8 h-8"
-              style={{ color: `hsl(var(--${pole.cssVar}))` }}
-            />
+          {/* Rating pill */}
+          <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-5 py-2 mb-5 border border-white/10">
+            <div className="flex gap-0.5">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+              ))}
+            </div>
+            <span className="text-[13px] font-medium" style={{ color: "rgba(255,255,255,0.8)" }}>4.9 · Plus de 50 avis</span>
           </div>
 
-          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-light leading-tight mb-4 max-w-4xl mx-auto">
-            {pole.title}
+          {/* H1 */}
+          <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] font-semibold leading-[1.1] tracking-tight max-w-5xl mx-auto mb-6" style={{ color: "#ffffff" }}>
+            Pôle <span style={{ color: "#F8A991" }}>{pole.title}</span>
           </h1>
 
-          <p
-            className="text-xl font-medium mb-6"
-            style={{ color: `hsl(var(--${pole.cssVar}))` }}
-          >
+          {/* Subtitle */}
+          <p className="text-base sm:text-lg max-w-2xl mx-auto mb-4 leading-relaxed" style={{ color: "rgba(255,255,255,0.6)" }}>
             {pole.subtitle}
           </p>
-
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
+          <p className="text-base max-w-2xl mx-auto mb-10 leading-relaxed" style={{ color: "rgba(255,255,255,0.5)" }}>
             {pole.longDescription}
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link
-              href="#formations"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
-            >
-              Voir les formations
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-            <Link
-              href="/contact"
-              className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 bg-secondary text-secondary-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors"
-            >
-              Nous contacter
-            </Link>
+          {/* Trust badges */}
+          <div className="flex flex-wrap items-center justify-center gap-8 mb-10">
+            {[
+              { icon: Users, text: "25 000+ Formés" },
+              { icon: CheckCircle, text: "98% Réussite" },
+              { icon: Award, text: "Certifié Qualiopi" },
+            ].map((b) => (
+              <div key={b.text} className="flex items-center gap-2 text-[13px] font-semibold" style={{ color: "rgba(255,255,255,0.7)" }}>
+                <b.icon className="w-4 h-4" />
+                {b.text}
+              </div>
+            ))}
           </div>
         </div>
+
+        {/* Hero image */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="relative aspect-[16/9] sm:aspect-[21/9] rounded-2xl overflow-hidden shadow-2xl shadow-black/30 ring-[12px] ring-[#151F2D]">
+            <Image
+              src={pole.image}
+              alt={pole.title}
+              fill
+              sizes="(max-width: 1024px) 100vw, 1100px"
+              className="object-cover"
+              priority
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/30 to-transparent" />
+            <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 md:p-10">
+              <div className="space-y-2 sm:space-y-3">
+                <span
+                  className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full"
+                  style={{ backgroundColor: hex, color: "#ffffff" }}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  {pole.title}
+                </span>
+                <h2 className="text-lg sm:text-2xl md:text-3xl font-bold leading-tight" style={{ color: "#ffffff" }}>
+                  {pole.subtitle}
+                </h2>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-12" />
       </section>
 
-      {/* Features Section */}
-      <section className="section-padding border-t border-border/50">
-        <div className="container-custom">
+      {/* Features */}
+      <section className="py-24 sm:py-32" style={{ backgroundColor: "#151F2D" }}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-2xl mb-16">
-            <p className="text-sm text-muted-foreground tracking-widest uppercase mb-4">
+            <span className="inline-block text-xs font-bold uppercase tracking-widest mb-5" style={{ color: "#F8A991" }}>
               Nos atouts
-            </p>
-            <h2 className="heading-section">
-              Pourquoi choisir nos formations {pole.title.toLowerCase()} ?
+            </span>
+            <h2 className="text-3xl sm:text-[2.5rem] font-normal tracking-tight leading-[1.1] mb-4" style={{ color: "#ffffff" }}>
+              Pourquoi choisir nos formations <span style={{ color: "#F8A991" }}>{pole.title.toLowerCase()}</span> ?
             </h2>
           </div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {pole.features.map((feature, index) => (
+            {pole.features.map((feature) => (
               <div
                 key={feature.title}
-                className="group p-6 rounded-2xl border border-border/50 hover:bg-card/50 transition-all duration-300"
-                style={{
-                  "--hover-border-color": `hsl(var(--${pole.cssVar}) / 0.3)`,
-                } as React.CSSProperties}
+                className="rounded-2xl p-7 hover:-translate-y-1 transition-all duration-300"
+                style={{ backgroundColor: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}
               >
                 <div
-                  className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform"
-                  style={{ backgroundColor: `hsl(var(--${pole.cssVar}) / 0.15)` }}
+                  className="w-12 h-12 rounded-xl flex items-center justify-center mb-5"
+                  style={{ backgroundColor: `rgba(${rgb},0.1)` }}
                 >
-                  <CheckCircle
-                    className="w-5 h-5"
-                    style={{ color: `hsl(var(--${pole.cssVar}))` }}
-                  />
+                  <CheckCircle className="w-5 h-5" style={{ color: hex }} />
                 </div>
-                <h3 className="font-medium mb-2">{feature.title}</h3>
-                <p className="text-sm text-muted-foreground">
+                <h3 className="text-base font-bold mb-2" style={{ color: "#ffffff" }}>{feature.title}</h3>
+                <p className="text-[13px] leading-relaxed" style={{ color: "rgba(255,255,255,0.55)" }}>
                   {feature.description}
                 </p>
               </div>
@@ -312,28 +368,26 @@ export default async function PolePage({ params }: Props) {
         </div>
       </section>
 
-      {/* Certifications Section */}
-      <section className="section-padding border-t border-border/50 bg-gradient-to-br from-primary/5 to-transparent">
-        <div className="container-custom">
+      {/* Certifications */}
+      <section className="py-24 sm:py-32" style={{ backgroundColor: "#151F2D" }}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto text-center">
-            <p className="text-sm text-muted-foreground tracking-widest uppercase mb-4">
+            <span className="inline-block text-xs font-bold uppercase tracking-widest mb-5" style={{ color: "#F8A991" }}>
               Certifications
-            </p>
-            <h2 className="heading-section mb-12">
-              Formations certifiantes reconnues
+            </span>
+            <h2 className="text-3xl sm:text-[2.5rem] font-normal tracking-tight leading-[1.1] mb-12" style={{ color: "#ffffff" }}>
+              Formations certifiantes <span style={{ color: "#F8A991" }}>reconnues</span>
             </h2>
 
             <div className="flex flex-wrap justify-center gap-4">
               {pole.certifications.map((cert) => (
                 <div
                   key={cert}
-                  className="flex items-center gap-2 px-4 py-2 bg-card rounded-full border border-border/50"
+                  className="flex items-center gap-2 px-4 py-2 rounded-full"
+                  style={{ backgroundColor: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}
                 >
-                  <Award
-                    className="w-4 h-4"
-                    style={{ color: `hsl(var(--${pole.cssVar}))` }}
-                  />
-                  <span className="text-sm font-medium">{cert}</span>
+                  <Award className="w-4 h-4" style={{ color: hex }} />
+                  <span className="text-sm font-medium" style={{ color: "#ffffff" }}>{cert}</span>
                 </div>
               ))}
             </div>
@@ -341,22 +395,23 @@ export default async function PolePage({ params }: Props) {
         </div>
       </section>
 
-      {/* Formations Section */}
-      <section id="formations" className="section-padding border-t border-border/50">
-        <div className="container-custom">
+      {/* Formations */}
+      <section id="formations" className="py-24 sm:py-32" style={{ backgroundColor: "#151F2D" }}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-16">
             <div className="max-w-xl">
-              <p className="text-sm text-muted-foreground tracking-widest uppercase mb-4">
+              <span className="inline-block text-xs font-bold uppercase tracking-widest mb-5" style={{ color: "#F8A991" }}>
                 Nos formations
-              </p>
-              <h2 className="heading-section">
-                {formations?.length || 0} formations disponibles
+              </span>
+              <h2 className="text-3xl sm:text-[2.5rem] font-normal tracking-tight leading-[1.1]" style={{ color: "#ffffff" }}>
+                <span style={{ color: "#F8A991" }}>{formations?.length || 0}</span> formations disponibles
               </h2>
             </div>
 
             <Link
               href="/formations"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-secondary text-secondary-foreground rounded-lg text-sm font-medium hover:bg-secondary/80 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+              style={{ backgroundColor: "rgba(255,255,255,0.05)", color: "#ffffff", border: "1px solid rgba(255,255,255,0.08)" }}
             >
               Tout le catalogue
               <ArrowRight className="w-4 h-4" />
@@ -371,9 +426,12 @@ export default async function PolePage({ params }: Props) {
                   href={`/formations/${slug}/${formation.slug || formation.id}`}
                   className="group block h-full"
                 >
-                  <article className="h-full bg-card rounded-xl border border-border/50 overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-2">
+                  <article
+                    className="h-full rounded-xl overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-2"
+                    style={{ backgroundColor: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}
+                  >
                     {/* Image */}
-                    <div className="aspect-[3/2] overflow-hidden relative bg-secondary">
+                    <div className="aspect-[3/2] overflow-hidden relative" style={{ backgroundColor: "rgba(255,255,255,0.02)" }}>
                       {formation.image_url ? (
                         <img
                           src={formation.image_url}
@@ -384,12 +442,12 @@ export default async function PolePage({ params }: Props) {
                         <div
                           className="w-full h-full flex items-center justify-center"
                           style={{
-                            background: `linear-gradient(135deg, hsl(var(--${pole.cssVar}) / 0.2), hsl(var(--${pole.cssVar}) / 0.05))`,
+                            background: `linear-gradient(135deg, rgba(${rgb},0.2), rgba(${rgb},0.05))`,
                           }}
                         >
                           <BookOpen
                             className="w-8 h-8"
-                            style={{ color: `hsl(var(--${pole.cssVar}) / 0.5)` }}
+                            style={{ color: `rgba(${rgb},0.5)` }}
                           />
                         </div>
                       )}
@@ -398,24 +456,24 @@ export default async function PolePage({ params }: Props) {
                     {/* Colored bar */}
                     <div
                       className="h-1 w-0 group-hover:w-full transition-all duration-500"
-                      style={{ backgroundColor: `hsl(var(--${pole.cssVar}))` }}
+                      style={{ backgroundColor: hex }}
                     />
 
                     {/* Content */}
                     <div className="p-5">
                       <h3
                         className="font-medium mb-2 transition-colors"
-                        style={{ color: `hsl(var(--${pole.cssVar}))` }}
+                        style={{ color: hex }}
                       >
                         {formation.title}
                       </h3>
                       {formation.subtitle && (
-                        <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                        <p className="text-sm mb-4 line-clamp-2" style={{ color: "rgba(255,255,255,0.55)" }}>
                           {formation.subtitle}
                         </p>
                       )}
 
-                      <div className="flex items-center justify-between text-xs text-muted-foreground pt-4 border-t border-border/50">
+                      <div className="flex items-center justify-between text-xs pt-4" style={{ color: "rgba(255,255,255,0.4)", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
                         {formation.duration && (
                           <div className="flex items-center gap-1">
                             <Clock className="w-3.5 h-3.5" />
@@ -425,7 +483,7 @@ export default async function PolePage({ params }: Props) {
                         {formation.price && (
                           <span
                             className="font-medium transition-colors"
-                            style={{ color: `hsl(var(--${pole.cssVar}))` }}
+                            style={{ color: hex }}
                           >
                             {formation.price}
                           </span>
@@ -437,16 +495,20 @@ export default async function PolePage({ params }: Props) {
               ))}
             </div>
           ) : (
-            <div className="text-center py-16 bg-card rounded-2xl border border-border/50">
-              <BookOpen className="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" />
-              <p className="text-muted-foreground mb-4">
+            <div
+              className="text-center py-16 rounded-2xl"
+              style={{ backgroundColor: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}
+            >
+              <BookOpen className="w-12 h-12 mx-auto mb-4" style={{ color: "rgba(255,255,255,0.25)" }} />
+              <p className="mb-4" style={{ color: "rgba(255,255,255,0.55)" }}>
                 Aucune formation disponible pour le moment dans ce pôle.
               </p>
               <Link
                 href="/contact"
-                className="inline-flex items-center gap-2 text-primary hover:underline"
+                className="inline-flex items-center gap-2 hover:underline"
+                style={{ color: hex }}
               >
-                Contactez-nous pour plus d'informations
+                Contactez-nous pour plus d&apos;informations
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
@@ -454,44 +516,44 @@ export default async function PolePage({ params }: Props) {
         </div>
       </section>
 
-      {/* Stats Section */}
-      <section className="section-padding border-t border-border/50">
-        <div className="container-custom">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+      {/* Stats */}
+      <section className="py-24 sm:py-32" style={{ backgroundColor: "#151F2D" }}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4">
             {[
-              { value: "25 000+", label: "Stagiaires formés", icon: Users },
-              { value: "98%", label: "Taux de réussite", icon: Award },
-              { value: "15+", label: "Années d'expérience", icon: Clock },
-              { value: "100%", label: "Finançable OPCO", icon: CheckCircle },
-            ].map((stat) => {
-              const StatIcon = stat.icon;
-              return (
-                <div key={stat.label} className="text-center">
-                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                    <StatIcon className="w-5 h-5 text-primary" />
-                  </div>
-                  <p className="text-2xl sm:text-3xl font-light text-primary mb-1">
-                    {stat.value}
-                  </p>
-                  <p className="text-sm text-muted-foreground">{stat.label}</p>
-                </div>
-              );
-            })}
+              { value: "25 000+", label: "Stagiaires formés" },
+              { value: "98%", label: "Taux de réussite" },
+              { value: "15+", label: "Années d’expérience" },
+              { value: "100%", label: "Finançable OPCO" },
+            ].map((stat, idx) => (
+              <div
+                key={stat.label}
+                className="py-8 text-center"
+                style={idx > 0 ? { borderLeft: "1px solid rgba(255,255,255,0.08)" } : undefined}
+              >
+                <p className="text-5xl sm:text-6xl font-normal tracking-tight" style={{ color: "#ffffff" }}>
+                  {stat.value}
+                </p>
+                <p className="text-[13px] mt-2" style={{ color: "rgba(255,255,255,0.35)" }}>
+                  {stat.label}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="section-padding bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border-t border-border/50">
-        <div className="container-custom">
+      {/* CTA */}
+      <section className="py-24 sm:py-32" style={{ backgroundColor: "#1F628E" }}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl mx-auto text-center">
-            <p className="text-sm text-muted-foreground tracking-widest uppercase mb-4">
+            <span className="inline-block text-xs font-bold uppercase tracking-widest mb-4" style={{ color: "#F8A991" }}>
               Prêt à vous former ?
-            </p>
-            <h2 className="heading-section mb-6">
-              Lancez-vous dans la formation {pole.title.toLowerCase()}
+            </span>
+            <h2 className="text-3xl sm:text-[2.5rem] font-normal tracking-tight leading-[1.1] mb-6" style={{ color: "#ffffff" }}>
+              Lancez-vous dans la formation <span style={{ color: "#F8A991" }}>{pole.title.toLowerCase()}</span>
             </h2>
-            <p className="text-lg text-muted-foreground mb-8">
+            <p className="text-base max-w-xl mx-auto mb-10 leading-relaxed" style={{ color: "rgba(255,255,255,0.45)" }}>
               Nos conseillers sont à votre disposition pour vous accompagner
               dans votre projet de formation. Financement, planning, contenu...
               nous répondons à toutes vos questions.
@@ -499,14 +561,16 @@ export default async function PolePage({ params }: Props) {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
                 href="/contact"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 rounded-lg font-medium transition-colors hover:opacity-90"
+                style={{ backgroundColor: "#F8A991", color: "#151F2D" }}
               >
                 Demander un devis
                 <ArrowRight className="w-4 h-4" />
               </Link>
               <Link
                 href="/formations"
-                className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 border border-border text-foreground rounded-lg font-medium hover:bg-secondary transition-colors"
+                className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 rounded-lg font-medium transition-colors hover:bg-white/10"
+                style={{ border: "1px solid rgba(255,255,255,0.2)", color: "#ffffff" }}
               >
                 Voir toutes les formations
               </Link>

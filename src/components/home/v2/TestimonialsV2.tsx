@@ -1,10 +1,10 @@
 const testimonials = [
-  { tag: "Sécurité", tagColor: "#e74c3c", title: "Formation Incendie excellente", content: "La formation Sécurité Incendie a été excellente. Les formateurs sont de vrais professionnels du terrain. J'ai obtenu mon diplôme du premier coup.", name: "Marie Dupont", role: "Agent de sécurité" },
-  { tag: "Santé", tagColor: "#3498db", title: "Gestes d'Urgence validés", content: "Grâce à C&Co Formation, j'ai validé ma formation Gestes d'Urgence. L'équipe est très à l'écoute et les locaux sont modernes. Je recommande.", name: "Thomas Martin", role: "Aide-soignant" },
-  { tag: "Petite Enfance", tagColor: "#1abc9c", title: "Pédagogies alternatives", content: "La formation sur les pédagogies alternatives m'a permis d'enrichir ma pratique. Approche très concrète et applicable au quotidien.", name: "Sophie Bernard", role: "Auxiliaire de puériculture" },
-  { tag: "Sécurité", tagColor: "#e74c3c", title: "SST au top", content: "Formation SST complète et bien organisée. Le formateur a su rendre le contenu vivant avec beaucoup de pratique. Je me sens prêt.", name: "Lucas Moreau", role: "Chef d'équipe BTP" },
-  { tag: "Petite Enfance", tagColor: "#1abc9c", title: "Éveil musical enrichissant", content: "L'atelier éveil musical m'a donné plein d'outils concrets pour animer mes séances en crèche. Formatrice passionnée et bienveillante.", name: "Camille Roux", role: "Éducatrice" },
-  { tag: "Santé", tagColor: "#3498db", title: "AFGSU de qualité", content: "Formation AFGSU très professionnelle. Les mises en situation sont réalistes et le rythme bien adapté. Organisme que je recommande.", name: "Antoine Leclerc", role: "Infirmier" },
+  { tag: "Sécurité", tagColor: "#A82424", title: "Formation Incendie excellente", content: "La formation Sécurité Incendie a été excellente. Les formateurs sont de vrais professionnels du terrain. J'ai obtenu mon diplôme du premier coup.", name: "Marie Dupont", role: "Agent de sécurité" },
+  { tag: "Santé", tagColor: "#507395", title: "Gestes d'Urgence validés", content: "Grâce à C&Co Formation, j'ai validé ma formation Gestes d'Urgence. L'équipe est très à l'écoute et les locaux sont modernes. Je recommande.", name: "Thomas Martin", role: "Aide-soignant" },
+  { tag: "Petite Enfance", tagColor: "#2D867E", title: "Pédagogies alternatives", content: "La formation sur les pédagogies alternatives m'a permis d'enrichir ma pratique. Approche très concrète et applicable au quotidien.", name: "Sophie Bernard", role: "Auxiliaire de puériculture" },
+  { tag: "Sécurité", tagColor: "#A82424", title: "SST au top", content: "Formation SST complète et bien organisée. Le formateur a su rendre le contenu vivant avec beaucoup de pratique. Je me sens prêt.", name: "Lucas Moreau", role: "Chef d'équipe BTP" },
+  { tag: "Petite Enfance", tagColor: "#2D867E", title: "Éveil musical enrichissant", content: "L'atelier éveil musical m'a donné plein d'outils concrets pour animer mes séances en crèche. Formatrice passionnée et bienveillante.", name: "Camille Roux", role: "Éducatrice" },
+  { tag: "Santé", tagColor: "#507395", title: "AFGSU de qualité", content: "Formation AFGSU très professionnelle. Les mises en situation sont réalistes et le rythme bien adapté. Organisme que je recommande.", name: "Antoine Leclerc", role: "Infirmier" },
 ];
 
 export default function TestimonialsV2() {
