@@ -22,6 +22,7 @@ import {
   Accessibility,
   Baby,
   HeartPulse,
+  Briefcase,
   User,
   LogOut,
   Settings,
@@ -85,6 +86,12 @@ const navigation: NavItem[] = [
         description: "Gestes d'urgence, soins, accompagnement",
         icon: HeartPulse,
       },
+      {
+        name: "Entrepreneuriat",
+        href: "/pole/entrepreneuriat",
+        description: "Création et développement d'activité",
+        icon: Briefcase,
+      },
     ],
   },
   {
@@ -147,6 +154,12 @@ const mobileNavigation: NavItem[] = [
         href: "/pole/sante",
         description: "Gestes d'urgence, soins, accompagnement",
         icon: HeartPulse,
+      },
+      {
+        name: "Entrepreneuriat",
+        href: "/pole/entrepreneuriat",
+        description: "Création et développement d'activité",
+        icon: Briefcase,
       },
     ],
   },

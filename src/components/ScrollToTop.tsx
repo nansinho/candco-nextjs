@@ -57,22 +57,19 @@ export function ScrollToTop() {
     <button
       onClick={scrollToTop}
       className={cn(
-        // Base styles with GPU optimization
-        "fixed right-6 bottom-24 z-50 w-12 h-12 rounded-full",
-        "bg-background text-primary",
-        "border-2 border-primary",
-        "shadow-lg shadow-black/20",
+        "fixed right-6 bottom-24 z-50 w-12 h-12 sm:w-14 sm:h-14 rounded-2xl",
         "flex items-center justify-center",
-        "transform-gpu", // Force GPU rendering
-        // Pure CSS animation
-        "transition-[opacity,transform,background-color] duration-200 ease-out",
+        "transform-gpu",
+        "transition-[opacity,transform] duration-200 ease-out",
         isVisible
           ? "opacity-100 scale-100 pointer-events-auto"
           : "opacity-0 scale-90 pointer-events-none",
-        // Hover effects
-        "hover:scale-110 hover:bg-primary/10 hover:shadow-xl hover:shadow-primary/20"
+        "hover:scale-105"
       )}
       style={{
+        backgroundColor: "#1F628E",
+        color: "#fff",
+        boxShadow: "0 4px 14px rgba(31,98,142,0.3)",
         willChange: "opacity, transform",
       }}
       aria-label="Retour en haut"
