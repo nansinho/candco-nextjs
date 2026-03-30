@@ -2,7 +2,7 @@ import { createServiceClient, ORG_ID } from "@/lib/supabase/service";
 import { getPoleFromDomaine } from "@/lib/domaines";
 import { Metadata } from "next";
 import Link from "next/link";
-import { Shield, Baby, HeartPulse, CheckCircle, Award, Users, Star } from "lucide-react";
+import { CheckCircle, Award, Users, Star } from "lucide-react";
 import FormationsClient from "./FormationsClient";
 
 export const metadata: Metadata = {
@@ -149,13 +149,15 @@ export default async function FormationsPage() {
         style={{ background: "linear-gradient(180deg, #1a6faa 0%, #1F628E 40%, #17567d 60%, #151F2D 100%)" }}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 sm:pt-40 pb-16 sm:pb-20 text-center">
+          {/* Breadcrumb */}
           <nav className="flex items-center justify-center gap-2 text-[13px] mb-6" style={{ color: "rgba(255,255,255,0.4)" }}>
             <Link href="/" className="hover:text-white transition-colors">Accueil</Link>
             <span>/</span>
             <span className="text-white">Formations</span>
           </nav>
 
-          <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-5 py-2 mb-5 border border-white/10">
+          {/* Rating pill */}
+          <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-5 py-2 mb-8 border border-white/10">
             <div className="flex gap-0.5">
               {[1, 2, 3, 4, 5].map((i) => (
                 <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
@@ -164,19 +166,31 @@ export default async function FormationsPage() {
             <span className="text-[13px] font-medium text-white/80">4.9 · Plus de 50 avis</span>
           </div>
 
-          <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] font-semibold leading-[1.1] tracking-tight text-white max-w-4xl mx-auto mb-6">
-            Trouvez la <span style={{ color: "#F8A991" }}>formation</span> qui vous correspond.
+          {/* Heading */}
+          <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] font-semibold leading-[1.1] tracking-tight text-white max-w-5xl mx-auto mb-6">
+            Notre catalogue de formations,{" "}
+            <span className="block" style={{ color: "#F8A991" }}>à votre service.</span>
           </h1>
+
+          {/* Subtitle */}
           <p className="text-base sm:text-lg text-blue-100/70 max-w-2xl mx-auto mb-10 leading-relaxed">
-            Plus de 50 formations certifiantes dans les domaines de la Sécurité, de la Petite Enfance et de la Santé.
+            Plus de 50 formations certifiantes en Sécurité, Petite Enfance et Santé. Trouvez la formation qui correspond à vos besoins.
           </p>
 
+          {/* CTA */}
+          <a
+            href="#catalogue"
+            className="inline-flex items-center gap-2 bg-[#F8A991] text-[#151F2D] px-8 py-3 rounded-xl font-bold text-[15px] hover:bg-[#f69b80] transition-colors shadow-xl shadow-black/10 mb-10"
+          >
+            Explorer le catalogue
+          </a>
+
           {/* Trust badges */}
-          <div className="flex flex-wrap items-center justify-center gap-8 mb-6">
+          <div className="flex flex-wrap items-center justify-center gap-8">
             {[
+              { icon: Users, text: "25 000+ Formés" },
               { icon: CheckCircle, text: "Certifié Qualiopi" },
               { icon: Award, text: "Financement OPCO" },
-              { icon: Users, text: "25 000+ formés" },
             ].map((b) => (
               <div key={b.text} className="flex items-center gap-2 text-[13px] font-semibold text-white/70">
                 <b.icon className="w-4 h-4" />
@@ -184,20 +198,17 @@ export default async function FormationsPage() {
               </div>
             ))}
           </div>
+        </div>
 
-          {/* Pole pills */}
-          <div className="flex items-center justify-center gap-3">
-            {[
-              { icon: Shield, name: "Sécurité", color: "#e74c3c" },
-              { icon: Baby, name: "Petite Enfance", color: "#f39c12" },
-              { icon: HeartPulse, name: "Santé", color: "#27ae60" },
-            ].map((p) => (
-              <div key={p.name} className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-[13px] font-bold text-white/80" style={{ backgroundColor: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.1)" }}>
-                <p.icon className="w-4 h-4" style={{ color: p.color }} />
-                {p.name}
-              </div>
-            ))}
-          </div>
+        {/* Stamp badge — floating top right */}
+        <div className="absolute top-28 right-8 lg:right-16 hidden lg:block rotate-12" style={{ animation: "float 5s ease-in-out infinite" }}>
+          <svg width="110" height="110" viewBox="0 0 110 110" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Note de satisfaction 4.9 sur 5">
+            <circle cx="55" cy="55" r="50" stroke="white" strokeWidth="2" strokeDasharray="4 3" opacity="0.4" />
+            <circle cx="55" cy="55" r="42" stroke="white" strokeWidth="1.5" opacity="0.3" />
+            <text x="55" y="42" textAnchor="middle" fill="white" fontSize="24" fontWeight="800" fontFamily="&apos;Plus Jakarta Sans&apos;,sans-serif">4.9</text>
+            <text x="55" y="57" textAnchor="middle" fill="white" fontSize="9" fontWeight="600" fontFamily="&apos;Plus Jakarta Sans&apos;,sans-serif" opacity="0.8" letterSpacing="1.5">SATISFACTION</text>
+            <text x="55" y="72" textAnchor="middle" fill="#fbbf24" fontSize="14" fontFamily="&apos;Plus Jakarta Sans&apos;,sans-serif">★★★★★</text>
+          </svg>
         </div>
       </section>
 

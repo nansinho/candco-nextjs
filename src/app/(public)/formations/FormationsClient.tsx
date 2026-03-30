@@ -1,7 +1,13 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
+
+const FormationDetailModal = dynamic(
+  () => import("@/components/formations/FormationDetailModal"),
+  { ssr: false }
+);
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -11,15 +17,13 @@ import {
   Shield,
   Baby,
   HeartPulse,
+  Briefcase,
   CalendarDays,
   Users,
-  ChevronRight,
-  Tag,
   X,
   SlidersHorizontal,
   Check,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
@@ -30,6 +34,7 @@ import {
 } from "@/components/ui/drawer";
 import { Label } from "@/components/ui/label";
 import { getFormationImage, groupFormationsByCategory } from "@/lib/formations-utils";
+import { normalizeText } from "@/lib/utils";
 
 interface Formation {
   id: string;
@@ -70,9 +75,10 @@ interface FormationsClientProps {
 
 const poles = [
   { id: "all", name: "Toutes", icon: null, color: null, hex: null },
-  { id: "securite-prevention", name: "Sécurité", icon: Shield, color: "pole-securite", bg: "#151F2D" },
-  { id: "petite-enfance", name: "Petite Enfance", icon: Baby, color: "pole-petite-enfance", bg: "#151F2D" },
-  { id: "sante", name: "Santé", icon: HeartPulse, color: "pole-sante", bg: "#151F2D" },
+  { id: "securite-prevention", name: "Sécurité", icon: Shield, color: "pole-securite", hex: "#A82424" },
+  { id: "petite-enfance", name: "Petite Enfance", icon: Baby, color: "pole-petite-enfance", hex: "#2D867E" },
+  { id: "sante", name: "Santé", icon: HeartPulse, color: "pole-sante", hex: "#507395" },
+  { id: "entrepreneuriat", name: "Entrepreneuriat", icon: Briefcase, color: "primary", hex: "#1F628E" },
 ];
 
 
@@ -87,6 +93,17 @@ export default function FormationsClient({
   const [selectedPole, setSelectedPole] = useState(initialPole);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [modalSlug, setModalSlug] = useState<string | null>(null);
+  const [modalPole, setModalPole] = useState<string>("");
+
+  const openFormation = useCallback((slug: string, pole: string) => {
+    setModalSlug(slug);
+    setModalPole(pole);
+  }, []);
+
+  const closeFormation = useCallback(() => {
+    setModalSlug(null);
+  }, []);
 
   // Debounce search query (300ms)
   useEffect(() => {
@@ -123,10 +140,11 @@ export default function FormationsClient({
 
   // Filtered formations
   const filteredFormations = useMemo(() => {
+    const q = normalizeText(debouncedSearchQuery);
     return formations.filter((formation) => {
       const matchesSearch =
-        formation.title.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-        (formation.subtitle || "").toLowerCase().includes(debouncedSearchQuery.toLowerCase());
+        normalizeText(formation.title).includes(q) ||
+        normalizeText(formation.subtitle || "").includes(q);
       const matchesPole = selectedPole === "all" || formation.pole === selectedPole;
       const matchesCategory = !selectedCategory || formation.category_id === selectedCategory;
       return matchesSearch && matchesPole && matchesCategory;
@@ -240,102 +258,124 @@ export default function FormationsClient({
       </Drawer>
 
       {/* Filters Section */}
-      <section className="py-3 md:py-6 sticky top-16 z-40 transition-all duration-300" style={{ backgroundColor: "rgba(21,31,45,0.95)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+      <section
+        className="sticky top-16 z-40"
+        style={{ backgroundColor: "#151F2D", borderBottom: "1px solid rgba(255,255,255,0.06)" }}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Mobile: Compact bar */}
-          <div className="flex md:hidden gap-2 items-center">
+          {/* Mobile */}
+          <div className="flex md:hidden gap-2 items-center py-3">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "rgba(255,255,255,0.3)" }} />
               <input
                 type="text"
                 placeholder="Rechercher..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-2.5 rounded-full border border-border/30 bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                className="w-full pl-9 pr-3 py-2.5 rounded-lg text-sm text-white placeholder:text-white/30 focus:outline-none"
+                style={{ backgroundColor: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-muted hover:bg-muted-foreground/20 flex items-center justify-center"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full flex items-center justify-center"
+                  style={{ backgroundColor: "rgba(255,255,255,0.1)" }}
                 >
-                  <X className="w-3 h-3 text-muted-foreground" />
+                  <X className="w-3 h-3 text-white/50" />
                 </button>
               )}
             </div>
-            <Button
-              variant="outline"
-              size="default"
+            <button
               onClick={() => setIsFilterOpen(true)}
-              className="shrink-0 gap-2 rounded-full"
+              className="shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-white/70"
+              style={{ backgroundColor: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}
             >
               <SlidersHorizontal className="w-4 h-4" />
               Filtres
               {activeFiltersCount > 0 && (
-                <Badge
-                  variant="default"
-                  className="h-5 w-5 p-0 flex items-center justify-center text-xs"
+                <span
+                  className="h-5 w-5 flex items-center justify-center text-[11px] font-bold rounded-full text-white"
+                  style={{ backgroundColor: "#F8A991", color: "#151F2D" }}
                 >
                   {activeFiltersCount}
-                </Badge>
+                </span>
               )}
-            </Button>
+            </button>
           </div>
 
-          {/* Desktop: Inline filters */}
-          <div className="hidden md:block space-y-4">
-            {/* Row 1: Search + Pole filters */}
-            <div className="flex gap-4 items-center justify-between">
+          {/* Desktop */}
+          <div className="hidden md:block py-4 space-y-3">
+            {/* Row 1: Search + Poles + Reset */}
+            <div className="flex items-center gap-3">
               {/* Search */}
-              <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <div className="relative w-60">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "rgba(255,255,255,0.3)" }} />
                 <input
                   type="text"
-                  placeholder="Rechercher une formation..."
+                  placeholder="Rechercher..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-11 pr-4 py-2.5 rounded-full text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-0 transition-all"
+                  className="w-full pl-10 pr-3 py-2 rounded-lg text-sm text-white placeholder:text-white/30 focus:outline-none"
                   style={{ backgroundColor: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}
                 />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2"
+                  >
+                    <X className="w-3.5 h-3.5 text-white/40 hover:text-white/70" />
+                  </button>
+                )}
               </div>
+
+              {/* Separator */}
+              <div className="w-px h-6" style={{ backgroundColor: "rgba(255,255,255,0.1)" }} />
 
               {/* Pole filters */}
-              <div className="flex gap-2 flex-wrap">
-                {poles.map((pole) => {
-                  const Icon = pole.icon;
-                  const isActive = selectedPole === pole.id;
-                  const colorClass = pole.color;
-                  return (
-                    <button
-                      key={pole.id}
-                      onClick={() => setSelectedPole(pole.id)}
-                      className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
-                        isActive
-                          ? ""
-                          : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-                      }`}
-                      style={
-                        isActive && colorClass
-                          ? {
-                              backgroundColor: `hsl(var(--${colorClass}))`,
-                              color: `hsl(var(--${colorClass}-foreground))`,
-                            }
-                          : isActive
-                          ? {
-                              backgroundColor: "hsl(var(--primary))",
-                              color: "hsl(var(--primary-foreground))",
-                            }
-                          : undefined
-                      }
-                    >
-                      {Icon && <Icon className="w-4 h-4" />}
-                      {pole.name}
-                    </button>
-                  );
-                })}
-              </div>
+              {poles.map((pole) => {
+                const Icon = pole.icon;
+                const isActive = selectedPole === pole.id;
+                return (
+                  <button
+                    key={pole.id}
+                    onClick={() => setSelectedPole(pole.id)}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13px] font-medium transition-all whitespace-nowrap"
+                    style={
+                      isActive
+                        ? {
+                            backgroundColor: pole.hex || "rgba(248,169,145,0.15)",
+                            color: pole.hex ? "#fff" : "#F8A991",
+                            boxShadow: pole.hex ? undefined : "inset 0 0 0 1px rgba(248,169,145,0.3)",
+                          }
+                        : {
+                            color: "rgba(255,255,255,0.5)",
+                          }
+                    }
+                  >
+                    {Icon && <Icon className="w-3.5 h-3.5" />}
+                    {pole.name}
+                  </button>
+                );
+              })}
+
+              {/* Reset button */}
+              {(selectedPole !== "all" || searchQuery) && (
+                <button
+                  onClick={() => {
+                    setSearchQuery("");
+                    setSelectedPole("all");
+                    setSelectedCategory(null);
+                  }}
+                  className="ml-auto flex items-center gap-1 text-[12px] font-medium transition-all hover:text-white/50"
+                  style={{ color: "rgba(255,255,255,0.3)" }}
+                >
+                  <X className="w-3 h-3" />
+                  Réinitialiser
+                </button>
+              )}
             </div>
 
-            {/* Row 2: Category filters */}
+            {/* Row 2: Category chips */}
             <AnimatePresence>
               {selectedPole !== "all" && poleCategories.length > 0 && (
                 <motion.div
@@ -345,123 +385,61 @@ export default function FormationsClient({
                   transition={{ duration: 0.2 }}
                   className="overflow-hidden"
                 >
-                  <div className="flex items-center gap-2 flex-wrap pt-2">
-                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground mr-2">
-                      <ChevronRight className="w-4 h-4" />
-                      <Tag className="w-4 h-4" />
-                      <span>Catégories :</span>
-                    </div>
-                    <button
-                      onClick={() => setSelectedCategory(null)}
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                        !selectedCategory
-                          ? "bg-foreground/10 text-foreground ring-1 ring-foreground/20"
-                          : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
-                      }`}
-                    >
-                      Toutes
-                    </button>
-                    {poleCategories.map((category) => {
-                      const isActive = selectedCategory === category.id;
-                      const pole = poles.find((p) => p.id === selectedPole);
-                      const colorClass = pole?.color;
-                      return (
+                  {(() => {
+                    const activePole = poles.find((p) => p.id === selectedPole);
+                    const activeHex = activePole?.hex || "#F8A991";
+                    return (
+                      <div className="flex items-center gap-1.5 flex-wrap pt-1" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
                         <button
-                          key={category.id}
-                          onClick={() => setSelectedCategory(category.id)}
-                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                            isActive
-                              ? ""
-                              : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
-                          }`}
+                          onClick={() => setSelectedCategory(null)}
+                          className="px-3 py-1.5 rounded-md text-[12px] font-medium transition-all whitespace-nowrap"
                           style={
-                            isActive && colorClass
-                              ? {
-                                  backgroundColor: `hsl(var(--${colorClass}) / 0.15)`,
-                                  color: `hsl(var(--${colorClass}))`,
-                                  boxShadow: `inset 0 0 0 1px hsl(var(--${colorClass}) / 0.3)`,
-                                }
-                              : undefined
+                            !selectedCategory
+                              ? { backgroundColor: `${activeHex}20`, color: activeHex }
+                              : { color: "rgba(255,255,255,0.4)" }
                           }
                         >
-                          {category.name}
+                          Toutes
                         </button>
-                      );
-                    })}
-                  </div>
+                        {poleCategories.map((category) => {
+                          const isActive = selectedCategory === category.id;
+                          return (
+                            <button
+                              key={category.id}
+                              onClick={() => setSelectedCategory(category.id)}
+                              className="px-3 py-1.5 rounded-md text-[12px] font-medium transition-all whitespace-nowrap"
+                              style={
+                                isActive
+                                  ? { backgroundColor: `${activeHex}20`, color: activeHex }
+                                  : { color: "rgba(255,255,255,0.4)" }
+                              }
+                            >
+                              {category.name}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
                 </motion.div>
               )}
             </AnimatePresence>
-
-            {/* Active filters display */}
-            {(selectedPole !== "all" || selectedCategory || searchQuery) && (
-              <div className="flex items-center gap-2 flex-wrap text-sm">
-                <span className="text-muted-foreground">Filtres actifs :</span>
-                {selectedPole !== "all" && (
-                  <Badge variant="secondary" className="gap-1">
-                    {poles.find((p) => p.id === selectedPole)?.name}
-                    {!selectedCategory && (
-                      <button
-                        onClick={() => setSelectedPole("all")}
-                        className="ml-1 hover:text-destructive"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    )}
-                  </Badge>
-                )}
-                {selectedCategory && selectedCategoryName && (
-                  <Badge variant="secondary" className="gap-1">
-                    {selectedCategoryName}
-                    <button
-                      onClick={() => setSelectedCategory(null)}
-                      className="ml-1 hover:text-destructive"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </Badge>
-                )}
-                {searchQuery && (
-                  <Badge variant="secondary" className="gap-1">
-                    "{searchQuery}"
-                    <button
-                      onClick={() => setSearchQuery("")}
-                      className="ml-1 hover:text-destructive"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </Badge>
-                )}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setSearchQuery("");
-                    setSelectedPole("all");
-                    setSelectedCategory(null);
-                  }}
-                  className="text-xs h-6 px-2"
-                >
-                  Réinitialiser
-                </Button>
-              </div>
-            )}
           </div>
         </div>
       </section>
 
       {/* Results */}
-      <section className="py-16 sm:py-20 bg-white">
+      <section id="catalogue" className="py-16 sm:py-20 scroll-mt-20" style={{ backgroundColor: "#151F2D" }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <p className="text-sm mb-8 text-gray-500">
+          <p className="text-sm mb-8" style={{ color: "rgba(255,255,255,0.4)" }}>
             {filteredFormations.length} formation
             {filteredFormations.length > 1 ? "s" : ""} trouvée
             {filteredFormations.length > 1 ? "s" : ""}
           </p>
 
           {filteredFormations.length === 0 ? (
-            <div className="text-center py-20 rounded-2xl bg-gray-50 border border-gray-200">
-              <p className="mb-4 text-gray-500">
+            <div className="text-center py-20 rounded-2xl" style={{ backgroundColor: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+              <p className="mb-4" style={{ color: "rgba(255,255,255,0.4)" }}>
                 Aucune formation ne correspond à votre recherche.
               </p>
               <button
@@ -517,7 +495,7 @@ export default function FormationsClient({
                           >
                             {pole.name}
                           </h2>
-                          <p className="text-sm text-gray-500">
+                          <p className="text-sm" style={{ color: "rgba(255,255,255,0.4)" }}>
                             {poleFormations.length} formation
                             {poleFormations.length > 1 ? "s" : ""}
                           </p>
@@ -529,13 +507,25 @@ export default function FormationsClient({
                         {formationsByCategory.map(({ category, formations: catFormations }) => (
                           <div key={category?.id || "uncategorized"}>
                             {/* Category Header */}
-                            <div className="flex items-center gap-3 mb-4">
-                              <Tag className="w-4 h-4 text-gray-400" />
-                              <h3 className="text-base font-medium text-[#151F2D]">
+                            <div
+                              className="flex items-center gap-3 mb-6 pb-3"
+                              style={{ borderBottom: `2px solid ${pole.hex}40` }}
+                            >
+                              <div
+                                className="w-1.5 h-8 rounded-full"
+                                style={{ backgroundColor: pole.hex || "#fff" }}
+                              />
+                              <h3
+                                className="text-lg font-bold"
+                                style={{ color: pole.hex || "#fff" }}
+                              >
                                 {category?.name || "Autres formations"}
                               </h3>
-                              <span className="text-xs text-gray-400">
-                                ({catFormations.length})
+                              <span
+                                className="text-xs font-medium px-2 py-0.5 rounded-full"
+                                style={{ backgroundColor: `${pole.hex}20`, color: `${pole.hex}` }}
+                              >
+                                {catFormations.length}
                               </span>
                             </div>
 
@@ -543,7 +533,7 @@ export default function FormationsClient({
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                               {catFormations.map((formation, index) => {
                                 const cssVar = pole.color || "primary";
-                                const cardBg = pole.bg || "#151F2D";
+                                const accent = pole.hex || "#1F628E";
                                 const sessionInfo = sessionCounts[formation.id];
                                 const hasActiveSessions = sessionInfo && sessionInfo.count > 0;
 
@@ -555,13 +545,16 @@ export default function FormationsClient({
                                     transition={{ duration: 0.4, delay: index * 0.05 }}
                                     className="h-full"
                                   >
-                                    <Link
-                                      href={`/formations/${formation.pole}/${formation.slug || formation.id}`}
-                                      className="group block h-full"
+                                    <div
+                                      role="button"
+                                      tabIndex={0}
+                                      onClick={() => openFormation(formation.slug || formation.id, formation.pole)}
+                                      onKeyDown={(e) => { if (e.key === "Enter") openFormation(formation.slug || formation.id, formation.pole); }}
+                                      className="group block h-full w-full text-left cursor-pointer"
                                     >
                                       <article
                                         className="rounded-2xl overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full flex flex-col border"
-                                        style={{ backgroundColor: cardBg, borderColor: `hsl(var(--${cssVar}) / 0.3)` }}
+                                        style={{ backgroundColor: `${accent}30`, border: `1.5px solid ${accent}55` }}
                                       >
                                         {/* Image */}
                                         <div className="relative aspect-[3/1] overflow-hidden">
@@ -574,7 +567,7 @@ export default function FormationsClient({
                                           />
                                           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                                           <div className="absolute bottom-3 left-3 flex items-center gap-2">
-                                            <span className="text-[11px] font-bold px-2.5 py-1 rounded-full text-white shadow-lg" style={{ backgroundColor: `hsl(var(--${cssVar}))` }}>{formation.pole_name}</span>
+                                            <span className="text-[11px] font-bold px-2.5 py-1 rounded-full text-white shadow-lg" style={{ backgroundColor: accent }}>{formation.pole_name}</span>
                                             {formation.duration && (
                                               <span className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-sm text-white flex items-center gap-1">
                                                 <Clock className="w-3 h-3" /> {formation.duration}
@@ -582,7 +575,7 @@ export default function FormationsClient({
                                             )}
                                           </div>
                                           {formation.popular && (
-                                            <span className="absolute top-3 right-3 text-[10px] font-bold px-2 py-1 rounded-full text-white" style={{ backgroundColor: `hsl(var(--${cssVar}))` }}>
+                                            <span className="absolute top-3 right-3 text-[10px] font-bold px-2 py-1 rounded-full text-white" style={{ backgroundColor: accent }}>
                                               Populaire
                                             </span>
                                           )}
@@ -613,15 +606,15 @@ export default function FormationsClient({
                                             </div>
                                           )}
 
-                                          <div className="flex items-center justify-between mt-auto pt-3" style={{ borderTop: `1px solid hsl(var(--${cssVar}) / 0.15)` }}>
+                                          <div className="flex items-center justify-between mt-auto pt-3" style={{ borderTop: `1px solid ${accent}33` }}>
                                             <p className="text-lg font-extrabold text-white">{formation.price}</p>
-                                            <span className="text-xs font-bold flex items-center gap-1" style={{ color: `hsl(var(--${cssVar}))` }}>
+                                            <span className="text-xs font-bold flex items-center gap-1" style={{ color: accent }}>
                                               Détails <ArrowRight className="w-3 h-3" />
                                             </span>
                                           </div>
                                         </div>
                                       </article>
-                                    </Link>
+                                    </div>
                                   </motion.div>
                                 );
                               })}
@@ -652,6 +645,13 @@ export default function FormationsClient({
           </Link>
         </div>
       </section>
+
+      {/* Formation Detail Modal */}
+      <FormationDetailModal
+        slug={modalSlug}
+        pole={modalPole}
+        onClose={closeFormation}
+      />
     </>
   );
 }
