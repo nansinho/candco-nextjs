@@ -1,21 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Settings,
   Save,
   Building2,
-  Mail,
   Globe,
   Bell,
-  Palette,
   Shield,
+  Loader2,
 } from "lucide-react";
 import {
   Tabs,
@@ -23,145 +23,205 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { adminStyles } from "@/components/admin/AdminDesignSystem";
+import {
+  useSettings,
+  useSettingsMutations,
+  defaultGeneralSettings,
+  defaultSeoSettings,
+  defaultNotificationSettings,
+  defaultAdvancedSettings,
+  type GeneralSettings,
+  type SeoSettings,
+  type NotificationSettings,
+  type AdvancedSettings,
+} from "@/hooks/admin/useSettings";
+import { toast } from "sonner";
+import { Json } from "@/types/database";
 
 export default function SettingsPage() {
-  const [generalSettings, setGeneralSettings] = useState({
-    siteName: "C&Co Formation",
-    siteDescription: "Organisme de formation professionnelle",
-    email: "contact@candco-formation.fr",
-    phone: "04 91 00 00 00",
-    address: "123 rue de la Formation, 13001 Marseille",
-  });
+  const { data: settings, isLoading } = useSettings();
+  const { upsertSetting } = useSettingsMutations();
 
-  const [notifications, setNotifications] = useState({
-    emailNotifications: true,
-    pushNotifications: true,
-    weeklyReport: true,
-    newRegistration: true,
-    newContact: true,
-  });
+  const [general, setGeneral] = useState<GeneralSettings>(defaultGeneralSettings);
+  const [seo, setSeo] = useState<SeoSettings>(defaultSeoSettings);
+  const [notifications, setNotifications] = useState<NotificationSettings>(defaultNotificationSettings);
+  const [advanced, setAdvanced] = useState<AdvancedSettings>(defaultAdvancedSettings);
+  const [activeTab, setActiveTab] = useState("general");
+
+  useEffect(() => {
+    if (settings) {
+      if (settings.general) setGeneral({ ...defaultGeneralSettings, ...(settings.general as Record<string, unknown>) } as GeneralSettings);
+      if (settings.seo) setSeo({ ...defaultSeoSettings, ...(settings.seo as Record<string, unknown>) } as SeoSettings);
+      if (settings.notifications) setNotifications({ ...defaultNotificationSettings, ...(settings.notifications as Record<string, unknown>) } as NotificationSettings);
+      if (settings.advanced) setAdvanced({ ...defaultAdvancedSettings, ...(settings.advanced as Record<string, unknown>) } as AdvancedSettings);
+    }
+  }, [settings]);
+
+  const handleSave = async () => {
+    try {
+      await Promise.all([
+        upsertSetting.mutateAsync({ key: "general", value: general as unknown as Json }),
+        upsertSetting.mutateAsync({ key: "seo", value: seo as unknown as Json }),
+        upsertSetting.mutateAsync({ key: "notifications", value: notifications as unknown as Json }),
+        upsertSetting.mutateAsync({ key: "advanced", value: advanced as unknown as Json }),
+      ]);
+      toast.success("Paramètres enregistrés");
+    } catch {
+      toast.error("Erreur lors de l'enregistrement");
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className={adminStyles.pageLayout}>
+        <AdminPageHeader
+          icon={Settings}
+          title="Paramètres"
+          description="Configurez les paramètres de votre application"
+        />
+        <div className="space-y-4">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-64 w-full" />
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Settings className="h-6 w-6" />
-            Paramètres
-          </h1>
-          <p className="text-muted-foreground">
-            Configurez les paramètres de votre application
-          </p>
-        </div>
-        <Button>
-          <Save className="h-4 w-4 mr-2" />
+    <div className={adminStyles.pageLayout}>
+      <AdminPageHeader
+        icon={Settings}
+        title="Paramètres"
+        description="Configurez les paramètres de votre application"
+      >
+        <Button onClick={handleSave} disabled={upsertSetting.isPending}>
+          {upsertSetting.isPending ? (
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          ) : (
+            <Save className="h-4 w-4 mr-2" />
+          )}
           Enregistrer
         </Button>
-      </div>
+      </AdminPageHeader>
 
-      <Tabs defaultValue="general" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="general">Général</TabsTrigger>
-          <TabsTrigger value="notifications">Notifications</TabsTrigger>
-          <TabsTrigger value="appearance">Apparence</TabsTrigger>
-          <TabsTrigger value="advanced">Avancé</TabsTrigger>
-        </TabsList>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <div className={adminStyles.tabsListWrapper}>
+          <TabsList className={adminStyles.tabsList}>
+            <TabsTrigger value="general" className={adminStyles.tabsTrigger}>
+              <Building2 className="h-4 w-4" />
+              <span>Général</span>
+            </TabsTrigger>
+            <TabsTrigger value="seo" className={adminStyles.tabsTrigger}>
+              <Globe className="h-4 w-4" />
+              <span>SEO</span>
+            </TabsTrigger>
+            <TabsTrigger value="notifications" className={adminStyles.tabsTrigger}>
+              <Bell className="h-4 w-4" />
+              <span>Notifications</span>
+            </TabsTrigger>
+            <TabsTrigger value="advanced" className={adminStyles.tabsTrigger}>
+              <Shield className="h-4 w-4" />
+              <span>Avancé</span>
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         {/* General Settings */}
-        <TabsContent value="general" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Building2 className="h-5 w-5" />
-                Informations de l'organisme
+        <TabsContent value="general" className="space-y-4">
+          <Card className="border-0 bg-secondary/30">
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className={adminStyles.cardTitle}>
+                Informations de l&apos;organisme
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-xs sm:text-sm">
                 Informations générales affichées sur le site
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 p-4 sm:p-6 pt-0 sm:pt-0">
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="siteName">Nom de l'organisme</Label>
+                  <Label htmlFor="siteName" className={adminStyles.formLabel}>Nom de l&apos;organisme</Label>
                   <Input
                     id="siteName"
-                    value={generalSettings.siteName}
-                    onChange={(e) =>
-                      setGeneralSettings({ ...generalSettings, siteName: e.target.value })
-                    }
+                    className={adminStyles.formInput}
+                    value={general.siteName}
+                    onChange={(e) => setGeneral({ ...general, siteName: e.target.value })}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email de contact</Label>
+                  <Label htmlFor="email" className={adminStyles.formLabel}>Email de contact</Label>
                   <Input
                     id="email"
                     type="email"
-                    value={generalSettings.email}
-                    onChange={(e) =>
-                      setGeneralSettings({ ...generalSettings, email: e.target.value })
-                    }
+                    className={adminStyles.formInput}
+                    value={general.email}
+                    onChange={(e) => setGeneral({ ...general, email: e.target.value })}
                   />
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
+                <Label htmlFor="description" className={adminStyles.formLabel}>Description</Label>
                 <Textarea
                   id="description"
-                  value={generalSettings.siteDescription}
-                  onChange={(e) =>
-                    setGeneralSettings({ ...generalSettings, siteDescription: e.target.value })
-                  }
+                  value={general.siteDescription}
+                  onChange={(e) => setGeneral({ ...general, siteDescription: e.target.value })}
                 />
               </div>
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Téléphone</Label>
+                  <Label htmlFor="phone" className={adminStyles.formLabel}>Téléphone</Label>
                   <Input
                     id="phone"
-                    value={generalSettings.phone}
-                    onChange={(e) =>
-                      setGeneralSettings({ ...generalSettings, phone: e.target.value })
-                    }
+                    className={adminStyles.formInput}
+                    value={general.phone}
+                    onChange={(e) => setGeneral({ ...general, phone: e.target.value })}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="address">Adresse</Label>
+                  <Label htmlFor="address" className={adminStyles.formLabel}>Adresse</Label>
                   <Input
                     id="address"
-                    value={generalSettings.address}
-                    onChange={(e) =>
-                      setGeneralSettings({ ...generalSettings, address: e.target.value })
-                    }
+                    className={adminStyles.formInput}
+                    value={general.address}
+                    onChange={(e) => setGeneral({ ...general, address: e.target.value })}
                   />
                 </div>
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Globe className="h-5 w-5" />
+        {/* SEO Settings */}
+        <TabsContent value="seo" className="space-y-4">
+          <Card className="border-0 bg-secondary/30">
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className={adminStyles.cardTitle}>
                 SEO & Métadonnées
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-xs sm:text-sm">
                 Paramètres pour le référencement naturel
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 p-4 sm:p-6 pt-0 sm:pt-0">
               <div className="space-y-2">
-                <Label htmlFor="metaTitle">Titre meta par défaut</Label>
+                <Label htmlFor="metaTitle" className={adminStyles.formLabel}>Titre meta par défaut</Label>
                 <Input
                   id="metaTitle"
+                  className={adminStyles.formInput}
                   placeholder="C&Co Formation - Organisme de formation professionnelle"
+                  value={seo.metaTitle}
+                  onChange={(e) => setSeo({ ...seo, metaTitle: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="metaDescription">Description meta par défaut</Label>
+                <Label htmlFor="metaDescription" className={adminStyles.formLabel}>Description meta par défaut</Label>
                 <Textarea
                   id="metaDescription"
                   placeholder="Découvrez nos formations professionnelles..."
+                  value={seo.metaDescription}
+                  onChange={(e) => setSeo({ ...seo, metaDescription: e.target.value })}
                 />
               </div>
             </CardContent>
@@ -169,201 +229,106 @@ export default function SettingsPage() {
         </TabsContent>
 
         {/* Notifications Settings */}
-        <TabsContent value="notifications" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Bell className="h-5 w-5" />
+        <TabsContent value="notifications" className="space-y-4">
+          <Card className="border-0 bg-secondary/30">
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className={adminStyles.cardTitle}>
                 Préférences de notifications
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-xs sm:text-sm">
                 Configurez comment vous recevez les notifications
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Notifications par email</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Recevoir les notifications par email
-                  </p>
+            <CardContent className="space-y-6 p-4 sm:p-6 pt-0 sm:pt-0">
+              {[
+                { key: "emailNotifications" as const, label: "Notifications par email", desc: "Recevoir les notifications par email" },
+                { key: "pushNotifications" as const, label: "Notifications push", desc: "Recevoir les notifications push dans le navigateur" },
+                { key: "weeklyReport" as const, label: "Rapport hebdomadaire", desc: "Recevoir un résumé hebdomadaire par email" },
+                { key: "newRegistration" as const, label: "Nouvelles inscriptions", desc: "Être notifié des nouvelles inscriptions" },
+                { key: "newContact" as const, label: "Nouveaux contacts", desc: "Être notifié des nouveaux messages de contact" },
+              ].map(({ key, label, desc }) => (
+                <div key={key} className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label className={adminStyles.formLabel}>{label}</Label>
+                    <p className="text-xs text-muted-foreground">{desc}</p>
+                  </div>
+                  <Switch
+                    checked={notifications[key]}
+                    onCheckedChange={(checked) =>
+                      setNotifications({ ...notifications, [key]: checked })
+                    }
+                  />
                 </div>
-                <Switch
-                  checked={notifications.emailNotifications}
-                  onCheckedChange={(checked) =>
-                    setNotifications({ ...notifications, emailNotifications: checked })
-                  }
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Notifications push</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Recevoir les notifications push dans le navigateur
-                  </p>
-                </div>
-                <Switch
-                  checked={notifications.pushNotifications}
-                  onCheckedChange={(checked) =>
-                    setNotifications({ ...notifications, pushNotifications: checked })
-                  }
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Rapport hebdomadaire</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Recevoir un résumé hebdomadaire par email
-                  </p>
-                </div>
-                <Switch
-                  checked={notifications.weeklyReport}
-                  onCheckedChange={(checked) =>
-                    setNotifications({ ...notifications, weeklyReport: checked })
-                  }
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Nouvelles inscriptions</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Être notifié des nouvelles inscriptions
-                  </p>
-                </div>
-                <Switch
-                  checked={notifications.newRegistration}
-                  onCheckedChange={(checked) =>
-                    setNotifications({ ...notifications, newRegistration: checked })
-                  }
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Nouveaux contacts</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Être notifié des nouveaux messages de contact
-                  </p>
-                </div>
-                <Switch
-                  checked={notifications.newContact}
-                  onCheckedChange={(checked) =>
-                    setNotifications({ ...notifications, newContact: checked })
-                  }
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Appearance Settings */}
-        <TabsContent value="appearance" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Palette className="h-5 w-5" />
-                Personnalisation
-              </CardTitle>
-              <CardDescription>
-                Personnalisez l'apparence de votre interface
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>Couleur principale</Label>
-                <div className="flex gap-2">
-                  {["#3b82f6", "#22c55e", "#f97316", "#8b5cf6", "#ec4899"].map((color) => (
-                    <button
-                      key={color}
-                      className="h-8 w-8 rounded-full border-2 border-transparent hover:border-foreground transition-colors"
-                      style={{ backgroundColor: color }}
-                    />
-                  ))}
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="logo">Logo</Label>
-                <Input id="logo" type="file" accept="image/*" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="favicon">Favicon</Label>
-                <Input id="favicon" type="file" accept="image/*" />
-              </div>
+              ))}
             </CardContent>
           </Card>
         </TabsContent>
 
         {/* Advanced Settings */}
-        <TabsContent value="advanced" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="h-5 w-5" />
+        <TabsContent value="advanced" className="space-y-4">
+          <Card className="border-0 bg-secondary/30">
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className={adminStyles.cardTitle}>
                 Paramètres avancés
               </CardTitle>
-              <CardDescription>
-                Configuration avancée de l'application
+              <CardDescription className="text-xs sm:text-sm">
+                Configuration avancée de l&apos;application
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6 p-4 sm:p-6 pt-0 sm:pt-0">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>Mode maintenance</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Activer le mode maintenance du site
-                  </p>
+                  <Label className={adminStyles.formLabel}>Mode maintenance</Label>
+                  <p className="text-xs text-muted-foreground">Activer le mode maintenance du site</p>
                 </div>
-                <Switch />
+                <Switch
+                  checked={advanced.maintenanceMode}
+                  onCheckedChange={(checked) =>
+                    setAdvanced({ ...advanced, maintenanceMode: checked })
+                  }
+                />
               </div>
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>Inscriptions ouvertes</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Permettre les nouvelles inscriptions
-                  </p>
+                  <Label className={adminStyles.formLabel}>Inscriptions ouvertes</Label>
+                  <p className="text-xs text-muted-foreground">Permettre les nouvelles inscriptions</p>
                 </div>
-                <Switch defaultChecked />
+                <Switch
+                  checked={advanced.registrationsOpen}
+                  onCheckedChange={(checked) =>
+                    setAdvanced({ ...advanced, registrationsOpen: checked })
+                  }
+                />
               </div>
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>Debug mode</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Afficher les informations de debug
-                  </p>
+                  <Label className={adminStyles.formLabel}>Debug mode</Label>
+                  <p className="text-xs text-muted-foreground">Afficher les informations de debug</p>
                 </div>
-                <Switch />
+                <Switch
+                  checked={advanced.debugMode}
+                  onCheckedChange={(checked) =>
+                    setAdvanced({ ...advanced, debugMode: checked })
+                  }
+                />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-destructive">
-            <CardHeader>
-              <CardTitle className="text-destructive">Zone de danger</CardTitle>
-              <CardDescription>
+          <Card className="border-0 bg-destructive/5">
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className={`${adminStyles.cardTitle} text-destructive`}>Zone de danger</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">
                 Actions irréversibles
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 p-4 sm:p-6 pt-0 sm:pt-0">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>Vider le cache</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Supprimer tous les fichiers en cache
-                  </p>
+                  <Label className={adminStyles.formLabel}>Vider le cache</Label>
+                  <p className="text-xs text-muted-foreground">Supprimer tous les fichiers en cache</p>
                 </div>
-                <Button variant="destructive" size="sm">
-                  Vider le cache
-                </Button>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Réinitialiser les paramètres</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Remettre tous les paramètres par défaut
-                  </p>
-                </div>
-                <Button variant="destructive" size="sm">
-                  Réinitialiser
-                </Button>
+                <Button variant="destructive" size="sm">Vider le cache</Button>
               </div>
             </CardContent>
           </Card>

@@ -109,9 +109,9 @@ export function SearchCommand() {
           .eq("published", true)
           .limit(50),
         supabase
-          .from("faqs")
-          .select("id, question, answer, slug, keywords")
-          .eq("published", true)
+          .from("faq_items")
+          .select("id, question, answer, keywords, category_id")
+          .eq("active", true)
           .limit(50),
       ]);
 
@@ -162,12 +162,12 @@ export function SearchCommand() {
           return normalizedQuestion.includes(searchTerm) || normalizedKeywords.includes(searchTerm);
         })
         .slice(0, 3)
-        .forEach((f: { id: string; question: string; slug: string | null }) => {
+        .forEach((f: { id: string; question: string }) => {
           searchResults.push({
             id: `faq-${f.id}`,
             title: f.question,
             subtitle: "Question fréquente",
-            href: `/faq#${f.slug || f.id}`,
+            href: `/faq#${f.id}`,
             type: "faq",
           });
         });

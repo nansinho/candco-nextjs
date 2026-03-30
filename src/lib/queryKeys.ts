@@ -118,6 +118,17 @@ export const queryKeys = {
       all: ["admin-contacts"] as const,
     },
 
+    // Settings
+    settings: {
+      all: ["admin-settings"] as const,
+    },
+
+    // Cookie Consents
+    cookieConsents: {
+      all: ["admin-cookie-consents"] as const,
+      stats: () => [...queryKeys.admin.cookieConsents.all, "stats"] as const,
+    },
+
     // Notifications
     notifications: {
       all: ["admin-notifications"] as const,

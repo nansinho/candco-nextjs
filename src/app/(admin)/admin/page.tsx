@@ -13,16 +13,21 @@ import {
   FileText,
   Image,
   HelpCircle,
+  Mail,
+  ArrowRightLeft,
 } from "lucide-react";
 
 async function fetchStats() {
   const supabase = createClient();
 
-  const [articlesRes, articlesPublishedRes, faqRes, mediaRes] = await Promise.all([
+  const [articlesRes, articlesPublishedRes, faqRes, mediaRes, contactsRes, contactsUnreadRes, redirectsRes] = await Promise.all([
     supabase.from("blog_articles").select("id", { count: "exact", head: true }),
     supabase.from("blog_articles").select("id", { count: "exact", head: true }).eq("published", true),
     supabase.from("faq_items").select("id", { count: "exact", head: true }),
     supabase.from("media").select("id", { count: "exact", head: true }),
+    supabase.from("contact_submissions").select("id", { count: "exact", head: true }),
+    supabase.from("contact_submissions").select("id", { count: "exact", head: true }).or("read.is.null,read.eq.false"),
+    supabase.from("redirects").select("id", { count: "exact", head: true }),
   ]);
 
   return {
@@ -30,6 +35,9 @@ async function fetchStats() {
     articlesPublished: articlesPublishedRes.count || 0,
     faq: faqRes.count || 0,
     media: mediaRes.count || 0,
+    contacts: contactsRes.count || 0,
+    contactsUnread: contactsUnreadRes.count || 0,
+    redirects: redirectsRes.count || 0,
   };
 }
 
@@ -49,9 +57,11 @@ export default function AdminDashboard() {
       />
 
       {/* Stats Grid */}
-      <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-3">
         {isLoading ? (
           <>
+            <StatsCardSkeleton />
+            <StatsCardSkeleton />
             <StatsCardSkeleton />
             <StatsCardSkeleton />
             <StatsCardSkeleton />
@@ -81,11 +91,18 @@ export default function AdminDashboard() {
               href="/admin/media"
             />
             <StatsCard
-              title="Articles publiés"
-              value={stats?.articlesPublished ?? 0}
-              description="Visibles sur le site"
-              icon={FileText}
-              href="/admin/articles"
+              title="Contacts"
+              value={stats?.contacts ?? 0}
+              description={`${stats?.contactsUnread ?? 0} non lus`}
+              icon={Mail}
+              href="/admin/contacts"
+            />
+            <StatsCard
+              title="Redirections"
+              value={stats?.redirects ?? 0}
+              description="Règles actives"
+              icon={ArrowRightLeft}
+              href="/admin/redirects"
             />
           </>
         )}
@@ -99,7 +116,7 @@ export default function AdminDashboard() {
             Accès rapide aux fonctionnalités du site vitrine
           </CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-2 sm:gap-3 sm:grid-cols-2 lg:grid-cols-3 p-3 sm:p-6 pt-0 sm:pt-0">
+        <CardContent className="grid gap-2 sm:gap-3 sm:grid-cols-2 lg:grid-cols-4 p-3 sm:p-6 pt-0 sm:pt-0">
           <Button asChild variant="ghost" className="justify-start text-xs sm:text-sm h-9 sm:h-10 bg-background/50 hover:bg-background">
             <Link href="/admin/articles">
               <FileText className="mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -116,6 +133,12 @@ export default function AdminDashboard() {
             <Link href="/admin/media">
               <Image className="mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
               Médiathèque
+            </Link>
+          </Button>
+          <Button asChild variant="ghost" className="justify-start text-xs sm:text-sm h-9 sm:h-10 bg-background/50 hover:bg-background">
+            <Link href="/admin/contacts">
+              <Mail className="mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              Voir les contacts
             </Link>
           </Button>
         </CardContent>

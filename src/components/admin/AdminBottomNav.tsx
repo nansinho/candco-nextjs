@@ -7,15 +7,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, CalendarDays, Building2, GraduationCap, Menu } from "lucide-react";
+import { LayoutDashboard, FileText, Mail, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "@/components/ui/sidebar";
 
 const navItems = [
   { path: "/admin", icon: LayoutDashboard, label: "Accueil", exact: true },
-  { path: "/admin/sessions", icon: CalendarDays, label: "Sessions", exact: false },
-  { path: "/admin/clients", icon: Building2, label: "Clients", exact: false },
-  { path: "/admin/formateurs", icon: GraduationCap, label: "Formateurs", exact: false },
+  { path: "/admin/articles", icon: FileText, label: "Articles", exact: false },
+  { path: "/admin/contacts", icon: Mail, label: "Contacts", exact: false },
 ];
 
 export function AdminBottomNav() {
@@ -34,7 +33,7 @@ export function AdminBottomNav() {
       className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t border-border sm:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
     >
-      <div className="grid grid-cols-5 h-14">
+      <div className="grid grid-cols-4 h-14">
         {navItems.map((item) => {
           const active = isActive(item.path, item.exact);
           return (

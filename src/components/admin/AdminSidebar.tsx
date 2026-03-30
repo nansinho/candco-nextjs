@@ -19,6 +19,7 @@ import {
   ArrowRightLeft,
   Cookie,
   Lock,
+  Mail,
 } from "lucide-react";
 import {
   Sidebar,
@@ -65,6 +66,7 @@ const adminMenuCategories: MenuCategory[] = [
       { title: "Articles", url: "/admin/articles", icon: FileText },
       { title: "FAQ", url: "/admin/faq", icon: HelpCircle },
       { title: "Médias", url: "/admin/media", icon: Image },
+      { title: "Contacts", url: "/admin/contacts", icon: Mail },
     ],
   },
   {
