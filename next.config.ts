@@ -85,11 +85,26 @@ const nextConfig: NextConfig = {
           },
           {
             key: "Strict-Transport-Security",
-            value: "max-age=31536000; includeSubDomains",
+            value: "max-age=31536000; includeSubDomains; preload",
           },
           {
             key: "Permissions-Policy",
             value: "camera=(), microphone=(), geolocation=(self), interest-cohort=()",
+          },
+          {
+            key: "Content-Security-Policy",
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.trustindex.io https://www.googletagmanager.com https://www.google-analytics.com",
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.trustindex.io",
+              "img-src 'self' data: blob: https://supabase.candco.fr https://*.trustindex.io https://lh3.googleusercontent.com https://www.google-analytics.com",
+              "font-src 'self' https://fonts.gstatic.com",
+              "connect-src 'self' https://supabase.candco.fr https://*.trustindex.io https://www.google-analytics.com https://analytics.google.com",
+              "frame-src 'self' https://*.trustindex.io",
+              "object-src 'none'",
+              "base-uri 'self'",
+              "form-action 'self'",
+            ].join("; "),
           },
         ],
       },

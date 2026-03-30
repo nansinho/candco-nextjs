@@ -14,16 +14,13 @@ import {
   Search,
   Clock,
   ArrowRight,
-  Shield,
-  Baby,
-  HeartPulse,
-  Briefcase,
   CalendarDays,
   Users,
   X,
   SlidersHorizontal,
   Check,
 } from "lucide-react";
+import { POLES } from "@/lib/poles-config";
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
@@ -75,10 +72,7 @@ interface FormationsClientProps {
 
 const poles = [
   { id: "all", name: "Toutes", icon: null, color: null, hex: null },
-  { id: "securite-prevention", name: "Sécurité", icon: Shield, color: "pole-securite", hex: "#A82424" },
-  { id: "petite-enfance", name: "Petite Enfance", icon: Baby, color: "pole-petite-enfance", hex: "#2D867E" },
-  { id: "sante", name: "Santé", icon: HeartPulse, color: "pole-sante", hex: "#507395" },
-  { id: "entrepreneuriat", name: "Entrepreneuriat", icon: Briefcase, color: "primary", hex: "#1F628E" },
+  ...POLES.map((p) => ({ id: p.id, name: p.shortName, icon: p.icon, color: p.color, hex: p.hex })),
 ];
 
 
@@ -631,14 +625,14 @@ export default function FormationsClient({
       </section>
 
       {/* CTA */}
-      <section className="py-12 bg-white border-t border-gray-100">
+      <section className="py-12 bg-card border-t border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <p className="mb-4 text-gray-500">
+          <p className="mb-4 text-muted-foreground">
             Besoin d&apos;aide pour choisir votre formation ?
           </p>
           <Link
             href="/contact"
-            className="inline-flex items-center gap-2 font-bold text-[14px] text-[#1F628E] transition-all hover:scale-[1.02]"
+            className="inline-flex items-center gap-2 font-bold text-[14px] text-primary transition-all hover:scale-[1.02]"
           >
             Contactez nos conseillers
             <ArrowRight className="w-4 h-4" />

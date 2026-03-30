@@ -3,7 +3,7 @@ import { Resend } from "resend";
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 const EMAIL_FROM = process.env.EMAIL_FROM || "C&Co Formation <contact@candco.fr>";
-const EMAIL_TO = ["contact@candco.fr", "contact@harua-ds.com"];
+const EMAIL_TO = (process.env.EMAIL_TO || "contact@candco.fr,contact@harua-ds.com").split(",").map(e => e.trim());
 
 interface SendEmailOptions {
   subject: string;

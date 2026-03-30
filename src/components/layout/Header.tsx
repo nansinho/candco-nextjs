@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, memo, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -29,6 +29,7 @@ import {
   LayoutDashboard,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { roleLabels, roleColors } from "@/lib/roles";
 import { useSearch } from "@/components/search";
 import { createClient } from "@/lib/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -193,26 +194,6 @@ const mobileNavigation: NavItem[] = [
   { name: "Contact", href: "/contact", icon: Mail },
 ];
 
-// Role labels and colors
-const roleLabels: Record<string, string> = {
-  superadmin: "Super Admin",
-  admin: "Admin",
-  org_manager: "Manager",
-  moderator: "Modérateur",
-  formateur: "Formateur",
-  client_manager: "Client",
-  user: "Utilisateur",
-};
-
-const roleColors: Record<string, string> = {
-  superadmin: "bg-amber-500/10 text-amber-600 border-amber-500/20",
-  admin: "bg-red-500/10 text-red-600 border-red-500/20",
-  org_manager: "bg-blue-500/10 text-blue-600 border-blue-500/20",
-  moderator: "bg-purple-500/10 text-purple-600 border-purple-500/20",
-  formateur: "bg-green-500/10 text-green-600 border-green-500/20",
-  client_manager: "bg-cyan-500/10 text-cyan-600 border-cyan-500/20",
-  user: "bg-muted text-muted-foreground border-border/30",
-};
 
 interface UserData {
   id: string;
@@ -223,19 +204,19 @@ interface UserData {
   role?: string;
 }
 
-export default function Header() {
+function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [hoveredSubmenu, setHoveredSubmenu] = useState<string | null>(null);
   const submenuTimeout = useRef<NodeJS.Timeout | null>(null);
 
-  const openSubmenu = (name: string) => {
+  const openSubmenu = useCallback((name: string) => {
     if (submenuTimeout.current) clearTimeout(submenuTimeout.current);
     setHoveredSubmenu(name);
-  };
-  const closeSubmenu = () => {
+  }, []);
+  const closeSubmenu = useCallback(() => {
     submenuTimeout.current = setTimeout(() => setHoveredSubmenu(null), 200);
-  };
+  }, []);
   const [mobileSubmenuOpen, setMobileSubmenuOpen] = useState<string | null>(null);
   const pathname = usePathname();
   const router = useRouter();
@@ -321,18 +302,18 @@ export default function Header() {
     setIsSwipingMenu(false);
   };
 
-  const isActiveRoute = (href: string, submenu?: NavSubItem[]) => {
+  const isActiveRoute = useCallback((href: string, submenu?: NavSubItem[]) => {
     if (submenu?.length) {
       return submenu.some((item) => pathname === item.href);
     }
     return pathname === href || pathname.startsWith(href + "/");
-  };
+  }, [pathname]);
 
-  const handleSignOut = async () => {
+  const handleSignOut = useCallback(async () => {
     await signOut();
-  };
+  }, [signOut]);
 
-  const getUserInitials = () => {
+  const getUserInitials = useCallback(() => {
     if (user?.first_name && user?.last_name) {
       return `${user.first_name.charAt(0)}${user.last_name.charAt(0)}`.toUpperCase();
     }
@@ -343,9 +324,9 @@ export default function Header() {
       return user.email.charAt(0).toUpperCase();
     }
     return "?";
-  };
+  }, [user]);
 
-  const getUserDisplayName = () => {
+  const getUserDisplayName = useCallback(() => {
     if (user?.first_name && user?.last_name) {
       return `${user.first_name} ${user.last_name}`;
     }
@@ -353,9 +334,9 @@ export default function Header() {
       return user.first_name;
     }
     return user?.email?.split("@")[0] || "Utilisateur";
-  };
+  }, [user]);
 
-  const isAdmin = user?.role && ["superadmin", "admin", "org_manager", "moderator"].includes(user.role);
+  const isAdmin = useMemo(() => user?.role && ["superadmin", "admin", "org_manager", "moderator"].includes(user.role), [user?.role]);
 
   return (
     <>
@@ -862,3 +843,5 @@ export default function Header() {
     </>
   );
 }
+
+export default memo(Header);

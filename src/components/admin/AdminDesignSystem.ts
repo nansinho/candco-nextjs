@@ -114,15 +114,6 @@ export const adminStyles = {
   dialogFooter: "flex justify-end gap-2 pt-4",
 
   // ============================================================
-  // BADGES DE RÔLE
-  // ============================================================
-  roleBadge: {
-    admin: "bg-destructive/10 text-destructive border-destructive/20",
-    org_manager: "bg-blue-500/10 text-blue-600 border-blue-500/20",
-    user: "bg-muted text-muted-foreground border-border/30",
-  },
-
-  // ============================================================
   // BOUTONS D'ACTION
   // ============================================================
   actionButton: {

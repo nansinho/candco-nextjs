@@ -23,6 +23,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { roleLabels, roleColorsGradient } from "@/lib/roles";
 
 // Fonction pour obtenir les initiales
 function getUserInitials(data: {
@@ -79,33 +80,13 @@ const getParentPath = (pathname: string): string | null => {
 
 // Badge de rôle - Design amélioré
 function RoleBadge({ role, size = "default" }: { role: string; size?: "default" | "large" }) {
-  const roleLabels: Record<string, string> = {
-    superadmin: "Super Admin",
-    admin: "Admin",
-    org_manager: "Org. Manager",
-    moderator: "Modérateur",
-    formateur: "Formateur",
-    client_manager: "Client Manager",
-    user: "Utilisateur",
-  };
-
-  const roleColors: Record<string, string> = {
-    superadmin: "bg-gradient-to-r from-amber-500/20 to-amber-600/10 text-amber-500 border-amber-500/30 shadow-amber-500/10",
-    admin: "bg-gradient-to-r from-red-500/20 to-red-600/10 text-red-500 border-red-500/30 shadow-red-500/10",
-    org_manager: "bg-gradient-to-r from-blue-500/20 to-blue-600/10 text-blue-500 border-blue-500/30 shadow-blue-500/10",
-    moderator: "bg-gradient-to-r from-purple-500/20 to-purple-600/10 text-purple-500 border-purple-500/30 shadow-purple-500/10",
-    formateur: "bg-gradient-to-r from-green-500/20 to-green-600/10 text-green-500 border-green-500/30 shadow-green-500/10",
-    client_manager: "bg-gradient-to-r from-cyan-500/20 to-cyan-600/10 text-cyan-500 border-cyan-500/30 shadow-cyan-500/10",
-    user: "bg-muted text-muted-foreground border-border/30",
-  };
-
   return (
     <Badge
       variant="outline"
       className={cn(
         "font-medium shadow-sm",
         size === "large" ? "text-[11px] px-2.5 py-0.5" : "text-[10px] px-2 py-0.5",
-        roleColors[role] || roleColors.user
+        roleColorsGradient[role] || roleColorsGradient.user
       )}
     >
       {roleLabels[role] || role}

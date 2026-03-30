@@ -269,7 +269,7 @@ export function CookieBanner() {
             <div className="flex items-start justify-between gap-4 p-4 bg-green-500/5 border border-green-500/20 rounded-xl">
               <div className="flex items-start gap-3">
                 <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center flex-shrink-0">
-                  <Shield className="w-5 h-5 text-green-600" />
+                  <Shield className="w-5 h-5 text-green-600 dark:text-green-400" />
                 </div>
                 <div>
                   <h4 className="font-medium text-foreground">
@@ -292,7 +292,7 @@ export function CookieBanner() {
             <div className="flex items-start justify-between gap-4 p-4 bg-muted/30 border border-border/50 rounded-xl">
               <div className="flex items-start gap-3">
                 <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center flex-shrink-0">
-                  <Settings className="w-5 h-5 text-blue-600" />
+                  <Settings className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
                   <h4 className="font-medium text-foreground">
@@ -316,7 +316,7 @@ export function CookieBanner() {
             <div className="flex items-start justify-between gap-4 p-4 bg-muted/30 border border-border/50 rounded-xl">
               <div className="flex items-start gap-3">
                 <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center flex-shrink-0">
-                  <Eye className="w-5 h-5 text-purple-600" />
+                  <Eye className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                 </div>
                 <div>
                   <h4 className="font-medium text-foreground">
@@ -337,7 +337,7 @@ export function CookieBanner() {
             </div>
           </div>
 
-          <div className="flex flex-col-reverse sm:flex-row gap-3 pt-4" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+          <div className="flex flex-col-reverse sm:flex-row gap-3 pt-4 border-t border-border">
             <button
               onClick={handleRejectAll}
               className="flex-1 inline-flex items-center justify-center px-4 py-2.5 transition-colors disabled:opacity-50"
