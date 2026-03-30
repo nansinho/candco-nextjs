@@ -93,12 +93,13 @@ export default function HeroSectionV2({ slides }: { slides?: HeroSlide[] }) {
 
           {/* H1 */}
           <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] font-semibold leading-[1.1] tracking-tight text-white max-w-5xl mx-auto mb-6">
-            Votre formation professionnelle, <span style={{ color: "#F8A991" }}>réinventée</span>
+            C&Co Formation,{" "}
+            <span className="block" style={{ color: "#F8A991" }}>votre organisme de formation.</span>
           </h1>
 
           {/* Subtitle */}
           <p className="text-base sm:text-lg text-blue-100/70 max-w-2xl mx-auto mb-10 leading-relaxed">
-            C&Co Formation, organisme certifié Qualiopi. Des formations en Sécurité, Petite Enfance et Santé conçues pour développer vos compétences.
+            Organisme certifié Qualiopi. Des formations certifiantes en Sécurité, Petite Enfance et Santé conçues pour développer vos compétences.
           </p>
 
           {/* CTA */}
