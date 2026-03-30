@@ -19,7 +19,7 @@ const DialogOverlay = React.forwardRef<
   <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      "fixed inset-0 z-[70] bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+      "fixed inset-0 z-[90] bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
       className,
     )}
     {...props}
@@ -50,7 +50,7 @@ const DialogContent = React.forwardRef<
       ref={ref}
       className={cn(
         // Mobile: aligned to top with safe-area, scrollable - generous padding
-        "fixed left-[50%] z-[70] grid w-full translate-x-[-50%] gap-6 border-0 bg-background p-5 sm:p-8 shadow-lg duration-200",
+        "fixed left-[50%] z-[90] grid w-full translate-x-[-50%] gap-6 border-0 bg-background p-5 sm:p-8 shadow-lg duration-200",
         // Mobile: top-aligned layout with dvh for iOS - touch-pan-y for smooth scrolling
         "top-[max(0.5rem,env(safe-area-inset-top))] translate-y-0 max-h-[calc(100dvh-1rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] overflow-y-auto overscroll-contain touch-pan-y rounded-xl",
         // Desktop: centered as before - increased height for better content display

@@ -15,6 +15,8 @@ interface InscriptionButtonProps {
   size?: "default" | "sm" | "lg";
   className?: string;
   fullWidth?: boolean;
+  mode?: "inscription" | "devis";
+  label?: string;
 }
 
 export function InscriptionButton({
@@ -23,8 +25,12 @@ export function InscriptionButton({
   size = "default",
   className,
   fullWidth = true,
+  mode = "inscription",
+  label,
 }: InscriptionButtonProps) {
   const [open, setOpen] = useState(false);
+
+  const defaultLabel = mode === "devis" ? "Demander un devis" : "S'inscrire";
 
   return (
     <>
@@ -34,7 +40,7 @@ export function InscriptionButton({
         onClick={() => setOpen(true)}
         className={fullWidth ? `w-full ${className || ""}` : className}
       >
-        S'inscrire
+        {label || defaultLabel}
         <ArrowRight className="ml-2 h-4 w-4" />
       </Button>
 
@@ -42,6 +48,7 @@ export function InscriptionButton({
         open={open}
         onOpenChange={setOpen}
         formation={formation}
+        mode={mode}
       />
     </>
   );
