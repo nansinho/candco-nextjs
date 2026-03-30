@@ -1,16 +1,12 @@
 "use client";
 
 import { useState, useEffect, forwardRef, SVGProps } from "react";
-import { X, Type, Eye, Link2, Contrast } from "lucide-react";
+import { X, Type, Eye, Link2, Contrast, RotateCcw } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 
-// Create motion components that support refs
 const MotionButton = motion.button;
 const MotionDiv = motion.div;
 
-// Custom accessibility icon - person with arms and legs spread (universal design symbol)
 const AccessibilityIcon = forwardRef<SVGSVGElement, SVGProps<SVGSVGElement>>(
   function AccessibilityIcon({ className, ...props }, ref) {
     return (
@@ -25,15 +21,10 @@ const AccessibilityIcon = forwardRef<SVGSVGElement, SVGProps<SVGSVGElement>>(
         strokeLinejoin="round"
         {...props}
       >
-        {/* Head */}
         <circle cx="12" cy="4" r="2.5" />
-        {/* Body */}
         <line x1="12" y1="6.5" x2="12" y2="14" />
-        {/* Arms spread */}
         <line x1="5" y1="9" x2="19" y2="9" />
-        {/* Left leg */}
         <line x1="12" y1="14" x2="7" y2="22" />
-        {/* Right leg */}
         <line x1="12" y1="14" x2="17" y2="22" />
       </svg>
     );
@@ -63,15 +54,12 @@ export function AccessibilityWidget() {
   const [settings, setSettings] = useState<AccessibilitySettings>(defaultSettings);
   const [mounted, setMounted] = useState(false);
 
-  // Ensure component is mounted before rendering (for hydration)
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Load settings from localStorage on mount
   useEffect(() => {
     if (!mounted) return;
-
     const saved = localStorage.getItem("accessibility-settings");
     if (saved) {
       try {
@@ -84,10 +72,8 @@ export function AccessibilityWidget() {
     }
   }, [mounted]);
 
-  // Apply settings to document
   const applySettings = (newSettings: AccessibilitySettings) => {
     const html = document.documentElement;
-
     html.classList.toggle("accessibility-large-text", newSettings.largeText);
     html.classList.toggle("accessibility-high-contrast", newSettings.highContrast);
     html.classList.toggle("accessibility-wide-spacing", newSettings.wideSpacing);
@@ -95,7 +81,6 @@ export function AccessibilityWidget() {
     html.classList.toggle("accessibility-desaturated", newSettings.desaturated);
   };
 
-  // Update a single setting
   const updateSetting = (key: keyof AccessibilitySettings, value: boolean) => {
     const newSettings = { ...settings, [key]: value };
     setSettings(newSettings);
@@ -103,63 +88,41 @@ export function AccessibilityWidget() {
     applySettings(newSettings);
   };
 
-  // Reset all settings
   const resetSettings = () => {
     setSettings(defaultSettings);
     localStorage.removeItem("accessibility-settings");
     applySettings(defaultSettings);
   };
 
+  const hasActiveSettings = Object.values(settings).some(Boolean);
+
   const options = [
-    {
-      key: "largeText" as const,
-      label: "Texte agrandi",
-      description: "Augmente la taille du texte",
-      icon: Type,
-    },
-    {
-      key: "highContrast" as const,
-      label: "Contraste élevé",
-      description: "Améliore le contraste des couleurs",
-      icon: Contrast,
-    },
-    {
-      key: "wideSpacing" as const,
-      label: "Espacement large",
-      description: "Augmente l'espacement du texte",
-      icon: Type,
-    },
-    {
-      key: "highlightLinks" as const,
-      label: "Surligner les liens",
-      description: "Rend les liens plus visibles",
-      icon: Link2,
-    },
-    {
-      key: "desaturated" as const,
-      label: "Mode désaturé",
-      description: "Affichage en niveaux de gris",
-      icon: Eye,
-    },
+    { key: "largeText" as const, label: "Texte agrandi", description: "Augmente la taille du texte", icon: Type },
+    { key: "highContrast" as const, label: "Contraste élevé", description: "Améliore le contraste des couleurs", icon: Contrast },
+    { key: "wideSpacing" as const, label: "Espacement large", description: "Augmente l'espacement du texte", icon: Type },
+    { key: "highlightLinks" as const, label: "Surligner les liens", description: "Rend les liens plus visibles", icon: Link2 },
+    { key: "desaturated" as const, label: "Mode désaturé", description: "Affichage en niveaux de gris", icon: Eye },
   ];
 
-  // Don't render until mounted (prevents hydration mismatch)
   if (!mounted) return null;
 
   return (
     <>
-      {/* Toggle Button - Fixed bottom left */}
+      {/* Toggle Button */}
       <MotionButton
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.3, delay: 0.5 }}
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 left-6 z-40 w-12 h-12 sm:w-14 sm:h-14 bg-[#1F628E] text-white rounded-2xl shadow-lg shadow-[#1F628E]/25 flex items-center justify-center hover:scale-105 hover:shadow-xl hover:shadow-[#1F628E]/35 transition-all duration-300 group"
+        className="fixed bottom-6 left-6 z-40 w-12 h-12 sm:w-14 sm:h-14 rounded-2xl shadow-lg flex items-center justify-center hover:scale-105 transition-all duration-300"
+        style={{ backgroundColor: "#1F628E", color: "#fff" }}
         aria-label="Ouvrir les options d'accessibilité"
         aria-expanded={isOpen}
-        aria-controls="accessibility-panel"
       >
-        <AccessibilityIcon className="w-5 h-5 sm:w-6 sm:h-6 group-hover:scale-110 transition-transform duration-300" />
+        <AccessibilityIcon className="w-5 h-5 sm:w-6 sm:h-6" />
+        {hasActiveSettings && (
+          <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-[#F8A991] ring-2 ring-[#1F628E]" />
+        )}
       </MotionButton>
 
       {/* Panel */}
@@ -172,89 +135,105 @@ export function AccessibilityWidget() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsOpen(false)}
-              className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50"
+              className="fixed inset-0 z-50"
+              style={{ backgroundColor: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}
               aria-hidden="true"
             />
 
             {/* Panel */}
             <MotionDiv
-              id="accessibility-panel"
               role="dialog"
               aria-modal="true"
               aria-labelledby="accessibility-title"
-              initial={{ opacity: 0, x: -100, scale: 0.95 }}
-              animate={{ opacity: 1, x: 0, scale: 1 }}
-              exit={{ opacity: 0, x: -100, scale: 0.95 }}
-              transition={{ duration: 0.3, ease: "easeOut" }}
-              className="fixed bottom-6 left-6 z-50 w-[340px] max-w-[calc(100vw-3rem)] max-h-[80vh] bg-card border border-border/30 rounded-2xl shadow-2xl overflow-hidden"
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.95 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+              className="fixed bottom-6 left-6 z-50 w-[340px] max-w-[calc(100vw-3rem)] rounded-2xl shadow-2xl overflow-hidden"
+              style={{ backgroundColor: "#1a2332", border: "1px solid rgba(255,255,255,0.08)" }}
             >
               {/* Header */}
-              <div className="bg-primary/10 px-5 py-4 flex items-center justify-between border-b border-border/30">
+              <div className="px-5 py-4 flex items-center justify-between" style={{ backgroundColor: "#1F628E" }}>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center">
-                    <AccessibilityIcon className="w-5 h-5 text-primary" />
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: "rgba(255,255,255,0.15)" }}>
+                    <AccessibilityIcon className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h2 id="accessibility-title" className="font-semibold text-foreground">
+                    <h2 id="accessibility-title" className="font-semibold text-white text-[15px]">
                       Accessibilité
                     </h2>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs" style={{ color: "rgba(255,255,255,0.7)" }}>
                       Personnalisez votre expérience
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="p-2 hover:bg-muted rounded-lg transition-colors"
-                  aria-label="Fermer le panneau d'accessibilité"
+                  className="p-2 rounded-lg transition-colors"
+                  style={{ color: "rgba(255,255,255,0.7)" }}
+                  aria-label="Fermer"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
               {/* Options */}
-              <div className="p-4 space-y-3 max-h-[50vh] overflow-y-auto">
-                {options.map((option) => (
-                  <div
-                    key={option.key}
-                    className="flex items-center justify-between p-3 bg-muted/50 rounded-xl hover:bg-muted transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 bg-background rounded-lg flex items-center justify-center">
-                        <option.icon className="w-4 h-4 text-primary" />
+              <div className="p-4 space-y-2">
+                {options.map((option) => {
+                  const isActive = settings[option.key];
+                  return (
+                    <button
+                      key={option.key}
+                      onClick={() => updateSetting(option.key, !isActive)}
+                      className="w-full flex items-center gap-3 p-3 rounded-xl transition-all text-left"
+                      style={{
+                        backgroundColor: isActive ? "rgba(31,98,142,0.2)" : "rgba(255,255,255,0.04)",
+                        border: isActive ? "1px solid rgba(31,98,142,0.4)" : "1px solid rgba(255,255,255,0.06)",
+                      }}
+                    >
+                      <div
+                        className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                        style={{
+                          backgroundColor: isActive ? "#1F628E" : "rgba(255,255,255,0.06)",
+                        }}
+                      >
+                        <option.icon className="w-4 h-4" style={{ color: isActive ? "#fff" : "rgba(255,255,255,0.5)" }} />
                       </div>
-                      <div>
-                        <Label
-                          htmlFor={option.key}
-                          className="text-sm font-medium cursor-pointer"
-                        >
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium" style={{ color: isActive ? "#fff" : "rgba(255,255,255,0.8)" }}>
                           {option.label}
-                        </Label>
-                        <p className="text-xs text-muted-foreground">
+                        </p>
+                        <p className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
                           {option.description}
                         </p>
                       </div>
-                    </div>
-                    <Switch
-                      id={option.key}
-                      checked={settings[option.key]}
-                      onCheckedChange={(checked) => updateSetting(option.key, checked)}
-                      aria-describedby={`${option.key}-desc`}
-                    />
-                  </div>
-                ))}
+                      <div
+                        className="w-10 h-6 rounded-full relative shrink-0 transition-colors"
+                        style={{ backgroundColor: isActive ? "#1F628E" : "rgba(255,255,255,0.1)" }}
+                      >
+                        <div
+                          className="absolute top-1 w-4 h-4 rounded-full bg-white transition-all duration-200"
+                          style={{ left: isActive ? "22px" : "4px" }}
+                        />
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
 
               {/* Footer */}
-              <div className="px-4 pb-4">
-                <button
-                  onClick={resetSettings}
-                  className="w-full py-2 px-4 text-sm border border-border rounded-lg hover:bg-muted transition-colors"
-                  aria-label="Réinitialiser tous les paramètres d'accessibilité"
-                >
-                  Réinitialiser les paramètres
-                </button>
-              </div>
+              {hasActiveSettings && (
+                <div className="px-4 pb-4">
+                  <button
+                    onClick={resetSettings}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-medium rounded-xl transition-colors"
+                    style={{ color: "rgba(255,255,255,0.5)", border: "1px solid rgba(255,255,255,0.08)" }}
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    Réinitialiser
+                  </button>
+                </div>
+              )}
             </MotionDiv>
           </>
         )}

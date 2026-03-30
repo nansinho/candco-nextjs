@@ -3,7 +3,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { useTheme } from "next-themes";
+
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -15,7 +15,7 @@ import {
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { LogOut, User, Home, Sun, Moon, ChevronDown, ArrowLeft, GitCommit } from "lucide-react";
+import { LogOut, User, Home, ChevronDown, ArrowLeft, GitCommit } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -138,7 +138,6 @@ export function AdminHeader() {
   const { user, signOut, userRole, effectiveRole, userProfile } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
-  const { theme, setTheme } = useTheme();
 
   const parentPath = getParentPath(pathname);
   const formattedBuildDate = formatBuildDate(buildDate);
@@ -203,18 +202,6 @@ export function AdminHeader() {
         </div>
 
         <div className="flex items-center gap-1.5">
-          {/* Toggle Dark/Light Mode */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className="h-9 w-9 text-muted-foreground hover:text-foreground"
-          >
-            <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-            <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-            <span className="sr-only">Changer de thème</span>
-          </Button>
-
           {/* Retour au site */}
           <Button variant="ghost" size="icon" asChild className="h-9 w-9 text-muted-foreground hover:text-foreground">
             <Link href="/">

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient, ORG_ID } from "@/lib/supabase/service";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { sendNotificationEmail, inscriptionEmailHtml } from "@/lib/email";
 
 interface InscriptionRequest {
   session_id: string;
@@ -157,6 +158,36 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
+
+    // Fetch formation title for the email
+    let formationTitle = "";
+    let sessionDate = "";
+    try {
+      const { data: produit } = await supabase
+        .from("produits_formation")
+        .select("intitule")
+        .eq("id", session.produit_id)
+        .single();
+      formationTitle = produit?.intitule || "";
+      sessionDate = session.date_debut || "";
+    } catch {}
+
+    // Send email notification (non-blocking)
+    sendNotificationEmail({
+      subject: `Nouvelle inscription — ${formationTitle || "Formation"}`,
+      html: inscriptionEmailHtml({
+        civilite,
+        prenom,
+        nom,
+        email,
+        telephone,
+        entreprise,
+        notes,
+        session_date: sessionDate,
+        formation_title: formationTitle,
+      }),
+      replyTo: email,
+    }).catch((err) => console.error("[inscription] Email send failed:", err));
 
     return NextResponse.json({
       success: true,

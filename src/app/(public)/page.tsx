@@ -99,15 +99,25 @@ export default async function HomePage() {
       .eq("publie", true),
   ]);
 
+  if (popularResult.error) {
+    console.error("[homepage] Formations error:", popularResult.error.message, "| ORG_ID:", ORG_ID);
+  }
+  if (poleCountsResult.error) {
+    console.error("[homepage] Pole counts error:", poleCountsResult.error.message);
+  }
+
   let rawFormations = popularResult.data;
   if (!rawFormations || rawFormations.length < 3) {
-    const { data } = await supabase
+    const { data, error: fallbackError } = await supabase
       .from("produits_formation")
       .select("id, intitule, sous_titre, slug, duree_heures, duree_jours, domaine, image_url, produit_tarifs(prix_ht, is_default)")
       .eq("organisation_id", ORG_ID)
       .eq("publie", true)
       .order("created_at", { ascending: false })
       .limit(18);
+    if (fallbackError) {
+      console.error("[homepage] Fallback formations error:", fallbackError.message);
+    }
     rawFormations = data;
   }
 

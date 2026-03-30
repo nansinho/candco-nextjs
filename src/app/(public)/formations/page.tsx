@@ -44,7 +44,7 @@ export default async function FormationsPage() {
   const supabase = createServiceClient();
 
   // Fetch formations from produits_formation
-  const { data: rawFormations } = await supabase
+  const { data: rawFormations, error: formationsError } = await supabase
     .from("produits_formation")
     .select(
       "id, intitule, sous_titre, description, domaine, categorie, duree_heures, duree_jours, image_url, populaire, slug, categorie_id, produit_tarifs(prix_ht, is_default)"
@@ -53,8 +53,12 @@ export default async function FormationsPage() {
     .eq("publie", true)
     .order("intitule");
 
+  if (formationsError) {
+    console.error("[formations] Supabase error:", formationsError.message, "| ORG_ID:", ORG_ID);
+  }
+
   // Fetch active sessions with inscription counts
-  const { data: sessionsData } = await supabase
+  const { data: sessionsData, error: sessionsError } = await supabase
     .from("sessions")
     .select(
       "id, produit_id, date_debut, places_max, inscriptions(count)"
@@ -62,6 +66,10 @@ export default async function FormationsPage() {
     .eq("organisation_id", ORG_ID)
     .in("statut", ["planifiee", "confirmee"])
     .gte("date_debut", new Date().toISOString().split("T")[0]);
+
+  if (sessionsError) {
+    console.error("[formations] Sessions error:", sessionsError.message);
+  }
 
   // Map formations to expected format
   const formations = (rawFormations || []).map((f: Record<string, unknown>) => {

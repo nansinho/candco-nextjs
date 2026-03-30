@@ -3,7 +3,6 @@
 /**
  * @file ChatWidget.tsx
  * @description Widget de chat guidé flottant avec arbre de décisions depuis la base de données
- * Lazy-load des données au premier open pour améliorer les performances
  */
 
 import { useState, useRef, useEffect, useCallback } from "react";
@@ -41,16 +40,13 @@ import {
   Building,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { createClient } from "@/lib/supabase/client";
 import { ChatMessageSkeleton, ChatOptionsSkeleton } from "./ChatMessageSkeleton";
 import type { LucideIcon } from "lucide-react";
 
-// Create motion components that support refs
 const MotionButton = motion.button;
 const MotionDiv = motion.div;
 
-// Icon mapping from database icon names to Lucide components
 const iconMap: Record<string, LucideIcon> = {
   "graduation-cap": GraduationCap,
   wallet: Wallet,
@@ -109,9 +105,7 @@ const OptionIcon = ({ iconName }: { iconName?: string }) => {
   if (!iconName) return null;
   const IconComponent = iconMap[iconName];
   if (!IconComponent) return null;
-  return (
-    <IconComponent className="w-4 h-4 shrink-0 text-muted-foreground group-hover:text-primary transition-colors" />
-  );
+  return <IconComponent className="w-4 h-4 shrink-0" />;
 };
 
 OptionIcon.displayName = "OptionIcon";
@@ -129,34 +123,27 @@ export function ChatWidget() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
-  // Ensure component is mounted before rendering
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Lazy-load: fetch chat nodes only on first open
   const fetchNodes = useCallback(async () => {
     if (hasFetched) return;
-
     setIsLoading(true);
     try {
       const supabase = createClient();
-
       const { data: nodesData, error: nodesError } = await supabase
         .from("chat_nodes")
         .select("*")
         .order("display_order");
-
       if (nodesError) throw nodesError;
 
       const { data: optionsData, error: optionsError } = await supabase
         .from("chat_options")
         .select("*")
         .order("display_order");
-
       if (optionsError) throw optionsError;
 
-      // Build nodes map with options
       const nodesMap: Record<string, ChatNode> = {};
       nodesData?.forEach((node: { id: string; message: string; is_end?: boolean }) => {
         nodesMap[node.id] = {
@@ -168,7 +155,6 @@ export function ChatWidget() {
       setNodes(nodesMap);
       setHasFetched(true);
 
-      // Initialize with welcome message
       if (nodesMap.welcome) {
         setMessages([
           {
@@ -187,14 +173,12 @@ export function ChatWidget() {
     }
   }, [hasFetched]);
 
-  // Fetch on first open
   useEffect(() => {
     if (isOpen && !hasFetched) {
       fetchNodes();
     }
   }, [isOpen, hasFetched, fetchNodes]);
 
-  // Auto-scroll to bottom
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -204,13 +188,11 @@ export function ChatWidget() {
   const trackAnalytics = useCallback(
     async (nodeId: string, optionId?: string) => {
       try {
-        const response = await fetch(
+        await fetch(
           "https://sxadbvezilpcldmncjrk.supabase.co/functions/v1/track-chat-analytics",
           {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               session_id: sessionId,
               node_id: nodeId,
@@ -218,11 +200,6 @@ export function ChatWidget() {
             }),
           }
         );
-
-        if (!response.ok) {
-          const error = await response.json();
-          console.warn("Analytics tracking failed:", error);
-        }
       } catch (error) {
         console.error("Error tracking analytics:", error);
       }
@@ -237,9 +214,7 @@ export function ChatWidget() {
         type: "user",
         content: option.label,
       };
-
       setMessages((prev) => [...prev, userMessage]);
-
       trackAnalytics(option.next_node_id || "action", option.id);
 
       if (option.action_type === "link" && option.action_value) {
@@ -288,15 +263,15 @@ export function ChatWidget() {
     trackAnalytics("welcome");
   }, [nodes, trackAnalytics]);
 
-  // Don't render until mounted (prevents hydration mismatch)
   if (!mounted) return null;
 
   return (
     <>
-      {/* Floating button - Fixed bottom right */}
+      {/* Floating button */}
       <MotionButton
         onClick={() => setIsOpen(true)}
-        className={`fixed bottom-6 right-6 z-40 flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-[#1F628E] text-white shadow-lg shadow-[#1F628E]/25 hover:shadow-xl hover:shadow-[#1F628E]/35 transition-all ${isOpen ? "hidden" : ""}`}
+        className={`fixed bottom-6 right-6 z-40 flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-2xl shadow-lg transition-all ${isOpen ? "hidden" : ""}`}
+        style={{ backgroundColor: "#1F628E", color: "#fff" }}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         initial={{ opacity: 0, y: 20 }}
@@ -317,31 +292,54 @@ export function ChatWidget() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[90] w-[calc(100vw-32px)] sm:w-[380px] max-w-[380px] h-[calc(100dvh-100px)] sm:h-[520px] max-h-[520px] bg-background border border-border/30 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+            className="fixed z-[90] flex flex-col overflow-hidden"
+            style={{
+              backgroundColor: "#1a2332",
+              border: "1px solid rgba(255,255,255,0.08)",
+              borderRadius: "16px",
+              boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5)",
+              bottom: "16px",
+              right: "16px",
+              width: "calc(100vw - 32px)",
+              maxWidth: "380px",
+              height: "calc(100dvh - 100px)",
+              maxHeight: "520px",
+            }}
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-border/30 bg-muted/30">
+            <div
+              className="flex items-center justify-between px-4 py-3 shrink-0"
+              style={{ backgroundColor: "#1F628E" }}
+            >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <MessageCircle className="w-5 h-5 text-primary" />
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center"
+                  style={{ backgroundColor: "rgba(255,255,255,0.15)" }}
+                >
+                  <MessageCircle className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-medium text-sm">Assistant C&Co</h3>
-                  <p className="text-xs text-muted-foreground">
-                    En ligne - Réponse instantanée
-                  </p>
+                  <h3 className="font-semibold text-sm text-white">Assistant C&Co</h3>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                    <p className="text-xs" style={{ color: "rgba(255,255,255,0.7)" }}>
+                      En ligne
+                    </p>
+                  </div>
                 </div>
               </div>
               <div className="flex items-center gap-1">
                 <button
-                  className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-muted transition-colors"
+                  className="h-8 w-8 flex items-center justify-center rounded-lg transition-colors"
+                  style={{ color: "rgba(255,255,255,0.7)" }}
                   onClick={handleReset}
                   title="Recommencer"
                 >
                   <RotateCcw className="w-4 h-4" />
                 </button>
                 <button
-                  className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-muted transition-colors"
+                  className="h-8 w-8 flex items-center justify-center rounded-lg transition-colors"
+                  style={{ color: "rgba(255,255,255,0.7)" }}
                   onClick={() => setIsOpen(false)}
                 >
                   <X className="w-4 h-4" />
@@ -349,13 +347,13 @@ export function ChatWidget() {
               </div>
             </div>
 
-            {/* Messages - Accessible region */}
-            <ScrollArea className="flex-1 p-4" aria-live="polite" role="log">
-              <div
-                ref={scrollRef}
-                className="space-y-4"
-                aria-label="Messages du chat"
-              >
+            {/* Messages */}
+            <div
+              className="flex-1 overflow-y-auto p-4"
+              aria-live="polite"
+              role="log"
+            >
+              <div ref={scrollRef} className="space-y-4" aria-label="Messages du chat">
                 {isLoading ? (
                   <>
                     <ChatMessageSkeleton />
@@ -372,55 +370,73 @@ export function ChatWidget() {
                         className={`flex ${message.type === "user" ? "justify-end" : "justify-start"}`}
                       >
                         <div
-                          className={`max-w-[85%] rounded-2xl px-4 py-2.5 ${
+                          className="max-w-[85%] rounded-2xl px-4 py-2.5"
+                          style={
                             message.type === "user"
-                              ? "bg-primary text-primary-foreground rounded-br-md"
-                              : "bg-muted rounded-bl-md"
-                          }`}
+                              ? {
+                                  backgroundColor: "#1F628E",
+                                  color: "#fff",
+                                  borderBottomRightRadius: "6px",
+                                }
+                              : {
+                                  backgroundColor: "rgba(255,255,255,0.06)",
+                                  color: "rgba(255,255,255,0.85)",
+                                  borderBottomLeftRadius: "6px",
+                                }
+                          }
                         >
-                          <p className="text-sm whitespace-pre-line">
-                            {message.content}
-                          </p>
+                          <p className="text-sm whitespace-pre-line">{message.content}</p>
                         </div>
                       </MotionDiv>
                     ))}
 
                     {/* Options for last bot message */}
-                    {messages.length > 0 &&
-                      messages[messages.length - 1].type === "bot" && (
-                        <MotionDiv
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.2 }}
-                          className="space-y-2 pt-2"
-                        >
-                          {messages[messages.length - 1].options?.map(
-                            (option) => (
-                              <button
-                                key={option.id}
-                                onClick={() => handleOptionClick(option)}
-                                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-left bg-background border border-border/30 rounded-xl hover:bg-muted hover:border-primary/30 transition-all group min-w-0"
-                              >
-                                <div className="shrink-0">
-                                  <OptionIcon iconName={option.icon} />
-                                </div>
-                                <span className="flex-1 min-w-0 truncate">
-                                  {option.label}
-                                </span>
-                                <ChevronRight className="w-4 h-4 shrink-0 text-muted-foreground group-hover:text-primary transition-colors" />
-                              </button>
-                            )
-                          )}
-                        </MotionDiv>
-                      )}
+                    {messages.length > 0 && messages[messages.length - 1].type === "bot" && (
+                      <MotionDiv
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2 }}
+                        className="space-y-2 pt-2"
+                      >
+                        {messages[messages.length - 1].options?.map((option) => (
+                          <button
+                            key={option.id}
+                            onClick={() => handleOptionClick(option)}
+                            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-left rounded-xl transition-all group min-w-0"
+                            style={{
+                              backgroundColor: "rgba(255,255,255,0.04)",
+                              border: "1px solid rgba(255,255,255,0.08)",
+                              color: "rgba(255,255,255,0.8)",
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = "rgba(31,98,142,0.15)";
+                              e.currentTarget.style.borderColor = "rgba(31,98,142,0.3)";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.04)";
+                              e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)";
+                            }}
+                          >
+                            <div className="shrink-0" style={{ color: "rgba(255,255,255,0.4)" }}>
+                              <OptionIcon iconName={option.icon} />
+                            </div>
+                            <span className="flex-1 min-w-0 truncate">{option.label}</span>
+                            <ChevronRight className="w-4 h-4 shrink-0" style={{ color: "rgba(255,255,255,0.3)" }} />
+                          </button>
+                        ))}
+                      </MotionDiv>
+                    )}
                   </>
                 )}
               </div>
-            </ScrollArea>
+            </div>
 
             {/* Footer */}
-            <div className="px-4 py-3 border-t border-border/30 bg-muted/20">
-              <p className="text-xs text-center text-muted-foreground">
+            <div
+              className="px-4 py-3 shrink-0"
+              style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}
+            >
+              <p className="text-xs text-center" style={{ color: "rgba(255,255,255,0.3)" }}>
                 Cliquez sur une option pour continuer
               </p>
             </div>

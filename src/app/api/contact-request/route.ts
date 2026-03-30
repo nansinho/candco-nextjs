@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { sendNotificationEmail, contactRequestEmailHtml } from "@/lib/email";
 
 interface ContactRequest {
   formation_id?: string;
@@ -74,6 +75,24 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
+
+    // Send email notification (non-blocking)
+    sendNotificationEmail({
+      subject,
+      html: contactRequestEmailHtml({
+        type,
+        formation_title,
+        civilite,
+        prenom,
+        nom,
+        email,
+        telephone,
+        entreprise,
+        nombre_participants,
+        message,
+      }),
+      replyTo: email,
+    }).catch((err) => console.error("[contact-request] Email send failed:", err));
 
     return NextResponse.json({
       success: true,

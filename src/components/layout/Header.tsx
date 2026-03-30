@@ -28,7 +28,6 @@ import {
   LayoutDashboard,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { useSearch } from "@/components/search";
 import { createClient } from "@/lib/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -517,8 +516,6 @@ export default function Header() {
               <Search className="w-5 h-5" />
             </button>
 
-            <ThemeToggle />
-
             <div className={cn("w-px h-6 mx-2", isScrolled ? "bg-border/50" : "bg-white/20")} />
 
             {/* User Auth Section */}
@@ -605,8 +602,6 @@ export default function Header() {
               <Search className="w-5 h-5" />
             </button>
 
-            <ThemeToggle />
-
             {/* Mobile user avatar */}
             {!loading && user && (
               <Link href="/mon-compte" className="p-1">
@@ -631,22 +626,33 @@ export default function Header() {
       </div>
 
       {/* Mobile Navigation */}
-      {isOpen && (
-        <div className="xl:hidden fixed inset-0 z-[9999]" style={{ top: 0 }}>
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm"
-            onClick={() => setIsOpen(false)}
-          />
+      <div
+        className={cn(
+          "xl:hidden fixed inset-0 z-[9999]",
+          isOpen ? "visible" : "invisible pointer-events-none"
+        )}
+        style={{ top: 0 }}
+      >
+        {/* Backdrop */}
+        <div
+          className={cn(
+            "fixed inset-0 bg-black/70 backdrop-blur-sm transition-opacity duration-300",
+            isOpen ? "opacity-100" : "opacity-0"
+          )}
+          onClick={() => setIsOpen(false)}
+        />
 
-          {/* Side Panel */}
-          <div
-            className="fixed top-0 right-0 h-full w-[80%] max-w-[300px] bg-background shadow-2xl flex flex-col overflow-hidden"
-            style={{ transform: `translateX(${swipeOffset}px)` }}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
-          >
+        {/* Side Panel */}
+        <div
+          className={cn(
+            "fixed top-0 right-0 h-full w-[80%] max-w-[300px] bg-background shadow-2xl flex flex-col overflow-hidden transition-transform duration-300 ease-out",
+            isOpen ? "translate-x-0" : "translate-x-full"
+          )}
+          style={swipeOffset > 0 ? { transform: `translateX(${swipeOffset}px)` } : undefined}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
             {/* Header */}
             <div className="px-5 py-3 border-b border-border/30 shrink-0 bg-gradient-to-br from-primary/5 via-background to-background">
               <div className="flex items-center justify-between">
@@ -885,7 +891,6 @@ export default function Header() {
             </div>
           </div>
         </div>
-      )}
     </header>
   );
 }
