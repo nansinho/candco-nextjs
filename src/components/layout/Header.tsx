@@ -625,272 +625,225 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Mobile Navigation */}
+      {/* Mobile Navigation — Fullscreen */}
       <div
         className={cn(
           "xl:hidden fixed inset-0 z-[9999]",
           isOpen ? "visible" : "invisible pointer-events-none"
         )}
-        style={{ top: 0 }}
       >
-        {/* Backdrop */}
+        {/* Fullscreen Panel */}
         <div
           className={cn(
-            "fixed inset-0 bg-black/70 backdrop-blur-sm transition-opacity duration-300",
-            isOpen ? "opacity-100" : "opacity-0"
+            "fixed inset-0 flex flex-col overflow-hidden transition-all duration-400 ease-out",
+            isOpen ? "opacity-100 scale-100" : "opacity-0 scale-[1.02]"
           )}
-          onClick={() => setIsOpen(false)}
-        />
-
-        {/* Side Panel */}
-        <div
-          className={cn(
-            "fixed top-0 right-0 h-full w-[80%] max-w-[300px] bg-background shadow-2xl flex flex-col overflow-hidden transition-transform duration-300 ease-out",
-            isOpen ? "translate-x-0" : "translate-x-full"
-          )}
-          style={swipeOffset > 0 ? { transform: `translateX(${swipeOffset}px)` } : undefined}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
+          style={{ background: "linear-gradient(180deg, #1a6faa 0%, #1F628E 30%, #17567d 60%, #151F2D 100%)" }}
         >
-            {/* Header */}
-            <div className="px-5 py-3 border-b border-border/30 shrink-0 bg-gradient-to-br from-primary/5 via-background to-background">
-              <div className="flex items-center justify-between">
-                <Link href="/" onClick={() => setIsOpen(false)}>
-                  <div className="relative h-8" style={{ aspectRatio: "100/32" }}>
-                    <Image
-                      src="/logo.svg"
-                      alt="C&Co Formation"
-                      fill
-                      className="object-contain"
-                    />
-                  </div>
-                </Link>
-                <button
-                  onClick={() => setIsOpen(false)}
-                  className="p-2.5 text-muted-foreground hover:text-foreground transition-colors rounded-full hover:bg-secondary/50"
-                  aria-label="Fermer le menu"
-                >
-                  <X className="w-5 h-5" />
-                </button>
+          {/* Header */}
+          <div className="flex items-center justify-between px-5 pt-5 pb-3 shrink-0">
+            <Link href="/" onClick={() => setIsOpen(false)}>
+              <div className="relative h-10" style={{ aspectRatio: "140/48" }}>
+                <Image
+                  src="/logo.svg"
+                  alt="C&Co Formation"
+                  fill
+                  className="object-contain"
+                />
               </div>
-            </div>
+            </Link>
+            <button
+              onClick={() => setIsOpen(false)}
+              className="w-10 h-10 flex items-center justify-center rounded-xl transition-colors"
+              style={{ backgroundColor: "rgba(255,255,255,0.1)", color: "#fff" }}
+              aria-label="Fermer le menu"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
 
-            {/* User info if logged in */}
-            {!loading && user && (
-              <div className="px-4 py-3 border-b border-border/30 bg-gradient-to-br from-primary/5 via-background to-background">
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-10 w-10 ring-2 ring-primary/20">
-                    <AvatarImage src={user.avatar_url} alt={getUserDisplayName()} />
-                    <AvatarFallback className="bg-primary text-primary-foreground text-sm">
-                      {getUserInitials()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{getUserDisplayName()}</p>
-                    <Badge
-                      variant="outline"
-                      className={cn(
-                        "text-[9px] px-1.5 py-0 h-4 mt-0.5",
-                        roleColors[user.role || "user"]
-                      )}
-                    >
-                      {roleLabels[user.role || "user"]}
-                    </Badge>
-                  </div>
+          {/* User info if logged in */}
+          {!loading && user && (
+            <div className="mx-5 mb-4 px-4 py-3 rounded-xl" style={{ backgroundColor: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <div className="flex items-center gap-3">
+                <Avatar className="h-10 w-10 ring-2 ring-white/20">
+                  <AvatarImage src={user.avatar_url} alt={getUserDisplayName()} />
+                  <AvatarFallback className="text-sm" style={{ backgroundColor: "#F8A991", color: "#151F2D" }}>
+                    {getUserInitials()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-white truncate">{getUserDisplayName()}</p>
+                  <p className="text-xs" style={{ color: "rgba(255,255,255,0.5)" }}>
+                    {roleLabels[user.role || "user"]}
+                  </p>
                 </div>
               </div>
-            )}
+            </div>
+          )}
 
-            {/* Navigation */}
-            <div className="flex-1 overflow-y-auto">
-              <nav className="py-2" aria-label="Menu mobile">
-                {mobileNavigation.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <div key={item.name}>
-                      {item.submenu ? (
-                        <div>
-                          <button
-                            className={cn(
-                              "w-full px-4 py-2.5 text-left font-medium transition-all flex items-center gap-3 group",
-                              isActiveRoute(item.href, item.submenu)
-                                ? "text-primary bg-primary/5"
-                                : "text-foreground hover:bg-secondary/30"
-                            )}
-                            onClick={() =>
-                              setMobileSubmenuOpen(
-                                mobileSubmenuOpen === item.name ? null : item.name
-                              )
-                            }
-                          >
-                            {Icon && (
-                              <div
-                                className={cn(
-                                  "w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-all",
-                                  isActiveRoute(item.href, item.submenu)
-                                    ? "bg-primary/20"
-                                    : "bg-secondary/50 group-hover:bg-secondary"
-                                )}
-                              >
-                                <Icon
-                                  className={cn(
-                                    "w-4 h-4 transition-colors",
-                                    isActiveRoute(item.href, item.submenu)
-                                      ? "text-primary"
-                                      : "text-muted-foreground"
-                                  )}
-                                />
-                              </div>
-                            )}
-                            <span className="flex-1 text-sm">{item.name}</span>
-                            <ChevronDown
-                              className={cn(
-                                "w-4 h-4 text-muted-foreground transition-transform duration-300",
-                                mobileSubmenuOpen === item.name &&
-                                  "rotate-180 text-primary"
-                              )}
-                            />
-                          </button>
-
-                          {/* Submenu */}
-                          {mobileSubmenuOpen === item.name && (
-                            <div className="bg-gradient-to-b from-secondary/20 to-secondary/5 py-1.5 space-y-0.5">
-                              {item.submenu.map((subItem) => {
-                                const SubIcon = subItem.icon;
-                                return (
-                                  <Link
-                                    key={subItem.name}
-                                    href={subItem.href}
-                                    onClick={() => setIsOpen(false)}
-                                    className={cn(
-                                      "flex items-center gap-3 px-4 py-2 mx-2 rounded-lg transition-all",
-                                      pathname === subItem.href
-                                        ? "text-primary bg-primary/10 border border-primary/20"
-                                        : "text-muted-foreground hover:text-foreground hover:bg-secondary/40"
-                                    )}
-                                  >
-                                    <div
-                                      className={cn(
-                                        "w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-all",
-                                        pathname === subItem.href
-                                          ? "bg-primary/20"
-                                          : "bg-secondary/50"
-                                      )}
-                                    >
-                                      {SubIcon && (
-                                        <SubIcon className="w-3.5 h-3.5" />
-                                      )}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                      <p className="text-xs font-medium">
-                                        {subItem.name}
-                                      </p>
-                                      <p className="text-[10px] text-muted-foreground line-clamp-1">
-                                        {subItem.description}
-                                      </p>
-                                    </div>
-                                  </Link>
-                                );
-                              })}
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <Link
-                          href={item.href}
-                          onClick={() => setIsOpen(false)}
-                          className={cn(
-                            "flex items-center gap-3 px-4 py-2.5 transition-all group",
-                            pathname === item.href
-                              ? "text-primary bg-primary/5"
-                              : "text-foreground hover:bg-secondary/30"
-                          )}
+          {/* Navigation */}
+          <div className="flex-1 overflow-y-auto px-5">
+            <nav className="space-y-1" aria-label="Menu mobile">
+              {mobileNavigation.map((item, index) => {
+                const Icon = item.icon;
+                const active = isActiveRoute(item.href, item.submenu);
+                return (
+                  <div
+                    key={item.name}
+                    className={cn(
+                      "transition-all duration-300",
+                      isOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+                    )}
+                    style={{ transitionDelay: isOpen ? `${index * 50}ms` : "0ms" }}
+                  >
+                    {item.submenu ? (
+                      <>
+                        <button
+                          className="w-full flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all"
+                          style={{
+                            backgroundColor: active || mobileSubmenuOpen === item.name ? "rgba(255,255,255,0.08)" : "transparent",
+                            color: active ? "#F8A991" : "#fff",
+                          }}
+                          onClick={() =>
+                            setMobileSubmenuOpen(
+                              mobileSubmenuOpen === item.name ? null : item.name
+                            )
+                          }
                         >
                           {Icon && (
                             <div
-                              className={cn(
-                                "w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-all",
-                                pathname === item.href
-                                  ? "bg-primary/20"
-                                  : "bg-secondary/50 group-hover:bg-secondary"
-                              )}
+                              className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                              style={{ backgroundColor: active ? "rgba(248,169,145,0.15)" : "rgba(255,255,255,0.06)" }}
                             >
-                              <Icon
-                                className={cn(
-                                  "w-4 h-4 transition-colors",
-                                  pathname === item.href
-                                    ? "text-primary"
-                                    : "text-muted-foreground"
-                                )}
-                              />
+                              <span style={{ color: active ? "#F8A991" : "rgba(255,255,255,0.7)" }}><Icon className="w-5 h-5" /></span>
                             </div>
                           )}
-                          <span className="flex-1 text-sm font-medium">
-                            {item.name}
-                          </span>
-                          <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 text-muted-foreground transition-opacity" />
-                        </Link>
-                      )}
-                    </div>
-                  );
-                })}
-              </nav>
-            </div>
+                          <span className="flex-1 text-left text-[15px] font-medium">{item.name}</span>
+                          <ChevronDown
+                            className="w-4 h-4 transition-transform duration-300"
+                            style={{
+                              color: "rgba(255,255,255,0.4)",
+                              transform: mobileSubmenuOpen === item.name ? "rotate(180deg)" : "rotate(0deg)",
+                            }}
+                          />
+                        </button>
 
-            {/* Bottom actions */}
-            <div className="border-t border-border/30 px-4 py-4 shrink-0 space-y-2 bg-background">
-              {!loading && user ? (
-                <>
+                        {/* Submenu */}
+                        <div
+                          className={cn(
+                            "overflow-hidden transition-all duration-300",
+                            mobileSubmenuOpen === item.name ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
+                          )}
+                        >
+                          <div className="pl-6 pr-2 py-2 space-y-1">
+                            {item.submenu.map((subItem) => {
+                              const SubIcon = subItem.icon;
+                              const subActive = pathname === subItem.href;
+                              return (
+                                <Link
+                                  key={subItem.name}
+                                  href={subItem.href}
+                                  onClick={() => setIsOpen(false)}
+                                  className="flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all"
+                                  style={{
+                                    backgroundColor: subActive ? "rgba(248,169,145,0.1)" : "transparent",
+                                    color: subActive ? "#F8A991" : "rgba(255,255,255,0.6)",
+                                  }}
+                                >
+                                  {SubIcon && <SubIcon className="w-4 h-4 shrink-0" />}
+                                  <span className="text-sm font-medium">{subItem.name}</span>
+                                </Link>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <Link
+                        href={item.href}
+                        onClick={() => setIsOpen(false)}
+                        className="flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all"
+                        style={{
+                          backgroundColor: active ? "rgba(255,255,255,0.08)" : "transparent",
+                          color: active ? "#F8A991" : "#fff",
+                        }}
+                      >
+                        {Icon && (
+                          <div
+                            className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                            style={{ backgroundColor: active ? "rgba(248,169,145,0.15)" : "rgba(255,255,255,0.06)" }}
+                          >
+                            <span style={{ color: active ? "#F8A991" : "rgba(255,255,255,0.7)" }}><Icon className="w-5 h-5" /></span>
+                          </div>
+                        )}
+                        <span className="flex-1 text-[15px] font-medium">{item.name}</span>
+                        <ChevronRight className="w-4 h-4" style={{ color: "rgba(255,255,255,0.2)" }} />
+                      </Link>
+                    )}
+                  </div>
+                );
+              })}
+            </nav>
+          </div>
+
+          {/* Bottom actions */}
+          <div className="px-5 pb-6 pt-4 shrink-0 space-y-3" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+            {!loading && user ? (
+              <>
+                <div className="flex gap-2">
                   <Link
                     href="/mon-compte"
                     onClick={() => setIsOpen(false)}
-                    className="w-full flex items-center justify-center gap-2 h-9 text-sm font-medium rounded-lg bg-secondary/50 hover:bg-secondary transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 h-11 text-sm font-medium rounded-xl transition-colors"
+                    style={{ backgroundColor: "rgba(255,255,255,0.06)", color: "#fff", border: "1px solid rgba(255,255,255,0.08)" }}
                   >
-                    <User className="w-4 h-4 text-muted-foreground" />
+                    <User className="w-4 h-4" />
                     Mon compte
                   </Link>
                   {isAdmin && (
                     <Link
                       href="/admin"
                       onClick={() => setIsOpen(false)}
-                      className="w-full flex items-center justify-center gap-2 h-9 text-sm font-medium rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                      className="flex-1 flex items-center justify-center gap-2 h-11 text-sm font-medium rounded-xl transition-colors"
+                      style={{ backgroundColor: "rgba(31,98,142,0.3)", color: "#fff", border: "1px solid rgba(31,98,142,0.4)" }}
                     >
                       <LayoutDashboard className="w-4 h-4" />
-                      Administration
+                      Admin
                     </Link>
                   )}
-                  <button
-                    onClick={() => {
-                      handleSignOut();
-                      setIsOpen(false);
-                    }}
-                    className="w-full flex items-center justify-center gap-2 h-9 text-sm font-medium rounded-lg text-destructive hover:bg-destructive/10 transition-colors"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    Déconnexion
-                  </button>
-                </>
-              ) : (
-                <Link
-                  href="/auth"
-                  onClick={() => setIsOpen(false)}
-                  className="w-full flex items-center justify-center gap-2 h-9 text-sm font-medium rounded-lg bg-secondary/50 hover:bg-secondary transition-colors"
+                </div>
+                <button
+                  onClick={() => { handleSignOut(); setIsOpen(false); }}
+                  className="w-full flex items-center justify-center gap-2 h-9 text-sm font-medium rounded-lg transition-colors"
+                  style={{ color: "rgba(255,255,255,0.35)" }}
                 >
-                  <User className="w-4 h-4 text-muted-foreground" />
-                  Connexion
-                </Link>
-              )}
+                  <LogOut className="w-4 h-4" />
+                  Déconnexion
+                </button>
+              </>
+            ) : (
               <Link
-                href="/contact"
+                href="/auth"
                 onClick={() => setIsOpen(false)}
-                className="w-full flex items-center justify-center h-10 text-sm font-medium rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground shadow-md transition-colors"
+                className="w-full flex items-center justify-center gap-2 h-11 text-sm font-medium rounded-xl transition-colors"
+                style={{ backgroundColor: "rgba(255,255,255,0.06)", color: "#fff", border: "1px solid rgba(255,255,255,0.08)" }}
               >
-                Nous contacter
+                <User className="w-4 h-4" />
+                Connexion
               </Link>
-            </div>
+            )}
+            <Link
+              href="/contact"
+              onClick={() => setIsOpen(false)}
+              className="w-full flex items-center justify-center h-12 text-sm font-bold rounded-xl shadow-lg transition-colors"
+              style={{ backgroundColor: "#F8A991", color: "#151F2D" }}
+            >
+              Nous contacter
+            </Link>
           </div>
         </div>
+      </div>
     </header>
   );
 }
