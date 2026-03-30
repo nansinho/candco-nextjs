@@ -177,23 +177,30 @@ export function CookieBanner() {
             className="fixed left-0 right-0 bottom-0 z-50 p-4 md:p-6 pointer-events-none"
           >
             <div className="container-custom max-w-4xl">
-              <div className="bg-card border border-border/30 shadow-2xl rounded-2xl p-6 md:p-8 pointer-events-auto">
+              <div
+                className="shadow-2xl rounded-2xl p-6 md:p-8 pointer-events-auto"
+                style={{ backgroundColor: "#1a2332", border: "1px solid rgba(255,255,255,0.08)" }}
+              >
                 <div className="flex items-start gap-4 mb-6">
-                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Cookie className="w-6 h-6 text-primary" />
+                  <div
+                    className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                    style={{ backgroundColor: "rgba(26,111,170,0.2)" }}
+                  >
+                    <Cookie className="w-6 h-6" style={{ color: "#1a6faa" }} />
                   </div>
                   <div className="flex-1">
-                    <h2 className="text-lg font-bold text-foreground mb-2">
+                    <h2 className="text-lg font-bold text-white mb-2">
                       Nous respectons votre vie privée
                     </h2>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
+                    <p className="text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.55)" }}>
                       Nous utilisons des cookies pour améliorer votre expérience
                       sur notre site. Les cookies essentiels sont nécessaires au
                       fonctionnement du site. Vous pouvez personnaliser vos
                       préférences ou accepter l&apos;ensemble des cookies.{" "}
                       <Link
                         href="/cookies"
-                        className="text-primary hover:underline"
+                        className="hover:underline"
+                        style={{ color: "#F8A991" }}
                       >
                         En savoir plus
                       </Link>
@@ -201,17 +208,19 @@ export function CookieBanner() {
                   </div>
                   <button
                     onClick={() => setShowBanner(false)}
-                    className="p-2 rounded-lg hover:bg-muted transition-colors"
+                    className="p-2 rounded-lg transition-colors"
+                    style={{ color: "rgba(255,255,255,0.4)" }}
                     aria-label="Fermer"
                   >
-                    <X className="w-5 h-5 text-muted-foreground" />
+                    <X className="w-5 h-5" />
                   </button>
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-3">
                   <button
                     onClick={handleAcceptAll}
-                    className="flex-1 sm:flex-none inline-flex items-center justify-center px-4 py-2.5 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+                    className="flex-1 sm:flex-none inline-flex items-center justify-center px-5 py-2.5 rounded-lg font-medium transition-colors disabled:opacity-50"
+                    style={{ backgroundColor: "#F8A991", color: "#151F2D" }}
                     disabled={isLoading}
                   >
                     <Check className="w-4 h-4 mr-2" />
@@ -219,7 +228,8 @@ export function CookieBanner() {
                   </button>
                   <button
                     onClick={() => setShowSettings(true)}
-                    className="flex-1 sm:flex-none inline-flex items-center justify-center px-4 py-2.5 border border-border rounded-lg font-medium hover:bg-muted transition-colors disabled:opacity-50"
+                    className="flex-1 sm:flex-none inline-flex items-center justify-center px-5 py-2.5 rounded-lg font-medium transition-colors disabled:opacity-50"
+                    style={{ border: "1px solid rgba(26,111,170,0.4)", color: "#1a6faa" }}
                     disabled={isLoading}
                   >
                     <Settings className="w-4 h-4 mr-2" />
@@ -227,7 +237,8 @@ export function CookieBanner() {
                   </button>
                   <button
                     onClick={handleRejectAll}
-                    className="flex-1 sm:flex-none inline-flex items-center justify-center px-4 py-2.5 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                    className="flex-1 sm:flex-none inline-flex items-center justify-center px-5 py-2.5 transition-colors disabled:opacity-50"
+                    style={{ color: "rgba(255,255,255,0.4)" }}
                     disabled={isLoading}
                   >
                     Refuser les optionnels
@@ -326,17 +337,19 @@ export function CookieBanner() {
             </div>
           </div>
 
-          <div className="flex flex-col-reverse sm:flex-row gap-3 pt-4 border-t border-border/50">
+          <div className="flex flex-col-reverse sm:flex-row gap-3 pt-4" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
             <button
               onClick={handleRejectAll}
-              className="flex-1 inline-flex items-center justify-center px-4 py-2.5 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+              className="flex-1 inline-flex items-center justify-center px-4 py-2.5 transition-colors disabled:opacity-50"
+              style={{ color: "rgba(255,255,255,0.4)" }}
               disabled={isLoading}
             >
               Tout refuser
             </button>
             <button
               onClick={handleSavePreferences}
-              className="flex-1 inline-flex items-center justify-center px-4 py-2.5 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+              className="flex-1 inline-flex items-center justify-center px-4 py-2.5 rounded-lg font-medium transition-colors disabled:opacity-50"
+              style={{ backgroundColor: "#F8A991", color: "#151F2D" }}
               disabled={isLoading}
             >
               <Check className="w-4 h-4 mr-2" />
