@@ -86,9 +86,9 @@ const sections = [
         <p>
           <strong style={strongStyle}>Agence HDS</strong>
         </p>
-        <p>SIRET : 810 696 096 00034</p>
+        <p>SIRET : 810 696 096 00043</p>
         <p>Responsable : Nans Harua</p>
-        <p>Adresse : 350 Route des Milles</p>
+        <p>Adresse : 350 Route des Milles, 13090 Aix-en-Provence</p>
         <p>
           Email :{" "}
           <a
@@ -374,52 +374,25 @@ export default function MentionsLegalesPage() {
     <>
       {/* Hero Section */}
       <section
-        className="relative py-16 md:py-24"
-        style={{
-          background:
-            "linear-gradient(180deg, #1a6faa 0%, #1F628E 40%, #17567d 60%, #151F2D 100%)",
-        }}
+        className="relative z-10"
+        style={{ background: "linear-gradient(180deg, #1a6faa 0%, #1F628E 40%, #17567d 60%, #151F2D 100%)" }}
       >
-        <div className="container-custom relative z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 sm:pt-40 pb-16 sm:pb-20 text-center">
           {/* Breadcrumb */}
-          <nav className="mb-8 text-sm">
-            <ol className="flex items-center gap-2" style={{ color: "rgba(255,255,255,0.5)" }}>
-              <li>
-                <Link
-                  href="/"
-                  className="hover:underline transition-colors"
-                  style={{ color: "rgba(255,255,255,0.5)" }}
-                >
-                  Accueil
-                </Link>
-              </li>
-              <li>/</li>
-              <li style={{ color: "#fff" }}>Mentions légales</li>
-            </ol>
+          <nav className="flex items-center justify-center gap-2 text-[13px] mb-6" style={{ color: "rgba(255,255,255,0.4)" }}>
+            <Link href="/" className="hover:text-white transition-colors">Accueil</Link>
+            <span>/</span>
+            <span className="text-white">Mentions légales</span>
           </nav>
 
-          <div className="max-w-3xl">
-            <p
-              className="text-sm mb-4 tracking-widest uppercase"
-              style={{ color: "rgba(255,255,255,0.5)" }}
-            >
-              Informations légales
-            </p>
-            <h1
-              className="text-3xl sm:text-4xl md:text-5xl font-light leading-tight mb-6"
-              style={{ color: "#fff" }}
-            >
-              Mentions{" "}
-              <span style={{ color: "#F8A991" }}>légales</span>
-            </h1>
-            <p
-              className="text-lg"
-              style={{ color: "rgba(255,255,255,0.6)" }}
-            >
-              Toutes les informations légales concernant C&Co Formation,
-              l&apos;éditeur et l&apos;hébergeur de ce site web.
-            </p>
-          </div>
+          <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] font-semibold leading-[1.1] tracking-tight text-white max-w-5xl mx-auto mb-6">
+            Mentions{" "}
+            <span className="block" style={{ color: "#F8A991" }}>légales.</span>
+          </h1>
+          <p className="text-base sm:text-lg max-w-2xl mx-auto mb-10 leading-relaxed" style={{ color: "rgba(255,255,255,0.6)" }}>
+            Toutes les informations légales concernant C&Co Formation,
+            l&apos;éditeur et l&apos;hébergeur de ce site web.
+          </p>
         </div>
       </section>
 

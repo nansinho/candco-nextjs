@@ -112,53 +112,33 @@ export default async function SitemapPage() {
     <div style={{ backgroundColor: "#0f1923" }}>
       {/* Hero Section */}
       <section
-        className="relative py-16 lg:py-20 overflow-hidden"
-        style={{
-          background:
-            "linear-gradient(180deg, #1a6faa 0%, #1F628E 40%, #17567d 60%, #151F2D 100%)",
-        }}
+        className="relative z-10"
+        style={{ background: "linear-gradient(180deg, #1a6faa 0%, #1F628E 40%, #17567d 60%, #151F2D 100%)" }}
       >
-        <div className="container-custom relative">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
-            <div className="max-w-2xl">
-              <nav className="flex items-center gap-2 text-sm mb-4">
-                <Link href="/" className="hover:underline transition-colors" style={{ color: "rgba(255,255,255,0.5)" }}>
-                  Accueil
-                </Link>
-                <span style={{ color: "rgba(255,255,255,0.5)" }}>/</span>
-                <span style={{ color: "#fff" }}>Plan du site</span>
-              </nav>
-              <p className="text-sm font-medium uppercase tracking-wider mb-2" style={{ color: "#F8A991" }}>
-                Navigation
-              </p>
-              <h1 className="text-4xl lg:text-5xl font-bold mb-4" style={{ color: "#fff" }}>
-                Plan du <span style={{ color: "#F8A991" }}>site.</span>
-              </h1>
-              <p className="text-lg" style={{ color: "rgba(255,255,255,0.6)" }}>
-                Retrouvez facilement toutes vos pages de notre site. Navigation
-                rapide vers nos formations, articles et informations pratiques.
-              </p>
-              <div className="flex flex-wrap gap-4 mt-6 text-sm" style={{ color: "rgba(255,255,255,0.6)" }}>
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: "#1a6faa" }} />
-                  <strong style={{ color: "#fff" }}>{totalFormations}</strong> formations
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: "#507395" }} />
-                  <strong style={{ color: "#fff" }}>{totalArticles}</strong> articles
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: "#2D867E" }} />
-                  <strong style={{ color: "#fff" }}>6</strong> sections
-                </span>
-              </div>
-            </div>
-            <div
-              className="hidden lg:flex w-32 h-32 rounded-2xl items-center justify-center"
-              style={{ backgroundColor: "rgba(31,98,142,0.15)" }}
-            >
-              <Map className="w-16 h-16" style={{ color: "#1F628E" }} />
-            </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 sm:pt-40 pb-16 sm:pb-20 text-center">
+          <nav className="flex items-center justify-center gap-2 text-[13px] mb-6" style={{ color: "rgba(255,255,255,0.4)" }}>
+            <Link href="/" className="hover:text-white transition-colors">Accueil</Link>
+            <span>/</span>
+            <span className="text-white">Plan du site</span>
+          </nav>
+
+          <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] font-semibold leading-[1.1] tracking-tight text-white max-w-5xl mx-auto mb-6">
+            Plan du{" "}
+            <span className="block" style={{ color: "#F8A991" }}>site.</span>
+          </h1>
+          <p className="text-base sm:text-lg max-w-2xl mx-auto mb-10 leading-relaxed" style={{ color: "rgba(255,255,255,0.6)" }}>
+            Retrouvez facilement toutes les pages de notre site.
+          </p>
+
+          <div className="flex flex-wrap items-center justify-center gap-8">
+            <span className="flex items-center gap-1.5 text-[13px] font-semibold" style={{ color: "rgba(255,255,255,0.7)" }}>
+              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: "#1F628E" }} />
+              <strong>{totalFormations}</strong>&nbsp;formations
+            </span>
+            <span className="flex items-center gap-1.5 text-[13px] font-semibold" style={{ color: "rgba(255,255,255,0.7)" }}>
+              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: "#F8A991" }} />
+              <strong>{totalArticles}</strong>&nbsp;articles
+            </span>
           </div>
         </div>
       </section>

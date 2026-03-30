@@ -169,55 +169,27 @@ export default function ConfidentialitePage() {
     <div style={{ backgroundColor: "#0f1923" }}>
       {/* Hero Section */}
       <section
-        className="py-16 md:py-24"
-        style={{
-          background:
-            "linear-gradient(180deg, #1a6faa 0%, #1F628E 40%, #17567d 60%, #151F2D 100%)",
-        }}
+        className="relative z-10"
+        style={{ background: "linear-gradient(180deg, #1a6faa 0%, #1F628E 40%, #17567d 60%, #151F2D 100%)" }}
       >
-        <div className="container-custom">
-          {/* Breadcrumb */}
-          <nav className="mb-8 text-sm">
-            <ol className="flex items-center gap-2">
-              <li>
-                <Link
-                  href="/"
-                  style={{ color: "rgba(255,255,255,0.5)" }}
-                  className="hover:underline transition-colors"
-                >
-                  Accueil
-                </Link>
-              </li>
-              <li style={{ color: "rgba(255,255,255,0.3)" }}>/</li>
-              <li style={{ color: "#fff" }}>Confidentialité</li>
-            </ol>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 sm:pt-40 pb-16 sm:pb-20 text-center">
+          <nav className="flex items-center justify-center gap-2 text-[13px] mb-6" style={{ color: "rgba(255,255,255,0.4)" }}>
+            <Link href="/" className="hover:text-white transition-colors">Accueil</Link>
+            <span>/</span>
+            <span className="text-white">Confidentialité</span>
           </nav>
 
-          <div className="max-w-3xl">
-            <p
-              className="text-sm mb-4 tracking-widest uppercase"
-              style={{ color: "rgba(255,255,255,0.5)" }}
-            >
-              Protection des données
-            </p>
-            <h1
-              className="text-3xl sm:text-4xl md:text-5xl font-light leading-tight mb-6"
-              style={{ color: "#fff" }}
-            >
-              Politique de{" "}
-              <span style={{ color: "#F8A991" }}>confidentialité</span>
-            </h1>
-            <p className="text-lg" style={{ color: "rgba(255,255,255,0.6)" }}>
-              Découvrez comment nous protégeons vos données personnelles
-              conformément au RGPD.
-            </p>
-            <p
-              className="text-sm mt-4"
-              style={{ color: "rgba(255,255,255,0.4)" }}
-            >
-              Dernière mise à jour : Mars 2026
-            </p>
-          </div>
+          <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] font-semibold leading-[1.1] tracking-tight text-white max-w-5xl mx-auto mb-6">
+            Politique de{" "}
+            <span className="block" style={{ color: "#F8A991" }}>confidentialité.</span>
+          </h1>
+          <p className="text-base sm:text-lg max-w-2xl mx-auto leading-relaxed" style={{ color: "rgba(255,255,255,0.6)" }}>
+            Découvrez comment nous protégeons vos données personnelles
+            conformément au RGPD.
+          </p>
+          <p className="text-sm mt-4" style={{ color: "rgba(255,255,255,0.4)" }}>
+            Dernière mise à jour : Mars 2026
+          </p>
         </div>
       </section>
 
