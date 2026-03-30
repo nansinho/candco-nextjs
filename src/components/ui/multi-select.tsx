@@ -15,7 +15,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
+import { cn, normalizeText } from "@/lib/utils";
 
 interface Option {
   value: string;
@@ -67,7 +67,7 @@ export function MultiSelect({
   };
 
   const filteredOptions = options.filter((option) =>
-    option.label.toLowerCase().includes(inputValue.toLowerCase())
+    normalizeText(option.label).includes(normalizeText(inputValue))
   );
 
   const showCreateOption =

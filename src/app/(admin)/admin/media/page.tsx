@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useRef } from "react";
+import { normalizeText } from "@/lib/utils";
 import { useMedia, useMediaMutations } from "@/hooks/admin/useMedia";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { EmptyState } from "@/components/admin/EmptyState";
@@ -104,7 +105,7 @@ export default function MediaPage() {
   const filteredMedia = useMemo(() => {
     return media.filter((file) => {
       const fileType = getFileType(file.file_type);
-      const matchesSearch = file.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSearch = normalizeText(file.name).includes(normalizeText(searchQuery));
       const matchesType = typeFilter === "all" || fileType === typeFilter;
       return matchesSearch && matchesType;
     });

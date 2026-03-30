@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { normalizeText } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useArticles, useArticleMutations, type Article } from "@/hooks/admin/useArticles";
@@ -65,11 +66,12 @@ export default function AdminArticles() {
 
   // Filter articles
   const filteredArticles = useMemo(() => {
+    const q = normalizeText(search);
     return articles.filter((a) => {
       const matchesSearch =
-        a.title.toLowerCase().includes(search.toLowerCase()) ||
-        a.category?.toLowerCase().includes(search.toLowerCase()) ||
-        a.author?.toLowerCase().includes(search.toLowerCase());
+        normalizeText(a.title).includes(q) ||
+        normalizeText(a.category || "").includes(q) ||
+        normalizeText(a.author || "").includes(q);
 
       const matchesStatus =
         filterStatus === "all" ||

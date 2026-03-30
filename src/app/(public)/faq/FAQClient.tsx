@@ -14,6 +14,7 @@ import {
   Accordion, AccordionContent, AccordionItem, AccordionTrigger,
 } from "@/components/ui/accordion";
 import CTASectionV2 from "@/components/home/v2/CTASectionV2";
+import { normalizeText } from "@/lib/utils";
 
 const iconMap: Record<string, LucideIcon> = {
   "building-2": Building, Building2: Building, wallet: Wallet, Wallet: Wallet,
@@ -40,10 +41,10 @@ export default function FAQClient({ categories, items }: { categories: FAQCatego
     let r = items;
     if (selectedCategory) r = r.filter((i) => i.category_id === selectedCategory);
     if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
+      const q = normalizeText(searchQuery);
       r = r.filter((i) =>
-        i.question.toLowerCase().includes(q) || i.answer.toLowerCase().includes(q) ||
-        i.keywords?.some((k) => k.toLowerCase().includes(q))
+        normalizeText(i.question).includes(q) || normalizeText(i.answer).includes(q) ||
+        i.keywords?.some((k) => normalizeText(k).includes(q))
       );
     }
     return r;

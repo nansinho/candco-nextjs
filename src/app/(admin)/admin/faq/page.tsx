@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { normalizeText } from "@/lib/utils";
 import {
   useFAQCategories,
   useFAQItems,
@@ -90,9 +91,10 @@ export default function AdminFAQ() {
 
   // Filter items
   const filteredItems = useMemo(() => {
+    const q = normalizeText(search);
     return items.filter((item) => {
-      const matchesSearch = item.question.toLowerCase().includes(search.toLowerCase()) ||
-        item.answer.toLowerCase().includes(search.toLowerCase());
+      const matchesSearch = normalizeText(item.question).includes(q) ||
+        normalizeText(item.answer).includes(q);
       const matchesCategory = filterCategory === "all" || item.category_id === filterCategory;
       return matchesSearch && matchesCategory;
     });

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { normalizeText } from "@/lib/utils";
 import { useRedirects, useRedirectMutations, type CreateRedirectInput } from "@/hooks/admin/useRedirects";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { EmptyState } from "@/components/admin/EmptyState";
@@ -91,9 +92,10 @@ export default function RedirectsPage() {
   });
 
   const filteredRedirects = useMemo(() => {
+    const q = normalizeText(searchQuery);
     return redirects.filter((redirect) =>
-      redirect.source_path.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      redirect.target_path.toLowerCase().includes(searchQuery.toLowerCase())
+      normalizeText(redirect.source_path).includes(q) ||
+      normalizeText(redirect.target_path).includes(q)
     );
   }, [redirects, searchQuery]);
 

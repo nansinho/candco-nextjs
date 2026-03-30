@@ -21,7 +21,7 @@ import {
   X,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { cn } from "@/lib/utils";
+import { cn, normalizeText } from "@/lib/utils";
 
 interface SearchResult {
   id: string;
@@ -59,12 +59,6 @@ const getIconForType = (type: string, pole?: string) => {
   if (type === "faq") return HelpCircle;
   return ArrowRight;
 };
-
-/**
- * Normalise le texte pour la recherche (supprime accents et met en minuscules)
- */
-const normalizeText = (text: string): string =>
-  text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
 export function SearchCommand() {
   const { open, setOpen } = useSearch();
