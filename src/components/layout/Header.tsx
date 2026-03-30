@@ -345,6 +345,7 @@ export default function Header() {
   const isAdmin = user?.role && ["superadmin", "admin", "org_manager", "moderator"].includes(user.role);
 
   return (
+    <>
     <header
       className={cn(
         "fixed top-0 left-0 right-0 z-50 transition-all duration-500",
@@ -624,6 +625,7 @@ export default function Header() {
           </div>
         </div>
       </div>
+    </header>
 
       {/* Mobile Navigation — Fullscreen */}
       <div
@@ -844,6 +846,6 @@ export default function Header() {
           </div>
         </div>
       </div>
-    </header>
+    </>
   );
 }
