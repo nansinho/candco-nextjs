@@ -2,6 +2,19 @@ import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 
+// Singleton service client for admin role checks (server-side only)
+let _serviceClient: ReturnType<typeof createClient> | null = null;
+function getServiceClient() {
+  if (!_serviceClient) {
+    _serviceClient = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    );
+  }
+  return _serviceClient;
+}
+
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
@@ -45,19 +58,13 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(redirectUrl);
     }
 
-    // Single OR query with service role key
-    const serviceClient = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      { auth: { autoRefreshToken: false, persistSession: false } }
-    );
-
-    const { data: userData } = await serviceClient
+    // Check role via service client (singleton)
+    const { data: userData } = await getServiceClient()
       .from("utilisateurs")
       .select("role")
       .or(`id.eq.${user.id}${user.email ? `,email.eq.${user.email}` : ""}`)
       .limit(1)
-      .maybeSingle();
+      .maybeSingle() as { data: { role: string } | null };
 
     const userRole = userData?.role || "user";
 

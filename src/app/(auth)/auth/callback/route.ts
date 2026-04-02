@@ -41,8 +41,10 @@ export async function GET(request: NextRequest) {
       if (redirect) {
         try {
           const decoded = decodeURIComponent(redirect);
-          if (decoded.startsWith("/") && !decoded.startsWith("//") && !decoded.includes("://")) {
-            redirectPath = decoded;
+          // Validate: must be a relative path on the same origin
+          const testUrl = new URL(decoded, origin);
+          if (testUrl.origin === origin && decoded.startsWith("/") && !decoded.startsWith("//")) {
+            redirectPath = testUrl.pathname + testUrl.search;
           }
         } catch {
           // Invalid redirect, use default

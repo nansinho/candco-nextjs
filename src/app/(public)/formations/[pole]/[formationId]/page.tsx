@@ -1,4 +1,5 @@
 import { createServiceClient, ORG_ID } from "@/lib/supabase/service";
+import { getFormationImage } from "@/lib/formations-utils";
 import { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -7,17 +8,11 @@ import {
   Clock,
   Users,
   MapPin,
-  Euro,
   Award,
-  Target,
-  BookOpen,
   CheckCircle2,
-  ChevronRight,
   GraduationCap,
-  Zap,
-  Accessibility,
   FileText,
-  ArrowRight,
+  CalendarDays,
 } from "lucide-react";
 import { InscriptionButton } from "@/components/inscription/InscriptionButton";
 
@@ -33,18 +28,22 @@ interface FormationData {
   description: string | null;
   pole: string;
   pole_name: string;
-  price: string;
-  duration: string;
+  price_ht: number | null;
+  price_ttc: number | null;
+  duree_heures: number | null;
+  duree_jours: number | null;
   format_lieu: string | null;
-  nombre_participants: string | null;
+  nombre_participants_min: number | null;
+  nombre_participants_max: number | null;
   image_url: string | null;
   certification: string | null;
-  objectifs_generaux: string[];
+  categorie: string | null;
+  objectifs: string[];
   prerequis: string[];
   programme: { titre: string; contenu: string; duree: string }[];
   public_vise: string[];
-  competences_visees: string[];
-  categories: { name: string } | null;
+  competences: string[];
+  tarifs: { nom: string; prix_ht: number; taux_tva: number; unite: string; is_default: boolean }[];
   modalites: {
     methodes?: string[];
     moyens?: string[];
@@ -52,19 +51,15 @@ interface FormationData {
   } | null;
   encadrement_pedagogique: string | null;
   financement: string[] | null;
-  modalites_paiement: string | null;
   accessibilite: string | null;
-  meta_title: string | null;
+  sessions: { id: string; date_debut: string; date_fin: string; lieu: string; places_disponibles: number }[];
 }
 
-// Pole colors
-const getPoleColor = (poleId: string): string => {
-  const colors: Record<string, string> = {
-    "securite-prevention": "pole-securite",
-    "petite-enfance": "pole-petite-enfance",
-    sante: "pole-sante",
-  };
-  return colors[poleId] || "primary";
+const poleColors: Record<string, string> = {
+  "securite-prevention": "#A82424",
+  "petite-enfance": "#2D867E",
+  sante: "#507395",
+  entrepreneuriat: "#1F628E",
 };
 
 // Generate dynamic metadata for SEO
@@ -152,10 +147,10 @@ function CourseJsonLd({
       name: "C&Co Formation",
       sameAs: "https://candco.fr",
     },
-    offers: formation.price
+    offers: formation.price_ht
       ? {
           "@type": "Offer",
-          price: String(formation.price).replace(/[^0-9]/g, ""),
+          price: String(formation.price_ht),
           priceCurrency: "EUR",
           availability: "https://schema.org/InStock",
           validFrom: new Date().toISOString(),
@@ -166,21 +161,17 @@ function CourseJsonLd({
       courseMode: String(formation.format_lieu || "").includes("distanciel")
         ? "online"
         : "onsite",
-      duration: formation.duration,
+      duration: formation.duree_heures ? `PT${formation.duree_heures}H` : undefined,
     },
     educationalLevel: "Professional",
     inLanguage: "fr",
     image: formation.image_url,
-    coursePrerequisites: Array.isArray(formation.prerequis)
-      ? (formation.prerequis as string[]).join(", ")
-      : "",
-    teaches: Array.isArray(formation.objectifs_generaux)
-      ? (formation.objectifs_generaux as string[]).join(", ")
-      : "",
+    coursePrerequisites: formation.prerequis.join(", "),
+    teaches: formation.objectifs.join(", "),
     audience: {
       "@type": "Audience",
-      audienceType: Array.isArray(formation.public_vise)
-        ? (formation.public_vise as string[]).join(", ")
+      audienceType: formation.public_vise.length > 0
+        ? formation.public_vise.join(", ")
         : "Professionnels",
     },
   };
@@ -240,22 +231,8 @@ function BreadcrumbJsonLd({
   );
 }
 
-// Section Title Component
-function SectionTitle({
-  icon: Icon,
-  children,
-}: {
-  icon: React.ElementType;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="flex items-center gap-3 mb-5">
-      <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-primary/10">
-        <Icon className="w-4 h-4 text-primary" />
-      </div>
-      <h2 className="text-lg font-medium">{children}</h2>
-    </div>
-  );
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return <h2 className="text-base font-bold text-gray-900 mb-4">{children}</h2>;
 }
 
 export default async function FormationDetailPage({ params }: Props) {
@@ -282,9 +259,9 @@ export default async function FormationDetailPage({ params }: Props) {
     notFound();
   }
 
-  // Map to expected format
-  const tarifs = rawFormation.produit_tarifs as Array<{ nom: string; prix_ht: number; taux_tva: number; unite: string; is_default: boolean }> | null;
-  const defaultTarif = tarifs?.find((t) => t.is_default) || tarifs?.[0];
+  // Map sub-tables
+  const tarifs = (rawFormation.produit_tarifs as Array<{ nom: string; prix_ht: number; taux_tva: number; unite: string; is_default: boolean }>) || [];
+  const defaultTarif = tarifs.find((t) => t.is_default) || tarifs[0];
   const objectifs = (rawFormation.produit_objectifs as Array<{ objectif: string; ordre: number }> || [])
     .sort((a, b) => a.ordre - b.ordre).map((o) => o.objectif);
   const prerequis = (rawFormation.produit_prerequis as Array<{ texte: string; ordre: number }> || [])
@@ -295,35 +272,6 @@ export default async function FormationDetailPage({ params }: Props) {
     .sort((a, b) => a.ordre - b.ordre).map((p) => p.texte);
   const competences = (rawFormation.produit_competences as Array<{ texte: string; ordre: number }> || [])
     .sort((a, b) => a.ordre - b.ordre).map((c) => c.texte);
-
-  // Build a compatible formation object for the existing template
-  const formation: FormationData = {
-    id: rawFormation.id,
-    slug: rawFormation.slug,
-    title: rawFormation.intitule,
-    subtitle: rawFormation.sous_titre,
-    description: rawFormation.description,
-    pole: pole,
-    pole_name: rawFormation.domaine,
-    price: defaultTarif ? `${defaultTarif.prix_ht}€ HT` : "",
-    duration: rawFormation.duree_jours ? `${rawFormation.duree_jours} jours` : rawFormation.duree_heures ? `${rawFormation.duree_heures} heures` : "",
-    format_lieu: rawFormation.lieu_format,
-    nombre_participants: rawFormation.nombre_participants_max ? `${rawFormation.nombre_participants_min || 1} à ${rawFormation.nombre_participants_max}` : null,
-    image_url: rawFormation.image_url,
-    certification: rawFormation.certification,
-    objectifs_generaux: objectifs,
-    prerequis: prerequis,
-    programme: programme.map((p) => ({ titre: p.titre, contenu: p.contenu, duree: p.duree })),
-    public_vise: publicVise,
-    competences_visees: competences,
-    categories: null,
-    modalites: rawFormation.modalites as FormationData["modalites"],
-    encadrement_pedagogique: rawFormation.encadrement_pedagogique as string | null,
-    financement: rawFormation.financement as string[] | null,
-    modalites_paiement: rawFormation.modalites_paiement as string | null,
-    accessibilite: rawFormation.accessibilite as string | null,
-    meta_title: rawFormation.meta_titre,
-  };
 
   // Fetch upcoming sessions
   const { data: rawSessions } = await supabase
@@ -336,7 +284,6 @@ export default async function FormationDetailPage({ params }: Props) {
     .order("date_debut")
     .limit(5);
 
-  // Map sessions to expected format
   interface RawSession {
     id: string;
     produit_id: string;
@@ -350,39 +297,54 @@ export default async function FormationDetailPage({ params }: Props) {
     lieu_type: string | null;
     inscriptions: Array<{ count: number }> | null;
   }
+
   const sessions = (rawSessions || []).map((s: RawSession) => {
     const inscriptionCount = s.inscriptions?.[0]?.count || 0;
     const placesMax = s.places_max || 0;
     const placesDisponibles = Math.max(0, placesMax - inscriptionCount);
     return {
       id: s.id,
-      formation_id: s.produit_id,
-      start_date: s.date_debut,
-      end_date: s.date_fin,
-      lieu: s.lieu_nom || s.lieu_ville || "À définir",
-      status: s.statut,
-      places_max: placesMax,
+      date_debut: s.date_debut,
+      date_fin: s.date_fin,
+      lieu: s.lieu_nom || s.lieu_ville || "A definir",
       places_disponibles: placesDisponibles,
-      format_type: s.lieu_type,
     };
   });
 
-  const poleColorVar = getPoleColor(pole);
-
-  // Parse modalites
-  const modalites = formation.modalites;
-  const modalitesMethodes = modalites?.methodes || [];
-  const modalitesMoyens = modalites?.moyens || [];
-  const modalitesEvaluation = modalites?.evaluation || [];
-
-  // Default image based on pole
-  const defaultImages: Record<string, string> = {
-    "securite-prevention": "/images/formations/securite-default.jpg",
-    "petite-enfance": "/images/formations/petite-enfance-default.jpg",
-    sante: "/images/formations/sante-default.jpg",
+  // Build formation object
+  const formation: FormationData = {
+    id: rawFormation.id,
+    slug: rawFormation.slug,
+    title: rawFormation.intitule,
+    subtitle: rawFormation.sous_titre,
+    description: rawFormation.description,
+    pole,
+    pole_name: rawFormation.domaine,
+    price_ht: defaultTarif?.prix_ht ?? null,
+    price_ttc: defaultTarif ? Math.round(defaultTarif.prix_ht * (1 + defaultTarif.taux_tva / 100) * 100) / 100 : null,
+    duree_heures: rawFormation.duree_heures,
+    duree_jours: rawFormation.duree_jours,
+    format_lieu: rawFormation.lieu_format,
+    nombre_participants_min: rawFormation.nombre_participants_min,
+    nombre_participants_max: rawFormation.nombre_participants_max,
+    image_url: rawFormation.image_url,
+    certification: rawFormation.certification,
+    categorie: rawFormation.categorie || null,
+    objectifs,
+    prerequis,
+    programme: programme.map((p) => ({ titre: p.titre, contenu: p.contenu, duree: p.duree })),
+    public_vise: publicVise,
+    competences,
+    tarifs,
+    modalites: rawFormation.modalites as FormationData["modalites"],
+    encadrement_pedagogique: rawFormation.encadrement_pedagogique as string | null,
+    financement: rawFormation.financement as string[] | null,
+    accessibilite: rawFormation.accessibilite as string | null,
+    sessions,
   };
-  const formationImage =
-    formation.image_url || defaultImages[formation.pole] || "/images/formation-default.jpg";
+
+  const accent = poleColors[pole] || "#1F628E";
+  const formationImage = getFormationImage({ id: formation.id, pole: formation.pole, image_url: formation.image_url });
 
   return (
     <>
@@ -390,522 +352,374 @@ export default async function FormationDetailPage({ params }: Props) {
       <CourseJsonLd formation={formation} pole={pole} />
       <BreadcrumbJsonLd formation={formation} pole={pole} />
 
-      {/* Breadcrumb */}
-      <nav className="bg-card border-b border-border" aria-label="Fil d'Ariane">
-        <div className="container-custom py-4">
-          <ol className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-            <li>
-              <Link
-                href="/"
-                className="hover:text-foreground transition-colors"
-              >
-                Accueil
-              </Link>
-            </li>
-            <li aria-hidden="true">/</li>
-            <li>
-              <Link
-                href="/formations"
-                className="hover:text-foreground transition-colors"
-              >
-                Formations
-              </Link>
-            </li>
-            <li aria-hidden="true">/</li>
-            <li>
-              <Link
-                href={`/pole/${pole}`}
-                className="hover:text-foreground transition-colors"
-              >
-                {formation.pole_name}
-              </Link>
-            </li>
-            <li aria-hidden="true">/</li>
-            <li className="text-foreground truncate max-w-[200px]" aria-current="page">
-              {formation.title}
-            </li>
-          </ol>
+      {/* Dark top section — behind fixed header */}
+      <section style={{ backgroundColor: "#151F2D" }}>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 sm:pt-32">
+          {/* Breadcrumb */}
+          <nav className="mb-6" aria-label="Fil d'Ariane">
+            <ol className="flex flex-wrap items-center gap-2 text-sm" style={{ color: "rgba(255,255,255,0.4)" }}>
+              <li>
+                <Link href="/" className="hover:text-white transition-colors">
+                  Accueil
+                </Link>
+              </li>
+              <li aria-hidden="true">/</li>
+              <li>
+                <Link href="/formations" className="hover:text-white transition-colors">
+                  Formations
+                </Link>
+              </li>
+              <li aria-hidden="true">/</li>
+              <li>
+                <Link href={`/pole/${pole}`} className="hover:text-white transition-colors">
+                  {formation.pole_name}
+                </Link>
+              </li>
+              <li aria-hidden="true">/</li>
+              <li className="text-white truncate max-w-[200px]" aria-current="page">
+                {formation.title}
+              </li>
+            </ol>
+          </nav>
+
+          {/* Image Banner */}
+          <div className="relative w-full h-44 sm:h-52 rounded-2xl overflow-hidden">
+            <Image
+              src={formationImage}
+              alt={formation.title}
+              fill
+              sizes="(max-width: 1024px) 100vw, 1100px"
+              className="object-cover"
+              priority
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+            <div className="absolute bottom-4 right-4 bg-white rounded-xl px-3 py-2 shadow-lg">
+              <Image
+                src="/logo-qualiopi.png"
+                alt="Certification Qualiopi"
+                width={120}
+                height={48}
+                className="h-10 w-auto"
+              />
+            </div>
+          </div>
+
+          {/* Spacer to transition into light area */}
+          <div className="h-8 sm:h-10" />
         </div>
-      </nav>
+      </section>
 
-      {/* Main Layout */}
-      <section className="section-padding">
-        <div className="container-custom">
-          <div className="grid lg:grid-cols-[1fr_380px] gap-10">
+      {/* Light content area */}
+      <div className="bg-[#F5F6F8] min-h-screen">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-10">
+
+          {/* Two-Column Layout */}
+          <div className="flex flex-col lg:flex-row gap-10 pb-10">
+
             {/* Main Content */}
-            <div className="space-y-8">
-              {/* Hero Header */}
-              <header>
-                {/* Mobile Image */}
-                <div className="lg:hidden mb-6 rounded-2xl overflow-hidden">
-                  <div className="relative aspect-video">
-                    <Image
-                      src={formationImage}
-                      alt={formation.title}
-                      fill
-                      sizes="100vw"
-                      className="object-cover"
-                      priority
-                    />
-                  </div>
-                </div>
+            <div className="flex-1 min-w-0">
 
-                {/* Badges */}
-                <div className="flex flex-wrap items-center gap-2 mb-4">
-                  <span
-                    className="px-3 py-1.5 rounded-lg text-xs font-medium text-white"
-                    style={{ backgroundColor: `hsl(var(--${poleColorVar}))` }}
-                  >
-                    {formation.pole_name}
+              {/* Title + Badges */}
+              <h1 className="text-2xl sm:text-[26px] font-bold text-gray-900 leading-tight">
+                {formation.title}
+              </h1>
+              {formation.subtitle && (
+                <p className="mt-1 text-[15px] text-gray-400">{formation.subtitle}</p>
+              )}
+              <div className="flex flex-wrap items-center gap-2 mt-3 mb-8">
+                <span
+                  className="px-3 py-1 rounded-full text-xs font-semibold text-white"
+                  style={{ backgroundColor: accent }}
+                >
+                  {formation.pole_name}
+                </span>
+                {formation.categorie && (
+                  <span className="px-3 py-1 rounded-full text-xs font-medium text-gray-600 bg-gray-100">
+                    {formation.categorie}
                   </span>
-                  {formation.categories && (
-                    <span className="px-3 py-1.5 rounded-lg text-xs font-medium border border-border bg-secondary">
-                      {formation.categories.name}
-                    </span>
-                  )}
-                  {formation.certification && (
-                    <span className="px-3 py-1.5 rounded-lg text-xs font-medium bg-green-500/10 text-green-600 flex items-center gap-1">
-                      <Award className="w-3 h-3" />
-                      Certifiante
-                    </span>
-                  )}
-                </div>
-
-                {/* Title */}
-                <h1 className="text-3xl md:text-4xl font-light leading-tight mb-4">
-                  {formation.title}
-                </h1>
-
-                {/* Quick Stats Mobile */}
-                <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-4 lg:hidden">
-                  <span className="flex items-center gap-1.5">
-                    <Clock className="w-4 h-4 text-primary" />
-                    {formation.duration}
-                  </span>
-                  {formation.format_lieu && (
-                    <span className="flex items-center gap-1.5">
-                      <MapPin className="w-4 h-4 text-primary" />
-                      {formation.format_lieu}
-                    </span>
-                  )}
-                </div>
-
-                {/* Description */}
-                {formation.description && (
-                  <p className="text-lg text-muted-foreground leading-relaxed">
-                    {formation.description}
-                  </p>
                 )}
-              </header>
+                {formation.certification && (
+                  <span className="px-3 py-1 rounded-full text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200">
+                    Certifiante
+                  </span>
+                )}
+              </div>
+
+              {/* Description */}
+              {formation.description && (
+                <section className="mb-6 p-6 rounded-2xl bg-white border border-gray-100">
+                  <SectionTitle>Description</SectionTitle>
+                  <p className="text-[15px] text-gray-600 leading-relaxed">{formation.description}</p>
+                </section>
+              )}
 
               {/* Objectifs */}
-              {formation.objectifs_generaux &&
-                Array.isArray(formation.objectifs_generaux) &&
-                formation.objectifs_generaux.length > 0 && (
-                  <section className="p-6 rounded-2xl border border-primary/20 bg-secondary/50">
-                    <SectionTitle icon={Target}>
-                      Objectifs de la formation
-                    </SectionTitle>
-                    <ul className="space-y-3">
-                      {formation.objectifs_generaux.map(
-                        (obj, i) => (
-                          <li key={i} className="flex items-start gap-3">
-                            <CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-                            <span className="text-muted-foreground">{obj}</span>
-                          </li>
-                        )
-                      )}
-                    </ul>
-                  </section>
-                )}
+              {formation.objectifs.length > 0 && (
+                <section className="mb-6 p-6 rounded-2xl bg-white border border-gray-100">
+                  <SectionTitle>Objectifs de la formation</SectionTitle>
+                  <ul className="space-y-3">
+                    {formation.objectifs.map((o, i) => (
+                      <li key={i} className="flex items-start gap-3">
+                        <CheckCircle2 className="w-[18px] h-[18px] shrink-0 mt-0.5" style={{ color: accent }} />
+                        <span className="text-[15px] text-gray-600">{o}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
 
-              {/* Compétences visées */}
-              {formation.competences_visees &&
-                Array.isArray(formation.competences_visees) &&
-                formation.competences_visees.length > 0 && (
-                  <section className="p-6 rounded-2xl border border-border bg-card">
-                    <SectionTitle icon={Award}>Compétences visées</SectionTitle>
-                    <div className="grid sm:grid-cols-2 gap-3">
-                      {formation.competences_visees.map(
-                        (comp, i) => (
-                          <div
-                            key={i}
-                            className="flex items-start gap-3 p-4 rounded-xl border border-border bg-secondary/30"
-                          >
-                            <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                              <span className="text-xs font-medium text-primary">
-                                {i + 1}
-                              </span>
-                            </div>
-                            <span className="text-sm text-muted-foreground">
-                              {comp}
-                            </span>
-                          </div>
-                        )
-                      )}
-                    </div>
-                  </section>
-                )}
+              {/* Competences */}
+              {formation.competences.length > 0 && (
+                <section className="mb-6 p-6 rounded-2xl bg-white border border-gray-100">
+                  <SectionTitle>Competences visees</SectionTitle>
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    {formation.competences.map((c, i) => (
+                      <div key={i} className="flex items-start gap-3 p-4 rounded-xl bg-gray-50">
+                        <Award className="w-4 h-4 shrink-0 mt-0.5" style={{ color: accent }} />
+                        <span className="text-sm text-gray-600">{c}</span>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
 
-              {/* Profil des bénéficiaires */}
-              {((formation.public_vise &&
-                Array.isArray(formation.public_vise) &&
-                formation.public_vise.length > 0) ||
-                (formation.prerequis &&
-                  Array.isArray(formation.prerequis) &&
-                  formation.prerequis.length > 0)) && (
-                <section className="p-6 rounded-2xl border border-border bg-card">
-                  <SectionTitle icon={Users}>
-                    Profil des bénéficiaires
-                  </SectionTitle>
-                  <div className="grid md:grid-cols-2 gap-6">
-                    {formation.public_vise &&
-                      Array.isArray(formation.public_vise) &&
-                      formation.public_vise.length > 0 && (
-                        <div>
-                          <h3 className="font-medium mb-3 flex items-center gap-2">
-                            <Users className="w-4 h-4 text-primary" />
-                            Pour qui ?
-                          </h3>
-                          <ul className="space-y-2">
-                            {formation.public_vise.map(
-                              (item, i) => (
-                                <li
-                                  key={i}
-                                  className="flex items-start gap-2 text-sm text-muted-foreground"
-                                >
-                                  <ChevronRight className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                                  <span>{item}</span>
-                                </li>
-                              )
-                            )}
-                          </ul>
-                        </div>
-                      )}
-                    {formation.prerequis &&
-                      Array.isArray(formation.prerequis) &&
-                      formation.prerequis.length > 0 && (
-                        <div>
-                          <h3 className="font-medium mb-3 flex items-center gap-2">
-                            <FileText className="w-4 h-4 text-primary" />
-                            Prérequis
-                          </h3>
-                          <ul className="space-y-2">
-                            {formation.prerequis.map(
-                              (item, i) => (
-                                <li
-                                  key={i}
-                                  className="flex items-start gap-2 text-sm text-muted-foreground"
-                                >
-                                  <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                                  <span>{item}</span>
-                                </li>
-                              )
-                            )}
-                          </ul>
-                        </div>
-                      )}
+              {/* Pour qui / Prerequisites */}
+              {(formation.public_vise.length > 0 || formation.prerequis.length > 0) && (
+                <section className="mb-6 p-6 rounded-2xl bg-white border border-gray-100">
+                  <div className="grid sm:grid-cols-2 gap-8">
+                    {formation.public_vise.length > 0 && (
+                      <div>
+                        <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
+                          <Users className="w-4 h-4" style={{ color: accent }} /> Pour qui ?
+                        </h3>
+                        <ul className="space-y-2">
+                          {formation.public_vise.map((p, i) => (
+                            <li key={i} className="flex items-start gap-2.5 text-sm text-gray-600">
+                              <span className="mt-2 w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: accent }} />
+                              {p}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {formation.prerequis.length > 0 && (
+                      <div>
+                        <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
+                          <FileText className="w-4 h-4" style={{ color: accent }} /> Prerequis
+                        </h3>
+                        <ul className="space-y-2">
+                          {formation.prerequis.map((p, i) => (
+                            <li key={i} className="flex items-start gap-2.5 text-sm text-gray-600">
+                              <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" style={{ color: accent }} />
+                              {p}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
                 </section>
               )}
 
               {/* Programme */}
-              {formation.programme &&
-                Array.isArray(formation.programme) &&
-                formation.programme.length > 0 && (
-                  <section className="p-6 rounded-2xl border border-border bg-card">
-                    <SectionTitle icon={BookOpen}>
-                      Programme détaillé
-                    </SectionTitle>
-                    <div className="space-y-4">
-                      {formation.programme.map((module, i) => (
-                        <div
-                          key={i}
-                          className="p-4 rounded-xl border border-border bg-secondary/30"
-                        >
-                          <div className="flex items-center gap-3 mb-3">
-                            <span className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-medium bg-primary/10 text-primary">
-                              {i + 1}
-                            </span>
-                            <h3 className="font-medium">{module.titre}</h3>
-                            {module.duree && (
-                              <span className="text-xs text-muted-foreground ml-auto">{module.duree}</span>
-                            )}
-                          </div>
-                          {module.contenu && (
-                            <p className="ml-11 text-sm text-muted-foreground">{module.contenu}</p>
-                          )}
+              {formation.programme.length > 0 && (
+                <section className="mb-6 p-6 rounded-2xl bg-white border border-gray-100">
+                  <SectionTitle>Programme detaille</SectionTitle>
+                  <div className="space-y-3">
+                    {formation.programme.map((mod, i) => (
+                      <div key={i} className="p-5 rounded-xl bg-gray-50">
+                        <div className="flex items-center gap-3 mb-2">
+                          <span
+                            className="w-7 h-7 rounded-lg flex items-center justify-center text-[13px] font-bold text-white"
+                            style={{ backgroundColor: accent }}
+                          >
+                            {i + 1}
+                          </span>
+                          <h3 className="font-semibold text-[15px] text-gray-900">{mod.titre}</h3>
                         </div>
-                      ))}
-                    </div>
-                  </section>
-                )}
-
-              {/* Modalités pédagogiques */}
-              {(modalitesMethodes.length > 0 ||
-                modalitesMoyens.length > 0 ||
-                modalitesEvaluation.length > 0) && (
-                <section className="p-6 rounded-2xl border border-border bg-card">
-                  <SectionTitle icon={Zap}>Approche pédagogique</SectionTitle>
-                  <div className="grid md:grid-cols-3 gap-4">
-                    {modalitesMethodes.length > 0 && (
-                      <div className="p-4 rounded-xl border border-border bg-secondary/30">
-                        <h3 className="font-medium mb-3 flex items-center gap-2 text-sm">
-                          <Zap className="w-4 h-4 text-primary" />
-                          Méthodes
-                        </h3>
-                        <ul className="space-y-2">
-                          {modalitesMethodes.map((method, i) => (
-                            <li
-                              key={i}
-                              className="flex items-start gap-2 text-sm text-muted-foreground"
-                            >
-                              <ChevronRight className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                              <span>{method}</span>
-                            </li>
-                          ))}
-                        </ul>
+                        {mod.contenu && (
+                          <p className="ml-10 text-sm text-gray-600 leading-relaxed whitespace-pre-line">{mod.contenu}</p>
+                        )}
                       </div>
-                    )}
-                    {modalitesMoyens.length > 0 && (
-                      <div className="p-4 rounded-xl border border-border bg-secondary/30">
-                        <h3 className="font-medium mb-3 flex items-center gap-2 text-sm">
-                          <BookOpen className="w-4 h-4 text-primary" />
-                          Moyens
-                        </h3>
-                        <ul className="space-y-2">
-                          {modalitesMoyens.map((moyen, i) => (
-                            <li
-                              key={i}
-                              className="flex items-start gap-2 text-sm text-muted-foreground"
-                            >
-                              <ChevronRight className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                              <span>{moyen}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                    {modalitesEvaluation.length > 0 && (
-                      <div className="p-4 rounded-xl border border-border bg-secondary/30">
-                        <h3 className="font-medium mb-3 flex items-center gap-2 text-sm">
-                          <Target className="w-4 h-4 text-primary" />
-                          Évaluation
-                        </h3>
-                        <ul className="space-y-2">
-                          {modalitesEvaluation.map((item, i) => (
-                            <li
-                              key={i}
-                              className="flex items-start gap-2 text-sm text-muted-foreground"
-                            >
-                              <ChevronRight className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                              <span>{item}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
+                    ))}
                   </div>
                 </section>
               )}
 
-              {/* Équipe pédagogique */}
+              {/* Approche pedagogique */}
+              {formation.modalites && (() => {
+                const m = formation.modalites!;
+                const has = (m.methodes?.length || 0) + (m.moyens?.length || 0) + (m.evaluation?.length || 0) > 0;
+                if (!has) return null;
+                return (
+                  <section className="mb-6 p-6 rounded-2xl bg-white border border-gray-100">
+                    <SectionTitle>Approche pedagogique</SectionTitle>
+                    <div className="grid sm:grid-cols-3 gap-4">
+                      {[
+                        { title: "Methodes", items: m.methodes },
+                        { title: "Moyens", items: m.moyens },
+                        { title: "Evaluation", items: m.evaluation },
+                      ].filter((s) => s.items && s.items.length > 0).map((s) => (
+                        <div key={s.title} className="p-4 rounded-xl bg-gray-50">
+                          <h3 className="font-semibold text-sm text-gray-900 mb-2">{s.title}</h3>
+                          <p className="text-sm text-gray-600 leading-relaxed">{s.items!.join(", ")}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                );
+              })()}
+
+              {/* Equipe pedagogique */}
               {formation.encadrement_pedagogique && (
-                <section className="p-6 rounded-2xl border border-border bg-card">
-                  <SectionTitle icon={GraduationCap}>
-                    Équipe pédagogique
-                  </SectionTitle>
-                  <p className="text-muted-foreground leading-relaxed">
-                    {formation.encadrement_pedagogique}
-                  </p>
+                <section className="mb-6 p-6 rounded-2xl bg-white border border-gray-100">
+                  <SectionTitle>Equipe pedagogique</SectionTitle>
+                  <p className="text-[15px] text-gray-600 leading-relaxed">{formation.encadrement_pedagogique}</p>
                 </section>
               )}
 
-              {/* Financement */}
-              {formation.financement &&
-                Array.isArray(formation.financement) &&
-                formation.financement.length > 0 && (
-                  <section className="p-6 rounded-2xl border border-border bg-card">
-                    <SectionTitle icon={Euro}>
-                      Options de financement
-                    </SectionTitle>
-                    <div className="flex flex-wrap gap-3">
-                      {formation.financement!.map((fin, i) => (
-                        <span
-                          key={i}
-                          className="px-4 py-2 rounded-full border border-border bg-secondary text-sm"
-                        >
+              {/* Accessibilite */}
+              {formation.accessibilite && (
+                <section className="mb-6 p-6 rounded-2xl bg-white border border-gray-100">
+                  <SectionTitle>Accessibilite</SectionTitle>
+                  <p className="text-[15px] text-gray-600 leading-relaxed">{formation.accessibilite}</p>
+                </section>
+              )}
+
+              {/* Footer */}
+              <div className="mt-8 pt-6 border-t border-gray-200 text-center">
+                <p className="text-xs text-gray-400">
+                  Organisme certifie <span className="font-semibold text-gray-600">Qualiopi</span> — Actions de formation
+                </p>
+              </div>
+            </div>
+
+            {/* Sidebar */}
+            <aside className="w-full lg:w-[300px] shrink-0">
+              <div className="lg:sticky lg:top-24 space-y-6">
+
+                {/* CTA card */}
+                <div className="rounded-2xl bg-white border border-gray-100 p-6">
+                  <div className="text-center mb-5">
+                    {formation.price_ht ? (
+                      <>
+                        <p className="text-3xl font-bold text-gray-900">{formation.price_ht} &euro;</p>
+                        <p className="text-sm text-gray-400 mt-1">
+                          HT / stagiaire{formation.price_ttc ? ` \u00B7 ${formation.price_ttc} \u20AC TTC` : ""}
+                        </p>
+                      </>
+                    ) : (
+                      <p className="text-lg font-bold text-gray-900">Sur devis</p>
+                    )}
+                  </div>
+                  <div className="space-y-3">
+                    <InscriptionButton
+                      formation={{ id: formation.id, title: formation.title, price: formation.price_ht ? `${formation.price_ht}\u20AC HT` : undefined }}
+                    />
+                    <InscriptionButton
+                      formation={{ id: formation.id, title: formation.title, price: formation.price_ht ? `${formation.price_ht}\u20AC HT` : undefined }}
+                      mode="devis"
+                      variant="secondary"
+                    />
+                  </div>
+                </div>
+
+                {/* Infos pratiques */}
+                <div className="rounded-2xl bg-white border border-gray-100 p-6">
+                  <h3 className="text-sm font-bold text-gray-900 mb-4">Infos pratiques</h3>
+                  <ul className="space-y-3">
+                    <li className="flex items-center gap-3">
+                      <Clock className="w-4 h-4 shrink-0" style={{ color: accent }} />
+                      <span className="text-sm text-gray-600">
+                        {formation.duree_heures ? `${formation.duree_heures}h` : ""}
+                        {formation.duree_jours ? ` (${formation.duree_jours}j)` : ""}
+                        {!formation.duree_heures && !formation.duree_jours && "\u2014"}
+                      </span>
+                    </li>
+                    <li className="flex items-center gap-3">
+                      <MapPin className="w-4 h-4 shrink-0" style={{ color: accent }} />
+                      <span className="text-sm text-gray-600">{formation.format_lieu || "Presentiel"}</span>
+                    </li>
+                    {(formation.nombre_participants_min || formation.nombre_participants_max) && (
+                      <li className="flex items-center gap-3">
+                        <Users className="w-4 h-4 shrink-0" style={{ color: accent }} />
+                        <span className="text-sm text-gray-600">
+                          {formation.nombre_participants_min && formation.nombre_participants_max
+                            ? `${formation.nombre_participants_min} a ${formation.nombre_participants_max} participants`
+                            : formation.nombre_participants_max
+                              ? `Max. ${formation.nombre_participants_max} participants`
+                              : `Min. ${formation.nombre_participants_min} participants`}
+                        </span>
+                      </li>
+                    )}
+                    {formation.certification && (
+                      <li className="flex items-start gap-3">
+                        <GraduationCap className="w-4 h-4 shrink-0 mt-0.5" style={{ color: accent }} />
+                        <span className="text-sm text-gray-600">{formation.certification}</span>
+                      </li>
+                    )}
+                  </ul>
+                </div>
+
+                {/* Prochaines sessions */}
+                {formation.sessions.length > 0 && (
+                  <div className="rounded-2xl bg-white border border-gray-100 p-6">
+                    <h3 className="text-sm font-bold text-gray-900 mb-4">Prochaines sessions</h3>
+                    <div className="space-y-3">
+                      {formation.sessions.map((s) => (
+                        <div key={s.id} className="flex items-center gap-3">
+                          <CalendarDays className="w-4 h-4 shrink-0" style={{ color: accent }} />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm text-gray-600">
+                              {new Date(s.date_debut).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
+                            </p>
+                            <p className="text-xs text-gray-400">
+                              {s.lieu} &middot; {s.places_disponibles} place{s.places_disponibles > 1 ? "s" : ""}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Tarifs detailles */}
+                {formation.tarifs.length > 1 && (
+                  <div className="rounded-2xl bg-white border border-gray-100 p-6">
+                    <h3 className="text-sm font-bold text-gray-900 mb-4">Tarifs</h3>
+                    <div className="space-y-3">
+                      {formation.tarifs.map((t, i) => (
+                        <div key={i} className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm text-gray-600">{t.nom || "Inter-entreprise"}</p>
+                            <p className="text-xs text-gray-400">{t.unite || "Par stagiaire"}</p>
+                          </div>
+                          <p className="text-sm font-bold text-gray-900">{t.prix_ht} &euro; HT</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Financement */}
+                {formation.financement && formation.financement.length > 0 && (
+                  <div className="rounded-2xl bg-white border border-gray-100 p-6">
+                    <h3 className="text-sm font-bold text-gray-900 mb-3">Financement</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {formation.financement.map((fin, i) => (
+                        <span key={i} className="px-3 py-1.5 rounded-full bg-gray-50 text-xs text-gray-600">
                           {fin}
                         </span>
                       ))}
                     </div>
-                    {formation.modalites_paiement && (
-                      <div className="mt-4 p-4 rounded-xl border border-border bg-secondary/30">
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                          <Euro className="w-4 h-4 text-primary" />
-                          <span className="font-medium">
-                            Modalités de paiement
-                          </span>
-                        </div>
-                        <p className="text-sm">{formation.modalites_paiement}</p>
-                      </div>
-                    )}
-                  </section>
+                  </div>
                 )}
-
-              {/* Accessibilité */}
-              {formation.accessibilite && (
-                <section className="p-6 rounded-2xl border border-border bg-card">
-                  <SectionTitle icon={Accessibility}>Accessibilité</SectionTitle>
-                  <p className="text-muted-foreground leading-relaxed">
-                    {formation.accessibilite}
-                  </p>
-                </section>
-              )}
-            </div>
-
-            {/* Sidebar */}
-            <aside className="lg:block">
-              <div className="sticky top-24 space-y-6">
-                {/* Image Desktop */}
-                <div className="hidden lg:block rounded-2xl overflow-hidden">
-                  <div className="relative aspect-video">
-                    <Image
-                      src={formationImage}
-                      alt={formation.title}
-                      fill
-                      sizes="100vw"
-                      className="object-cover"
-                      priority
-                    />
-                  </div>
-                </div>
-
-                {/* Info Card */}
-                <div className="p-6 rounded-2xl border border-border bg-card shadow-sm">
-                  <h2 className="font-semibold mb-4 line-clamp-2">
-                    {formation.title}
-                  </h2>
-
-                  {/* Info Grid */}
-                  <dl className="space-y-4 mb-6">
-                    {formation.duration && (
-                      <div className="flex items-center gap-3">
-                        <Clock className="w-4 h-4 text-muted-foreground" />
-                        <div className="flex-1">
-                          <dt className="text-xs text-muted-foreground">
-                            Durée
-                          </dt>
-                          <dd className="font-medium text-sm">
-                            {formation.duration}
-                          </dd>
-                        </div>
-                      </div>
-                    )}
-                    {formation.format_lieu && (
-                      <div className="flex items-center gap-3">
-                        <MapPin className="w-4 h-4 text-muted-foreground" />
-                        <div className="flex-1">
-                          <dt className="text-xs text-muted-foreground">
-                            Lieu
-                          </dt>
-                          <dd className="font-medium text-sm">
-                            {formation.format_lieu}
-                          </dd>
-                        </div>
-                      </div>
-                    )}
-                    {formation.nombre_participants && (
-                      <div className="flex items-center gap-3">
-                        <Users className="w-4 h-4 text-muted-foreground" />
-                        <div className="flex-1">
-                          <dt className="text-xs text-muted-foreground">
-                            Participants
-                          </dt>
-                          <dd className="font-medium text-sm">
-                            {formation.nombre_participants}
-                          </dd>
-                        </div>
-                      </div>
-                    )}
-                  </dl>
-
-                  {/* Price */}
-                  {formation.price && (
-                    <div className="p-4 rounded-xl bg-primary/5 border border-primary/20 mb-6">
-                      <p className="text-xs text-muted-foreground text-center mb-1">
-                        Tarif de la formation
-                      </p>
-                      <p className="text-2xl font-bold text-primary text-center">
-                        {formation.price}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Sessions */}
-                  {sessions && sessions.length > 0 && (
-                    <div className="mb-6">
-                      <h3 className="font-medium mb-3 text-sm">
-                        Prochaines sessions
-                      </h3>
-                      <ul className="space-y-2">
-                        {sessions.slice(0, 3).map((session) => (
-                          <li
-                            key={session.id}
-                            className="p-3 bg-secondary/50 rounded-lg text-sm"
-                          >
-                            <time dateTime={session.start_date}>
-                              {new Date(session.start_date).toLocaleDateString(
-                                "fr-FR",
-                                {
-                                  day: "numeric",
-                                  month: "long",
-                                  year: "numeric",
-                                }
-                              )}
-                            </time>
-                            {session.lieu && (
-                              <span className="text-muted-foreground block text-xs mt-1">
-                                {session.lieu}
-                              </span>
-                            )}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {/* CTA Buttons */}
-                  <div className="space-y-3">
-                    <InscriptionButton
-                      formation={{
-                        id: formation.id,
-                        title: formation.title,
-                        price: formation.price,
-                      }}
-                    />
-                    <Link
-                      href={`/contact?formation=${encodeURIComponent(formation.title)}`}
-                      className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 border border-primary/20 text-foreground rounded-lg font-medium hover:bg-secondary transition-colors"
-                    >
-                      Demander un devis
-                      <ArrowRight className="w-4 h-4" />
-                    </Link>
-                  </div>
-                </div>
-
-                {/* Qualiopi Badge */}
-                <div className="p-4 rounded-xl border border-primary/20 bg-card text-center">
-                  <p className="text-sm font-medium">Organisme certifié</p>
-                  <p className="text-xs text-muted-foreground">
-                    Qualiopi - Actions de formation
-                  </p>
-                </div>
               </div>
             </aside>
+
           </div>
         </div>
-      </section>
+      </div>
     </>
   );
 }

@@ -2,22 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient, ORG_ID } from "@/lib/supabase/service";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { sendNotificationEmail, inscriptionEmailHtml } from "@/lib/email";
-
-interface InscriptionRequest {
-  session_id: string;
-  civilite: string;
-  prenom: string;
-  nom: string;
-  email: string;
-  telephone?: string;
-  entreprise?: string;
-  notes?: string;
-}
+import { inscriptionSchema } from "@/lib/validations";
+import { checkCsrf, getClientIp } from "@/lib/api-security";
 
 export async function POST(request: NextRequest) {
   try {
+    // CSRF protection
+    const csrfError = checkCsrf(request);
+    if (csrfError) return csrfError;
+
     // Rate limit: 5 inscriptions per minute per IP
-    const clientIp = request.headers.get("x-forwarded-for") || "unknown";
+    const clientIp = getClientIp(request);
     if (!checkRateLimit(`inscription:${clientIp}`, 5, 60_000)) {
       return NextResponse.json(
         { error: "Trop de demandes, veuillez réessayer plus tard" },
@@ -25,22 +20,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body: InscriptionRequest = await request.json();
-    const { session_id, civilite, prenom, nom, email, telephone, entreprise, notes } = body;
+    // Parse and validate input
+    const rawBody = await request.json();
+    const result = inscriptionSchema.safeParse(rawBody);
 
-    // Validate required fields
-    if (!session_id || !prenom || !nom || !email) {
+    if (!result.success) {
+      const firstError = result.error.issues[0];
       return NextResponse.json(
-        { error: "Champs obligatoires manquants (session, prénom, nom, email)" },
+        { error: firstError?.message || "Données invalides" },
         { status: 400 }
       );
     }
 
-    // Validate email format
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    const { session_id, civilite, prenom, nom, email, telephone, entreprise, notes } = result.data;
+
+    // Per-email rate limit
+    if (!checkRateLimit(`inscription-email:${email}`, 3, 300_000)) {
       return NextResponse.json(
-        { error: "Format d'email invalide" },
-        { status: 400 }
+        { error: "Trop de demandes pour cet email, veuillez réessayer plus tard" },
+        { status: 429 }
       );
     }
 

@@ -355,44 +355,62 @@ body.admin-layout > main {
    Placed OUTSIDE @layer for maximum priority
    ============================================================ */
 html.admin-layout-theme {
-  --background: 225 25% 95% !important;
-  --foreground: 220 40% 10% !important;
+  /* Background #e8edf2 */
+  --background: 213 24% 93% !important;
+  /* Foreground #0e2438 */
+  --foreground: 208 62% 14% !important;
 
+  /* Card #ffffff */
   --card: 0 0% 100% !important;
-  --card-foreground: 220 40% 10% !important;
+  --card-foreground: 208 62% 14% !important;
 
+  /* Popover */
   --popover: 0 0% 100% !important;
-  --popover-foreground: 220 40% 10% !important;
+  --popover-foreground: 208 62% 14% !important;
 
-  --primary: 16 100% 50% !important;
+  /* Primary #1f628e */
+  --primary: 205 64% 34% !important;
   --primary-foreground: 0 0% 100% !important;
 
-  --secondary: 220 15% 93% !important;
-  --secondary-foreground: 220 40% 15% !important;
+  /* Secondary #e4edf3 */
+  --secondary: 210 30% 93% !important;
+  --secondary-foreground: 208 62% 14% !important;
 
-  --muted: 220 15% 93% !important;
-  --muted-foreground: 220 10% 45% !important;
+  /* Muted #e4edf3 / foreground #5a7a8f */
+  --muted: 210 30% 93% !important;
+  --muted-foreground: 202 23% 46% !important;
 
-  --accent: 220 15% 93% !important;
-  --accent-foreground: 220 40% 15% !important;
+  /* Accent #f8a991 */
+  --accent: 13 87% 78% !important;
+  --accent-foreground: 208 62% 14% !important;
 
   --destructive: 0 84% 60% !important;
   --destructive-foreground: 0 0% 100% !important;
 
-  --border: 220 15% 88% !important;
-  --input: 220 15% 88% !important;
-  --ring: 16 100% 50% !important;
+  /* Border #cbd8e3 */
+  --border: 210 24% 84% !important;
+  --input: 210 24% 84% !important;
+  --ring: 205 64% 34% !important;
 
-  --coral: 16 100% 50% !important;
-  --coral-muted: 16 80% 50% !important;
+  /* Coral accent #f8a991 */
+  --coral: 13 87% 78% !important;
+  --coral-muted: 13 70% 65% !important;
 
-  /* Sidebar - #0F2D42 */
-  --sidebar-background: 202 65% 16% !important;
-  --sidebar-foreground: 210 20% 92% !important;
-  --sidebar-primary: 16 85% 72% !important;
-  --sidebar-primary-foreground: 202 65% 16% !important;
-  --sidebar-accent: 202 55% 22% !important;
-  --sidebar-accent-foreground: 210 20% 92% !important;
-  --sidebar-border: 202 45% 24% !important;
-  --sidebar-ring: 16 85% 72% !important;
+  /* Radius */
+  --radius: 0.75rem !important;
+
+  /* Sidebar #0f2d42 */
+  --sidebar-background: 203 65% 16% !important;
+  /* Sidebar foreground #e0eaf0 */
+  --sidebar-foreground: 207 38% 91% !important;
+  /* Sidebar primary = accent #f8a991 for active items */
+  --sidebar-primary: 13 87% 78% !important;
+  --sidebar-primary-foreground: 203 65% 16% !important;
+  /* Sidebar accent #143d58 (hover) */
+  --sidebar-accent: 205 63% 21% !important;
+  /* Sidebar accent foreground #f8a991 */
+  --sidebar-accent-foreground: 13 87% 78% !important;
+  /* Sidebar border #1a3a5f */
+  --sidebar-border: 213 57% 24% !important;
+  --sidebar-ring: 13 87% 78% !important;
 }

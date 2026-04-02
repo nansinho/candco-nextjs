@@ -99,7 +99,7 @@ const nextConfig: NextConfig = {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.trustindex.io https://www.googletagmanager.com https://www.google-analytics.com",
+              "script-src 'self' 'unsafe-inline' https://cdn.trustindex.io https://www.googletagmanager.com https://www.google-analytics.com",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.trustindex.io",
               "img-src 'self' data: blob: https://supabase.candco.fr https://*.trustindex.io https://lh3.googleusercontent.com https://www.google-analytics.com",
               "font-src 'self' https://fonts.gstatic.com",

@@ -2,6 +2,16 @@ import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+/** Escape user-supplied strings before inserting into HTML email templates. */
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 const EMAIL_FROM = process.env.EMAIL_FROM || "C&Co Formation <contact@candco.fr>";
 const EMAIL_TO = (process.env.EMAIL_TO || "contact@candco.fr,contact@harua-ds.com").split(",").map(e => e.trim());
 
@@ -58,23 +68,32 @@ export function contactRequestEmailHtml({
 }) {
   const typeLabel = type === "devis" ? "Demande de devis" : "Demande d'inscription";
 
+  const safeTitle = escapeHtml(formation_title);
+  const safePrenom = escapeHtml(prenom);
+  const safeNom = escapeHtml(nom);
+  const safeEmail = escapeHtml(email);
+  const safeTel = telephone ? escapeHtml(telephone) : "";
+  const safeEntreprise = entreprise ? escapeHtml(entreprise) : "";
+  const safeCivilite = civilite ? escapeHtml(civilite) : "";
+  const safeMessage = message ? escapeHtml(message) : "";
+
   return `
     <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e5e7eb;">
       <div style="background: #1F628E; padding: 24px 32px;">
         <h1 style="color: #ffffff; font-size: 20px; margin: 0;">${typeLabel}</h1>
-        <p style="color: rgba(255,255,255,0.8); font-size: 14px; margin: 8px 0 0;">${formation_title}</p>
+        <p style="color: rgba(255,255,255,0.8); font-size: 14px; margin: 8px 0 0;">${safeTitle}</p>
       </div>
       <div style="padding: 32px;">
         <table style="width: 100%; border-collapse: collapse;">
-          ${civilite ? row("Civilit\u00e9", civilite) : ""}
-          ${row("Pr\u00e9nom", prenom)}
-          ${row("Nom", nom)}
-          ${row("Email", `<a href="mailto:${email}" style="color: #1F628E;">${email}</a>`)}
-          ${telephone ? row("T\u00e9l\u00e9phone", `<a href="tel:${telephone}" style="color: #1F628E;">${telephone}</a>`) : ""}
-          ${entreprise ? row("Entreprise", entreprise) : ""}
+          ${civilite ? row("Civilit\u00e9", safeCivilite) : ""}
+          ${row("Pr\u00e9nom", safePrenom)}
+          ${row("Nom", safeNom)}
+          ${row("Email", `<a href="mailto:${safeEmail}" style="color: #1F628E;">${safeEmail}</a>`)}
+          ${telephone ? row("T\u00e9l\u00e9phone", `<a href="tel:${safeTel}" style="color: #1F628E;">${safeTel}</a>`) : ""}
+          ${entreprise ? row("Entreprise", safeEntreprise) : ""}
           ${nombre_participants ? row("Participants", String(nombre_participants)) : ""}
         </table>
-        ${message ? `<div style="margin-top: 20px; padding: 16px; background: #f8fafc; border-radius: 8px; border-left: 4px solid #1F628E;"><p style="margin: 0; font-size: 14px; color: #334155; white-space: pre-line;">${message}</p></div>` : ""}
+        ${message ? `<div style="margin-top: 20px; padding: 16px; background: #f8fafc; border-radius: 8px; border-left: 4px solid #1F628E;"><p style="margin: 0; font-size: 14px; color: #334155; white-space: pre-line;">${safeMessage}</p></div>` : ""}
       </div>
       <div style="padding: 16px 32px; background: #f8fafc; border-top: 1px solid #e5e7eb; text-align: center;">
         <p style="margin: 0; font-size: 12px; color: #94a3b8;">Notification automatique — C&Co Formation</p>
@@ -104,23 +123,33 @@ export function inscriptionEmailHtml({
   session_date?: string;
   formation_title?: string;
 }) {
+  const safePrenom = escapeHtml(prenom);
+  const safeNom = escapeHtml(nom);
+  const safeEmail = escapeHtml(email);
+  const safeTel = telephone ? escapeHtml(telephone) : "";
+  const safeEntreprise = entreprise ? escapeHtml(entreprise) : "";
+  const safeCivilite = civilite ? escapeHtml(civilite) : "";
+  const safeNotes = notes ? escapeHtml(notes) : "";
+  const safeTitle = formation_title ? escapeHtml(formation_title) : "";
+  const safeSessionDate = session_date ? escapeHtml(session_date) : "";
+
   return `
     <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e5e7eb;">
       <div style="background: #1F628E; padding: 24px 32px;">
         <h1 style="color: #ffffff; font-size: 20px; margin: 0;">Nouvelle inscription</h1>
-        ${formation_title ? `<p style="color: rgba(255,255,255,0.8); font-size: 14px; margin: 8px 0 0;">${formation_title}</p>` : ""}
+        ${formation_title ? `<p style="color: rgba(255,255,255,0.8); font-size: 14px; margin: 8px 0 0;">${safeTitle}</p>` : ""}
       </div>
       <div style="padding: 32px;">
         <table style="width: 100%; border-collapse: collapse;">
-          ${civilite ? row("Civilit\u00e9", civilite) : ""}
-          ${row("Pr\u00e9nom", prenom)}
-          ${row("Nom", nom)}
-          ${row("Email", `<a href="mailto:${email}" style="color: #1F628E;">${email}</a>`)}
-          ${telephone ? row("T\u00e9l\u00e9phone", `<a href="tel:${telephone}" style="color: #1F628E;">${telephone}</a>`) : ""}
-          ${entreprise ? row("Entreprise", entreprise) : ""}
-          ${session_date ? row("Date de session", session_date) : ""}
+          ${civilite ? row("Civilit\u00e9", safeCivilite) : ""}
+          ${row("Pr\u00e9nom", safePrenom)}
+          ${row("Nom", safeNom)}
+          ${row("Email", `<a href="mailto:${safeEmail}" style="color: #1F628E;">${safeEmail}</a>`)}
+          ${telephone ? row("T\u00e9l\u00e9phone", `<a href="tel:${safeTel}" style="color: #1F628E;">${safeTel}</a>`) : ""}
+          ${entreprise ? row("Entreprise", safeEntreprise) : ""}
+          ${session_date ? row("Date de session", safeSessionDate) : ""}
         </table>
-        ${notes ? `<div style="margin-top: 20px; padding: 16px; background: #f8fafc; border-radius: 8px; border-left: 4px solid #1F628E;"><p style="margin: 0; font-size: 14px; color: #334155; white-space: pre-line;">${notes}</p></div>` : ""}
+        ${notes ? `<div style="margin-top: 20px; padding: 16px; background: #f8fafc; border-radius: 8px; border-left: 4px solid #1F628E;"><p style="margin: 0; font-size: 14px; color: #334155; white-space: pre-line;">${safeNotes}</p></div>` : ""}
       </div>
       <div style="padding: 16px 32px; background: #f8fafc; border-top: 1px solid #e5e7eb; text-align: center;">
         <p style="margin: 0; font-size: 12px; color: #94a3b8;">Notification automatique — C&Co Formation</p>

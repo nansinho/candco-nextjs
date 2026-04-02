@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run build:*)",
+      "Bash(npx create-next-app:*)",
+      "Bash(ls:*)",
+      "Bash(npx next:*)",
+      "Bash(grep -r \"dangerouslySetInnerHTML\\\\|DOMPurify\" C:UsersNans-Projectscandco-nextjs/src --include=*.ts --include=*.tsx)",
+      "Bash(grep -r \"\\\\.on\\\\\\(''''*''''\\\\\\)\\\\|supabase\\\\.channel\\\\|realtime\" C:UsersNans-Projectscandco-nextjs/src --include=*.ts --include=*.tsx)",
+      "Bash(grep -v \"^$\")",
+      "Bash(grep -E \"$\\\\{|template|html\")",
+      "Bash(head:*)"
+    ]
+  }
+}

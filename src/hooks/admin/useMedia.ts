@@ -64,15 +64,60 @@ export function useMedia() {
   });
 }
 
+// Upload security constants
+const ALLOWED_MIME_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/avif",
+  "image/gif",
+  "image/svg+xml",
+  "application/pdf",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+];
+
+const ALLOWED_EXTENSIONS = [
+  "jpg", "jpeg", "png", "webp", "avif", "gif", "svg",
+  "pdf", "docx", "xlsx",
+];
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+
+function validateFile(file: File): string | null {
+  if (file.size > MAX_FILE_SIZE) {
+    return `Fichier trop volumineux (max ${MAX_FILE_SIZE / 1024 / 1024} Mo)`;
+  }
+
+  if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+    return `Type de fichier non autorisé (${file.type})`;
+  }
+
+  const ext = file.name.split(".").pop()?.toLowerCase();
+  if (!ext || !ALLOWED_EXTENSIONS.includes(ext)) {
+    return `Extension de fichier non autorisée (.${ext})`;
+  }
+
+  return null; // OK
+}
+
 export function useMediaMutations() {
   const supabase = createClient();
   const queryClient = useQueryClient();
 
   const uploadFile = useMutation({
     mutationFn: async ({ file, folder = "uploads" }: { file: File; folder?: string }) => {
-      const fileExt = file.name.split(".").pop();
+      // Validate file before upload
+      const validationError = validateFile(file);
+      if (validationError) {
+        throw new Error(validationError);
+      }
+
+      const fileExt = file.name.split(".").pop()?.toLowerCase();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-      const filePath = `${folder}/${fileName}`;
+      // Sanitize folder name to prevent path traversal
+      const safeFolder = folder.replace(/[^a-zA-Z0-9_-]/g, "");
+      const filePath = `${safeFolder}/${fileName}`;
 
       // Upload to storage
       const { error: uploadError } = await supabase.storage
@@ -80,6 +125,7 @@ export function useMediaMutations() {
         .upload(filePath, file, {
           cacheControl: "3600",
           upsert: false,
+          contentType: file.type,
         });
 
       if (uploadError) throw uploadError;

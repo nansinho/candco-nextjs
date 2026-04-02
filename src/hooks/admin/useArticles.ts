@@ -19,6 +19,13 @@ export interface Article {
   read_time: number | null;
   meta_title: string | null;
   meta_description: string | null;
+  focus_keyword: string | null;
+  secondary_keywords: string[] | null;
+  keywords: string[] | null;
+  seo_score: number | null;
+  social_linkedin_text: string | null;
+  social_facebook_text: string | null;
+  ai_generated: boolean | null;
   created_at: string;
   updated_at: string;
   published_at: string | null;

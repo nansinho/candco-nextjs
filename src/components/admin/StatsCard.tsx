@@ -11,70 +11,46 @@ interface StatsCardProps {
   icon: LucideIcon;
   href?: string;
   iconColor?: string;
-  iconBg?: string;
-  trend?: {
-    value: number;
-    isPositive: boolean;
-  };
+  trend?: { value: number; isPositive: boolean };
 }
 
-export function StatsCard({
-  title,
-  value,
-  description,
-  icon: Icon,
-  href,
-  iconColor = "#F8A991",
-  iconBg,
-  trend,
-}: StatsCardProps) {
+export function StatsCard({ title, value, description, icon: Icon, href, iconColor = "#1f628e", trend }: StatsCardProps) {
   const content = (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow p-5">
-      <div className="flex items-start justify-between">
-        <div className="space-y-1.5">
-          <p className="text-[13px] text-gray-500 font-medium">{title}</p>
-          <p className="text-3xl font-bold text-gray-900 tracking-tight">{value}</p>
-          {description && (
-            <p className="text-xs text-gray-400">{description}</p>
-          )}
-          {trend && (
-            <p className={`text-xs font-semibold ${trend.isPositive ? "text-emerald-600" : "text-red-500"}`}>
-              {trend.isPositive ? "↗ +" : "↘ -"}{Math.abs(trend.value)}%
-            </p>
-          )}
-        </div>
+    <div className="rounded-xl border border-[#cbd8e3]/50 bg-white p-3 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/5 w-full">
+      <div className="flex items-center justify-between mb-2">
         <div
-          className="h-12 w-12 rounded-full flex items-center justify-center shrink-0"
-          style={{ backgroundColor: iconBg || `${iconColor}18` }}
+          className="h-8 w-8 flex items-center justify-center rounded-lg"
+          style={{ backgroundColor: `${iconColor}15` }}
         >
-          <Icon className="h-5 w-5" style={{ color: iconColor }} />
+          <Icon className="h-3.5 w-3.5" style={{ color: iconColor }} />
         </div>
+        {trend && (
+          <span className={`flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${trend.isPositive ? "text-emerald-500 bg-emerald-500/10" : "text-red-400 bg-red-400/10"}`}>
+            {trend.isPositive ? "↗" : "↘"} {Math.abs(trend.value)}%
+          </span>
+        )}
       </div>
+      <p className="text-xl font-bold text-[#0e2438]">{value}</p>
+      <p className="text-xs text-[#5a7a8f] mt-0.5">{description || title}</p>
     </div>
   );
 
   if (href) {
     return (
-      <Link href={href} className="block transition-transform hover:scale-[1.02] rounded-xl">
+      <Link href={href} className="block">
         {content}
       </Link>
     );
   }
-
   return content;
 }
 
 export function StatsCardSkeleton() {
   return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-      <div className="flex items-start justify-between">
-        <div className="space-y-2">
-          <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-9 w-16" />
-          <Skeleton className="h-3 w-20" />
-        </div>
-        <Skeleton className="h-12 w-12 rounded-full" />
-      </div>
+    <div className="rounded-xl border border-[#cbd8e3]/50 bg-white p-3 w-full">
+      <Skeleton className="h-8 w-8 rounded-lg" />
+      <Skeleton className="h-6 w-12 mt-2" />
+      <Skeleton className="h-3 w-20 mt-1" />
     </div>
   );
 }

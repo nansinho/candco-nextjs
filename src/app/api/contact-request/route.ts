@@ -2,24 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { sendNotificationEmail, contactRequestEmailHtml } from "@/lib/email";
-
-interface ContactRequest {
-  formation_id?: string;
-  formation_title: string;
-  type: "inscription" | "devis";
-  civilite?: string;
-  prenom: string;
-  nom: string;
-  email: string;
-  telephone?: string;
-  entreprise?: string;
-  nombre_participants?: number;
-  message?: string;
-}
+import { contactRequestSchema } from "@/lib/validations";
+import { checkCsrf, getClientIp } from "@/lib/api-security";
 
 export async function POST(request: NextRequest) {
   try {
-    const clientIp = request.headers.get("x-forwarded-for") || "unknown";
+    // CSRF protection
+    const csrfError = checkCsrf(request);
+    if (csrfError) return csrfError;
+
+    // Rate limit
+    const clientIp = getClientIp(request);
     if (!checkRateLimit(`contact-request:${clientIp}`, 5, 60_000)) {
       return NextResponse.json(
         { error: "Trop de demandes, veuillez réessayer plus tard" },
@@ -27,20 +20,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body: ContactRequest = await request.json();
-    const { formation_title, type, civilite, prenom, nom, email, telephone, entreprise, nombre_participants, message } = body;
+    // Parse and validate input
+    const rawBody = await request.json();
+    const result = contactRequestSchema.safeParse(rawBody);
 
-    if (!prenom || !nom || !email) {
+    if (!result.success) {
+      const firstError = result.error.issues[0];
       return NextResponse.json(
-        { error: "Champs obligatoires manquants (prénom, nom, email)" },
+        { error: firstError?.message || "Données invalides" },
         { status: 400 }
       );
     }
 
-    if (!/^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$/.test(email)) {
+    const { formation_title, type, civilite, prenom, nom, email, telephone, entreprise, nombre_participants, message } = result.data;
+
+    // Per-email rate limit (prevent spam from same email)
+    if (!checkRateLimit(`contact-email:${email}`, 3, 300_000)) {
       return NextResponse.json(
-        { error: "Format d'email invalide" },
-        { status: 400 }
+        { error: "Trop de demandes pour cet email, veuillez réessayer plus tard" },
+        { status: 429 }
       );
     }
 
