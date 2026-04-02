@@ -89,6 +89,7 @@ export default function WhyChooseUsV2() {
               fill
               className="object-cover"
               sizes="(max-width: 1024px) 100vw, 640px"
+              priority
             />
             <div className="absolute inset-0 bg-gradient-to-t from-[#151F2D]/60 to-transparent" />
             <div className="absolute bottom-0 left-0 p-6">

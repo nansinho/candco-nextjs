@@ -1,5 +1,11 @@
 import type { Metadata, Viewport } from "next";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import "../globals.css";
+
+const jakarta = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-jakarta",
+});
 
 // Admin-specific metadata (no SEO indexing)
 export const metadata: Metadata = {
@@ -19,8 +25,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#0d0d0d" },
+    { media: "(prefers-color-scheme: light)", color: "#0B1120" },
+    { media: "(prefers-color-scheme: dark)", color: "#0B1120" },
   ],
 };
 
@@ -45,7 +51,7 @@ export default function AdminRootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fr" suppressHydrationWarning>
+    <html lang="fr" suppressHydrationWarning data-scroll-behavior="smooth" className={jakarta.variable}>
       <head>
         {/* Polyfill for crypto.randomUUID - must run before any other scripts */}
         <script dangerouslySetInnerHTML={{ __html: cryptoPolyfillScript }} />

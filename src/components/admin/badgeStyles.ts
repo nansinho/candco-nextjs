@@ -14,7 +14,7 @@ export const badgeBase = {
 export const badgeStyles = {
   // Roles
   superadmin: "bg-red-500/10 text-red-600 border border-red-500/20",
-  admin: "bg-orange-500/10 text-orange-600 border border-orange-500/20",
+  admin: "bg-primary/10 text-primary border border-primary/20",
   org_manager: "bg-violet-500/10 text-violet-600 border border-violet-500/20",
   moderator: "bg-purple-500/10 text-purple-600 border border-purple-500/20",
   user: "bg-blue-500/10 text-blue-600 border border-blue-500/20",
@@ -45,7 +45,7 @@ export const badgeStyles = {
   basse: "bg-green-500/10 text-green-600 border border-green-500/20",
 
   // Poles
-  poleSecurite: "bg-orange-500/80 text-white border border-orange-600/20",
+  poleSecurite: "bg-red-600/80 text-white border border-red-700/20",
   polePetiteEnfance: "bg-purple-500/80 text-white border border-purple-600/20",
   poleSante: "bg-blue-500/80 text-white border border-blue-600/20",
 } as const;

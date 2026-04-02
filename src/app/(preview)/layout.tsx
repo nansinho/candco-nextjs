@@ -81,7 +81,7 @@ export default function PreviewLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="fr" suppressHydrationWarning className={jakarta.variable}>
+    <html lang="fr" suppressHydrationWarning className={jakarta.variable} data-scroll-behavior="smooth">
       <head>
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />

@@ -17,10 +17,10 @@ const AdminLayoutWrapper = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="fixed inset-0 z-[100] bg-zinc-950 flex items-center justify-center">
+      <div className="fixed inset-0 z-[100] bg-white flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
-          <p className="text-sm text-zinc-400">Chargement...</p>
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Chargement...</p>
         </div>
       </div>
     ),

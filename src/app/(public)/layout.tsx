@@ -317,7 +317,7 @@ export default function PublicLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fr" suppressHydrationWarning className={jakarta.variable}>
+    <html lang="fr" suppressHydrationWarning className={jakarta.variable} data-scroll-behavior="smooth">
       <head>
         {/* Polyfill for crypto.randomUUID - must run before any other scripts */}
         <script dangerouslySetInnerHTML={{ __html: cryptoPolyfillScript }} />

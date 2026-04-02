@@ -21,7 +21,7 @@ const defaultImages: Record<string, string> = {
   sante: "/images/poles/pole-health.jpg",
 };
 
-function FormationCard({ f }: { f: Formation }) {
+function FormationCard({ f, priority = false }: { f: Formation; priority?: boolean }) {
   const accent = colors[f.pole] || "#1F628E";
   return (
     <Link href={`/formations/${f.pole}/${f.slug || f.id}`} className="group block h-full">
@@ -36,6 +36,7 @@ function FormationCard({ f }: { f: Formation }) {
             fill
             sizes="(max-width:640px) 100vw, (max-width:1024px) 50vw, 33vw"
             className="object-cover"
+            priority={priority}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
           <div className="absolute bottom-3 left-3 flex items-center gap-2">
@@ -138,7 +139,7 @@ export default function FeaturedFormationsV2({ formations }: { formations: Forma
               >
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {pageFormations.map(f => (
-                    <FormationCard key={f.id} f={f} />
+                    <FormationCard key={f.id} f={f} priority={pageIdx === 0} />
                   ))}
                 </div>
               </div>

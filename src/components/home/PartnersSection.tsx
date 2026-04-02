@@ -42,6 +42,7 @@ export default function PartnersSection() {
                     src={partner.logo}
                     alt={partner.alt}
                     fill
+                    sizes="120px"
                     className="object-contain"
                     loading="lazy"
                   />

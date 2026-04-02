@@ -542,8 +542,8 @@ export default function FormationsClient({
                                     <div
                                       role="button"
                                       tabIndex={0}
-                                      onClick={() => openFormation(formation.slug || formation.id, formation.pole)}
-                                      onKeyDown={(e) => { if (e.key === "Enter") openFormation(formation.slug || formation.id, formation.pole); }}
+                                      onClick={() => openFormation(formation.id, formation.pole)}
+                                      onKeyDown={(e) => { if (e.key === "Enter") openFormation(formation.id, formation.pole); }}
                                       className="group block h-full w-full text-left cursor-pointer"
                                     >
                                       <article

@@ -10,7 +10,7 @@
 import { ReactNode } from "react";
 import { QueryProvider } from "@/providers/QueryProvider";
 import { AuthProvider } from "@/contexts/AuthContext";
-import { ThemeProvider } from "@/components/ThemeProvider";
+import { ThemeProvider as NextThemesProvider } from "next-themes";
 import { AdminLayoutClient } from "./AdminLayoutClient";
 
 interface AdminLayoutWrapperProps {
@@ -19,12 +19,17 @@ interface AdminLayoutWrapperProps {
 
 export default function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps) {
   return (
-    <ThemeProvider>
+    <NextThemesProvider
+      attribute="class"
+      defaultTheme="light"
+      forcedTheme="light"
+      disableTransitionOnChange
+    >
       <QueryProvider>
         <AuthProvider>
           <AdminLayoutClient>{children}</AdminLayoutClient>
         </AuthProvider>
       </QueryProvider>
-    </ThemeProvider>
+    </NextThemesProvider>
   );
 }

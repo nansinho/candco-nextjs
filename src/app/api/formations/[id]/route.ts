@@ -9,10 +9,8 @@ export async function GET(
   const { id } = await params;
   const supabase = createServiceClient();
 
-  // Fetch formation with all related data
-  const { data: f } = await supabase
-    .from("produits_formation")
-    .select(`
+  // Fetch formation with all related data (try slug first, then id)
+  const selectQuery = `
       *,
       produit_objectifs(objectif, ordre),
       produit_prerequis(texte, ordre),
@@ -20,11 +18,30 @@ export async function GET(
       produit_public_vise(texte, ordre),
       produit_competences(texte, ordre),
       produit_tarifs(nom, prix_ht, taux_tva, unite, is_default)
-    `)
+    `;
+
+  // Try by UUID id first, then by slug
+  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
+  let { data: f } = await supabase
+    .from("produits_formation")
+    .select(selectQuery)
     .eq("organisation_id", ORG_ID)
-    .eq("slug", id)
+    .eq(isUUID ? "id" : "slug", id)
     .eq("publie", true)
     .single();
+
+  // Fallback: try the other field
+  if (!f) {
+    const { data: fFallback } = await supabase
+      .from("produits_formation")
+      .select(selectQuery)
+      .eq("organisation_id", ORG_ID)
+      .eq(isUUID ? "slug" : "id", id)
+      .eq("publie", true)
+      .single();
+    f = fFallback;
+  }
 
   if (!f) {
     return NextResponse.json({ error: "Formation not found" }, { status: 404 });

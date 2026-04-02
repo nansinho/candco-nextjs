@@ -15,7 +15,7 @@ import {
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { LogOut, User, Home, ChevronDown, ArrowLeft, GitCommit } from "lucide-react";
+import { LogOut, User, Home, ChevronDown, ArrowLeft, GitCommit, Search } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -142,7 +142,7 @@ export function AdminHeader() {
 
   return (
     <header
-      className="h-16 bg-background border-b border-border/50 sticky z-50"
+      className="h-16 bg-card border-b border-border/40 sticky z-50 shadow-sm"
       style={{ top: 0 }}
     >
       <div className="flex h-full items-center justify-between px-3 sm:px-4">
@@ -182,6 +182,18 @@ export function AdminHeader() {
           </TooltipProvider>
         </div>
 
+        {/* Search bar - center */}
+        <div className="hidden md:flex items-center flex-1 max-w-md mx-8">
+          <div className="relative w-full">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Rechercher..."
+              className="w-full h-9 pl-10 pr-4 rounded-lg bg-muted/50 border border-border/40 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all"
+            />
+          </div>
+        </div>
+
         <div className="flex items-center gap-1.5">
           {/* Retour au site */}
           <Button variant="ghost" size="icon" asChild className="h-9 w-9 text-muted-foreground hover:text-foreground">
@@ -193,21 +205,21 @@ export function AdminHeader() {
           {/* User menu - Carte premium */}
           <Sheet>
             <SheetTrigger asChild>
-              <button className="flex items-center gap-3 h-auto px-3 py-2 rounded-2xl bg-gradient-to-r from-secondary/60 to-secondary/30 hover:from-secondary/80 hover:to-secondary/50 border border-border/20 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer">
-                <Avatar className="h-9 w-9 ring-2 ring-primary/30 shadow-md">
+              <button className="flex items-center gap-2.5 h-auto px-2.5 py-1.5 rounded-xl hover:bg-gray-50 border border-transparent hover:border-gray-200 transition-all duration-200 cursor-pointer">
+                <Avatar className="h-9 w-9 ring-2 ring-[#F8A991]/30">
                   <AvatarImage
                     src={userProfile?.avatar_url || undefined}
                     alt={userDisplayName}
                   />
-                  <AvatarFallback className="bg-primary text-primary-foreground text-sm font-medium">
+                  <AvatarFallback className="bg-[#0f1929] text-white text-sm font-bold">
                     {userInitials}
                   </AvatarFallback>
                 </Avatar>
-                <div className="text-left hidden md:flex flex-col gap-0.5">
-                  <span className="text-sm font-semibold leading-tight text-foreground">{userDisplayName}</span>
-                  <RoleBadge role={effectiveRole || "user"} size="large" />
+                <div className="text-left hidden md:flex flex-col">
+                  <span className="text-sm font-semibold leading-tight text-gray-900">{userDisplayName}</span>
+                  <span className="text-[11px] text-gray-400">{roleLabels[effectiveRole || "user"] || effectiveRole}</span>
                 </div>
-                <ChevronDown className="h-4 w-4 text-muted-foreground/70 hidden md:block" />
+                <ChevronDown className="h-3.5 w-3.5 text-gray-400 hidden md:block" />
               </button>
             </SheetTrigger>
             <SheetContent side="right" className="w-[300px] sm:w-[340px] p-0 flex flex-col">

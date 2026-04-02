@@ -48,8 +48,8 @@ export const adminStyles = {
   // TABLEAUX - polices compactes style SaaS
   // ============================================================
   tableHead: "text-muted-foreground font-normal text-[11px] sm:text-xs",
-  tableRow: "border-b border-border/30 hover:bg-muted/30",
-  tableRowClickable: "border-b border-border/30 hover:bg-muted/30 cursor-pointer transition-colors",
+  tableRow: "border-b border-border/40 hover:bg-muted/50",
+  tableRowClickable: "border-b border-border/40 hover:bg-muted/50 cursor-pointer transition-colors",
   tableRowHeader: "hover:bg-transparent border-b border-border/50",
   tableCell: "text-[11px] sm:text-xs",
   tableCellMuted: "text-[11px] sm:text-xs text-muted-foreground",
@@ -83,10 +83,10 @@ export const adminStyles = {
   // ============================================================
   // CARDS
   // ============================================================
-  statsCard: "border-0 bg-secondary/30",
-  contentCard: "border-0 bg-card",
-  filterCard: "border-0 bg-secondary/30",
-  detailCard: "border-0 bg-secondary/30 p-4 sm:p-6 rounded-lg",
+  statsCard: "border border-border/40 bg-card shadow-sm",
+  contentCard: "border border-border/30 bg-card shadow-sm",
+  filterCard: "border border-border/40 bg-card shadow-sm",
+  detailCard: "border border-border/40 bg-card shadow-sm p-4 sm:p-6 rounded-lg",
   detailCardHeader: "flex items-center justify-between mb-4",
 
   // ============================================================

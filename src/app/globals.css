@@ -115,7 +115,7 @@
   }
 
   html {
-    scroll-behavior: smooth;
+    /* scroll-behavior managed via data-scroll-behavior attribute on <html> */
   }
 
   body {
@@ -348,4 +348,51 @@ body.admin-layout > footer {
 body.admin-layout > main {
   padding: 0 !important;
   margin: 0 !important;
+}
+
+/* ============================================================
+   ADMIN THEME — Light dashboard with navy sidebar
+   Placed OUTSIDE @layer for maximum priority
+   ============================================================ */
+html.admin-layout-theme {
+  --background: 225 25% 95% !important;
+  --foreground: 220 40% 10% !important;
+
+  --card: 0 0% 100% !important;
+  --card-foreground: 220 40% 10% !important;
+
+  --popover: 0 0% 100% !important;
+  --popover-foreground: 220 40% 10% !important;
+
+  --primary: 16 100% 50% !important;
+  --primary-foreground: 0 0% 100% !important;
+
+  --secondary: 220 15% 93% !important;
+  --secondary-foreground: 220 40% 15% !important;
+
+  --muted: 220 15% 93% !important;
+  --muted-foreground: 220 10% 45% !important;
+
+  --accent: 220 15% 93% !important;
+  --accent-foreground: 220 40% 15% !important;
+
+  --destructive: 0 84% 60% !important;
+  --destructive-foreground: 0 0% 100% !important;
+
+  --border: 220 15% 88% !important;
+  --input: 220 15% 88% !important;
+  --ring: 16 100% 50% !important;
+
+  --coral: 16 100% 50% !important;
+  --coral-muted: 16 80% 50% !important;
+
+  /* Sidebar - #0F2D42 */
+  --sidebar-background: 202 65% 16% !important;
+  --sidebar-foreground: 210 20% 92% !important;
+  --sidebar-primary: 16 85% 72% !important;
+  --sidebar-primary-foreground: 202 65% 16% !important;
+  --sidebar-accent: 202 55% 22% !important;
+  --sidebar-accent-foreground: 210 20% 92% !important;
+  --sidebar-border: 202 45% 24% !important;
+  --sidebar-ring: 16 85% 72% !important;
 }

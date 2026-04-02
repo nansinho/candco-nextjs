@@ -25,8 +25,10 @@ interface AdminLayoutClientProps {
 export function AdminLayoutClient({ children }: AdminLayoutClientProps) {
   useEffect(() => {
     document.body.classList.add("admin-layout");
+    document.documentElement.classList.add("admin-layout-theme");
     return () => {
       document.body.classList.remove("admin-layout");
+      document.documentElement.classList.remove("admin-layout-theme");
     };
   }, []);
 

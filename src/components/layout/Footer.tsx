@@ -94,6 +94,7 @@ export default function Footer() {
                   src="/logo-qualiopi.png"
                   alt="Certification Qualiopi - Actions de Formation"
                   fill
+                  sizes="140px"
                   className="object-contain"
                 />
               </div>

@@ -43,6 +43,10 @@ const nextConfig: NextConfig = {
     imageSizes: [16, 32, 48, 64, 96, 128, 256],
   },
 
+  turbopack: {
+    root: ".",
+  },
+
   // Expérimental - améliorations de performance
   experimental: {
     // Optimise le tree-shaking des packages
