@@ -1,16 +1,8 @@
 "use client";
 
-/**
- * @file AdminLayoutWrapper.tsx
- * @description Wrapper client-only pour le layout admin
- * Ce composant contient tous les providers et le layout client
- * Il est chargé dynamiquement avec ssr: false pour éviter les erreurs d'hydratation
- */
-
 import { ReactNode } from "react";
 import { QueryProvider } from "@/providers/QueryProvider";
 import { AuthProvider } from "@/contexts/AuthContext";
-import { ThemeProvider as NextThemesProvider } from "next-themes";
 import { AdminLayoutClient } from "./AdminLayoutClient";
 
 interface AdminLayoutWrapperProps {
@@ -19,17 +11,10 @@ interface AdminLayoutWrapperProps {
 
 export default function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps) {
   return (
-    <NextThemesProvider
-      attribute="class"
-      defaultTheme="light"
-      forcedTheme="light"
-      disableTransitionOnChange
-    >
-      <QueryProvider>
-        <AuthProvider>
-          <AdminLayoutClient>{children}</AdminLayoutClient>
-        </AuthProvider>
-      </QueryProvider>
-    </NextThemesProvider>
+    <QueryProvider>
+      <AuthProvider>
+        <AdminLayoutClient>{children}</AdminLayoutClient>
+      </AuthProvider>
+    </QueryProvider>
   );
 }
