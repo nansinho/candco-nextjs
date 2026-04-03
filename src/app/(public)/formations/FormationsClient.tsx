@@ -2,7 +2,6 @@
 
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
@@ -532,14 +531,14 @@ export default function FormationsClient({
                                         style={{ backgroundColor: `${accent}30`, border: `1.5px solid ${accent}55` }}
                                       >
                                         {/* Image */}
-                                        <div className="relative aspect-[3/1] overflow-hidden">
-                                          <Image
+                                        <div className="relative aspect-[16/9] sm:aspect-[3/1] overflow-hidden">
+                                          {/* Use native img to avoid Next.js preload injection for all ~40 images */}
+                                          <img
                                             src={getFormationImage(formation)}
                                             alt={formation.title}
-                                            fill
-                                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                                            className="object-cover"
+                                            className="absolute inset-0 w-full h-full object-cover"
                                             loading="lazy"
+                                            decoding="async"
                                           />
                                           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                                           <div className="absolute bottom-3 left-3 flex items-center gap-2">
@@ -559,10 +558,10 @@ export default function FormationsClient({
 
                                         {/* Content */}
                                         <div className="p-5 flex flex-col flex-1">
-                                          <h3 className="text-[15px] font-bold text-white leading-snug mb-2 line-clamp-2 min-h-[2.5rem] group-hover:text-[#F8A991] transition-colors">
+                                          <h3 className="font-bold text-white leading-snug mb-2 line-clamp-2 min-h-[2.5rem] group-hover:text-[#F8A991] transition-colors" style={{ fontSize: "clamp(0.8125rem, 0.75rem + 0.3vw, 0.9375rem)" }}>
                                             {formation.title}
                                           </h3>
-                                          <p className="text-[13px] text-white/40 line-clamp-2 mb-3 min-h-[2.5rem]">
+                                          <p className="text-white/40 line-clamp-2 mb-3 min-h-[2rem]" style={{ fontSize: "clamp(0.75rem, 0.7rem + 0.2vw, 0.8125rem)" }}>
                                             {formation.subtitle || "\u00A0"}
                                           </p>
 
@@ -583,7 +582,7 @@ export default function FormationsClient({
                                           )}
 
                                           <div className="flex items-center justify-between mt-auto pt-3" style={{ borderTop: `1px solid ${accent}33` }}>
-                                            <p className="text-lg font-extrabold text-white">{formation.price}</p>
+                                            <p className="font-extrabold text-white" style={{ fontSize: "clamp(1rem, 0.9rem + 0.4vw, 1.125rem)" }}>{formation.price}</p>
                                             <span className="text-xs font-bold flex items-center gap-1" style={{ color: accent }}>
                                               Détails <ArrowRight className="w-3 h-3" />
                                             </span>
