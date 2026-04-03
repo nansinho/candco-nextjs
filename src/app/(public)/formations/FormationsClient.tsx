@@ -539,6 +539,7 @@ export default function FormationsClient({
                                             fill
                                             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                                             className="object-cover"
+                                            loading="lazy"
                                           />
                                           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                                           <div className="absolute bottom-3 left-3 flex items-center gap-2">
