@@ -1,13 +1,7 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
-import dynamic from "next/dynamic";
-
-const FormationDetailModal = dynamic(
-  () => import("@/components/formations/FormationDetailModal"),
-  { ssr: false }
-);
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -87,17 +81,7 @@ export default function FormationsClient({
   const [selectedPole, setSelectedPole] = useState(initialPole);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [modalSlug, setModalSlug] = useState<string | null>(null);
-  const [modalPole, setModalPole] = useState<string>("");
-
-  const openFormation = useCallback((slug: string, pole: string) => {
-    setModalSlug(slug);
-    setModalPole(pole);
-  }, []);
-
-  const closeFormation = useCallback(() => {
-    setModalSlug(null);
-  }, []);
+  // Navigation directe vers la page détail (plus de modal)
 
   // Debounce search query (300ms)
   useEffect(() => {
@@ -539,12 +523,9 @@ export default function FormationsClient({
                                     transition={{ duration: 0.4, delay: index * 0.05 }}
                                     className="h-full"
                                   >
-                                    <div
-                                      role="button"
-                                      tabIndex={0}
-                                      onClick={() => openFormation(formation.id, formation.pole)}
-                                      onKeyDown={(e) => { if (e.key === "Enter") openFormation(formation.id, formation.pole); }}
-                                      className="group block h-full w-full text-left cursor-pointer"
+                                    <Link
+                                      href={`/formations/${formation.pole}/${formation.slug || formation.id}`}
+                                      className="group block h-full w-full"
                                     >
                                       <article
                                         className="rounded-2xl overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full flex flex-col border"
@@ -608,7 +589,7 @@ export default function FormationsClient({
                                           </div>
                                         </div>
                                       </article>
-                                    </div>
+                                    </Link>
                                   </motion.div>
                                 );
                               })}
@@ -640,12 +621,6 @@ export default function FormationsClient({
         </div>
       </section>
 
-      {/* Formation Detail Modal */}
-      <FormationDetailModal
-        slug={modalSlug}
-        pole={modalPole}
-        onClose={closeFormation}
-      />
     </>
   );
 }

@@ -9,7 +9,8 @@
       "Bash(grep -r \"\\\\.on\\\\\\(''''*''''\\\\\\)\\\\|supabase\\\\.channel\\\\|realtime\" C:UsersNans-Projectscandco-nextjs/src --include=*.ts --include=*.tsx)",
       "Bash(grep -v \"^$\")",
       "Bash(grep -E \"$\\\\{|template|html\")",
-      "Bash(head:*)"
+      "Bash(head:*)",
+      "Bash(git commit:*)"
     ]
   }
 }

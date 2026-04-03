@@ -48,8 +48,13 @@ export async function GET(
   }
 
   const poleInfo = getPoleFromDomaine(f.domaine as string);
-  const tarifs = f.produit_tarifs as Array<{ nom: string; prix_ht: number; taux_tva: number; unite: string; is_default: boolean }> | null;
-  const defaultTarif = tarifs?.find((t) => t.is_default) || tarifs?.[0];
+  const allTarifs = f.produit_tarifs as Array<{ nom: string; prix_ht: number; taux_tva: number; unite: string; is_default: boolean }> | null;
+  // Only expose intra/inter tariffs publicly
+  const tarifs = allTarifs?.filter((t) => {
+    const nom = (t.nom || "").toLowerCase();
+    return nom.includes("intra") || nom.includes("inter");
+  }) || [];
+  const defaultTarif = tarifs.find((t) => t.is_default) || tarifs[0];
 
   const objectifs = (f.produit_objectifs as Array<{ objectif: string; ordre: number }> || [])
     .sort((a, b) => a.ordre - b.ordre).map((o) => o.objectif);

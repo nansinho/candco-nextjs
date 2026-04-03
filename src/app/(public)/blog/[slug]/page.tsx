@@ -99,10 +99,10 @@ export default async function BlogArticlePage({ params }: Props) {
         {article.image_url && (
           <div className="absolute inset-0">
             <Image src={article.image_url} alt={article.title} fill sizes="100vw" className="object-cover" priority />
-            <div className="absolute inset-0" style={{ background: "linear-gradient(to top, #151F2D 0%, rgba(21,31,45,0.8) 50%, rgba(21,31,45,0.3) 100%)" }} />
+            <div className="absolute inset-0" style={{ background: "linear-gradient(to top, #0F2D42 0%, rgba(15,45,66,0.8) 50%, rgba(15,45,66,0.3) 100%)" }} />
           </div>
         )}
-        {!article.image_url && <div className="absolute inset-0" style={{ backgroundColor: "#151F2D" }} />}
+        {!article.image_url && <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, #0F2D42 0%, #1F628E 100%)" }} />}
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-12 flex flex-col justify-end min-h-[450px] lg:min-h-[550px]">
           {/* Breadcrumb */}
@@ -148,7 +148,7 @@ export default async function BlogArticlePage({ params }: Props) {
       </section>
 
       {/* ═══ 2. CONTENT + SIDEBAR ═══ */}
-      <section className="py-16 sm:py-20 bg-white">
+      <section className="py-16 sm:py-20" style={{ backgroundColor: "#F5F7FA" }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14">
             {/* Main */}
@@ -162,7 +162,7 @@ export default async function BlogArticlePage({ params }: Props) {
             {/* Sidebar */}
             <aside className="lg:col-span-4 hidden lg:block">
               <div className="sticky top-24">
-                <div className="p-6 rounded-2xl border border-gray-100" style={{ backgroundColor: "#F5F7FA" }}>
+                <div className="p-6 rounded-2xl border border-[#cbd8e3]/50 bg-white shadow-sm">
                   <TableOfContents content={article.content || ""} />
                 </div>
                 <Link
@@ -180,7 +180,7 @@ export default async function BlogArticlePage({ params }: Props) {
 
       {/* ═══ 3. RELATED ARTICLES — dark ═══ */}
       {relatedArticles && relatedArticles.length > 0 && (
-        <section className="py-20 sm:py-24" style={{ backgroundColor: "#151F2D" }}>
+        <section className="py-20 sm:py-24" style={{ backgroundColor: "#0F2D42" }}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6 mb-14">
               <div>
@@ -212,7 +212,7 @@ export default async function BlogArticlePage({ params }: Props) {
                       ) : (
                         <div className="w-full h-full bg-white/5" />
                       )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-[#151F2D]/50 to-transparent" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#0F2D42]/50 to-transparent" />
                       {related.category && (
                         <span className="absolute top-4 left-4 text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full text-white" style={{ backgroundColor: "#1F628E" }}>
                           {related.category}
@@ -250,7 +250,7 @@ export default async function BlogArticlePage({ params }: Props) {
       <CTASectionV2 />
 
       {/* ═══ 5. BACK — mobile ═══ */}
-      <div className="lg:hidden py-6" style={{ backgroundColor: "#151F2D" }}>
+      <div className="lg:hidden py-6" style={{ backgroundColor: "#0F2D42" }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <Link
             href="/blog"
