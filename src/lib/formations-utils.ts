@@ -16,26 +16,16 @@ interface GroupedFormations<T> {
 }
 
 /**
- * Récupère l'image d'une formation avec fallback intelligent
+ * Récupère l'image personnalisée d'une formation.
+ * Retourne null si aucune image n'est définie — l'appelant doit afficher
+ * le placeholder C&Co (fond blanc + logo).
  */
 export function getFormationImage(formation: {
   id: string;
   pole: string;
   image_url?: string | null;
-}): string {
-  // Image URL personnalisée
-  if (formation.image_url) {
-    return formation.image_url;
-  }
-
-  // Image par défaut du pôle
-  const poleDefaultImages: Record<string, string> = {
-    "petite-enfance": "/images/poles/pole-childhood.jpg",
-    "sante": "/images/poles/pole-health.jpg",
-    "securite-prevention": "/images/poles/pole-security.jpg",
-  };
-
-  return poleDefaultImages[formation.pole] || "/images/poles/pole-security.jpg";
+}): string | null {
+  return formation.image_url || null;
 }
 
 /**

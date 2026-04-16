@@ -15,12 +15,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { pole, formationId } = await params;
   const supabase = createServiceClient();
 
-  const { data: formation } = await supabase
+  // Try by slug first, fallback to id (UUID). Use limit(1) to handle duplicate slugs gracefully.
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(formationId);
+  let query = supabase
     .from("produits_formation")
     .select("intitule, sous_titre, description, meta_titre, meta_description, image_url, domaine")
-    .eq("organisation_id", ORG_ID)
-    .eq("slug", formationId)
-    .single();
+    .eq("organisation_id", ORG_ID);
+  if (isUuid) {
+    query = query.eq("id", formationId);
+  } else {
+    query = query.eq("slug", formationId);
+  }
+  const { data: formations } = await query.order("image_url", { ascending: false, nullsFirst: false }).limit(1);
+  const formation = formations?.[0] ?? null;
 
   if (!formation) {
     return { title: "Formation non trouvée" };
@@ -107,7 +114,9 @@ export default async function FormationDetailPage({ params }: Props) {
   const supabase = createServiceClient();
 
   // Fetch formation with sub-tables
-  const { data: rawFormation } = await supabase
+  // Try by slug first, fallback to id (UUID)
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(formationId);
+  let mainQuery = supabase
     .from("produits_formation")
     .select(`
       *,
@@ -118,9 +127,15 @@ export default async function FormationDetailPage({ params }: Props) {
       produit_competences(texte, ordre),
       produit_tarifs(nom, prix_ht, taux_tva, unite, is_default)
     `)
-    .eq("organisation_id", ORG_ID)
-    .eq("slug", formationId)
-    .single();
+    .eq("organisation_id", ORG_ID);
+  if (isUuid) {
+    mainQuery = mainQuery.eq("id", formationId);
+  } else {
+    mainQuery = mainQuery.eq("slug", formationId);
+  }
+  // Order by image_url descending so formations WITH images come first (nulls last)
+  const { data: rawFormations } = await mainQuery.order("image_url", { ascending: false, nullsFirst: false }).limit(1);
+  const rawFormation = rawFormations?.[0] ?? null;
 
   if (!rawFormation) {
     notFound();
@@ -240,15 +255,30 @@ export default async function FormationDetailPage({ params }: Props) {
 
           {/* Image Banner (in dark zone) */}
           <div className="relative w-full h-44 sm:h-52 rounded-2xl overflow-hidden">
-            <Image
-              src={formationImage}
-              alt={formation.title}
-              fill
-              sizes="(max-width: 1024px) 100vw, 1100px"
-              className="object-cover"
-              priority
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+            {formationImage ? (
+              <>
+                <Image
+                  src={formationImage}
+                  alt={formation.title}
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 1100px"
+                  className="object-cover"
+                  priority
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+              </>
+            ) : (
+              <div className="absolute inset-0 bg-white flex items-center justify-center">
+                <Image
+                  src="/logo.svg"
+                  alt="C&Co Formation"
+                  width={200}
+                  height={80}
+                  className="h-16 w-auto opacity-90"
+                  priority
+                />
+              </div>
+            )}
             <div className="absolute bottom-4 right-4 bg-white rounded-xl px-3 py-2 shadow-lg">
               <Image src="/logo-qualiopi.png" alt="Certification Qualiopi" width={120} height={48} className="h-10 w-auto" />
             </div>

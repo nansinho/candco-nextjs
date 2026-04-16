@@ -533,14 +533,31 @@ export default function FormationsClient({
                                         {/* Image */}
                                         <div className="relative aspect-[16/9] sm:aspect-[3/1] overflow-hidden">
                                           {/* Use native img to avoid Next.js preload injection for all ~40 images */}
-                                          <img
-                                            src={getFormationImage(formation)}
-                                            alt={formation.title}
-                                            className="absolute inset-0 w-full h-full object-cover"
-                                            loading="lazy"
-                                            decoding="async"
-                                          />
-                                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                                          {(() => {
+                                            const img = getFormationImage(formation);
+                                            return img ? (
+                                              <>
+                                                <img
+                                                  src={img}
+                                                  alt={formation.title}
+                                                  className="absolute inset-0 w-full h-full object-cover"
+                                                  loading="lazy"
+                                                  decoding="async"
+                                                />
+                                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                                              </>
+                                            ) : (
+                                              <div className="absolute inset-0 bg-white flex items-center justify-center">
+                                                <img
+                                                  src="/logo.svg"
+                                                  alt="C&Co Formation"
+                                                  className="h-10 sm:h-12 w-auto opacity-90"
+                                                  loading="lazy"
+                                                  decoding="async"
+                                                />
+                                              </div>
+                                            );
+                                          })()}
                                           <div className="absolute bottom-3 left-3 flex items-center gap-2">
                                             <span className="text-[11px] font-bold px-2.5 py-1 rounded-full text-white shadow-lg" style={{ backgroundColor: accent }}>{formation.pole_name}</span>
                                             {formation.duration && (

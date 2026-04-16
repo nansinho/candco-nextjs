@@ -79,27 +79,39 @@ export default function FormationDetailContent({
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-10">
       {/* Image Banner */}
-      {showBanner && (
-        <div className="relative w-full h-44 sm:h-52 rounded-2xl overflow-hidden mb-8">
-          <Image
-            src={getFormationImage({ id: f.id, pole: f.pole, image_url: f.image_url })}
-            alt={f.title}
-            fill
-            className="object-cover"
-            priority
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
-          <div className="absolute bottom-4 right-4 bg-white rounded-xl px-3 py-2 shadow-lg">
-            <Image
-              src="/logo-qualiopi.png"
-              alt="Certification Qualiopi"
-              width={120}
-              height={48}
-              className="h-10 w-auto"
-            />
+      {showBanner && (() => {
+        const bannerImage = getFormationImage({ id: f.id, pole: f.pole, image_url: f.image_url });
+        return (
+          <div className="relative w-full h-44 sm:h-52 rounded-2xl overflow-hidden mb-8">
+            {bannerImage ? (
+              <>
+                <Image src={bannerImage} alt={f.title} fill className="object-cover" priority />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+              </>
+            ) : (
+              <div className="absolute inset-0 bg-white flex items-center justify-center">
+                <Image
+                  src="/logo.svg"
+                  alt="C&Co Formation"
+                  width={200}
+                  height={80}
+                  className="h-16 w-auto opacity-90"
+                  priority
+                />
+              </div>
+            )}
+            <div className="absolute bottom-4 right-4 bg-white rounded-xl px-3 py-2 shadow-lg">
+              <Image
+                src="/logo-qualiopi.png"
+                alt="Certification Qualiopi"
+                width={120}
+                height={48}
+                className="h-10 w-auto"
+              />
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Two-Column Layout */}
       <div className="flex flex-col lg:flex-row gap-10 pb-10">
